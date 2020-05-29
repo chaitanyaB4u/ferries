@@ -1,12 +1,13 @@
 use juniper::{FieldResult, RootNode};
 
+
 use crate::db_manager::MySqlConnectionPool;
 
 use crate::models::users::{Registration, User};
-use crate::models::teams::{NewTeamRequest,Team};
+use crate::models::teams::{NewTeamRequest,Team,TeamQuery};
 
 use crate::services::users::{get_users, register};
-use crate::services::teams::{create_team};
+use crate::services::teams::{create_team,get_members};
 
 #[derive(Clone)]
 pub struct DBContext {
@@ -23,6 +24,12 @@ impl QueryRoot {
     fn get_users(context: &DBContext) -> Vec<User> {
         let connection = context.db.get().unwrap();
         get_users(&connection)
+    }
+
+    #[graphql(description = "Get the Members of a Team")]
+    fn get_members(context:&DBContext, team_query:TeamQuery) -> Vec<User> {
+        let connection = context.db.get().unwrap();
+        get_members(&connection,&team_query).expect("Something is Wrong")
     }
 }
 

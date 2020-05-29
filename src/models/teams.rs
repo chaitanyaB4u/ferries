@@ -35,6 +35,12 @@ pub struct NewTeamRequest {
     pub team_name: String,
 }
 
+#[derive(juniper::GraphQLInputObject)]
+pub struct TeamQuery {
+    pub fuzzy_id: String,
+}
+
+
 // The Persistable entity
 #[derive(Insertable)]
 #[table_name = "teams"]
