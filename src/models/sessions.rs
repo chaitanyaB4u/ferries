@@ -42,10 +42,6 @@ enum Status {
 #[juniper::object(description = "Fields that we can safely expose to APIs")]
 impl Session {
 
-    pub fn id(&self) -> i32 {
-        self.id
-    }
-
     pub fn fuzzy_id(&self) -> &str {
         self.fuzzy_id.as_str()
     }
@@ -132,6 +128,10 @@ impl NewSessionRequest {
 
         if self.name.trim().is_empty() {
             errors.push(ValidationError::new("name","name of the session is a must."));
+        }
+
+        if self.description.trim().is_empty() {
+            errors.push(ValidationError::new("desciption", "description of the session is a must."));
         }
 
         errors
