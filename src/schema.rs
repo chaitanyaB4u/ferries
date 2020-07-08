@@ -16,6 +16,8 @@ table! {
         active -> Bool,
         created_at -> Datetime,
         updated_at -> Datetime,
+        fuzzy_id -> Varchar,
+        description -> Nullable<Text>,
     }
 }
 
