@@ -5,8 +5,9 @@
 // along with the emails table
 
 use crate::schema::users;
+use crate::commons::util;
+
 use chrono::NaiveDateTime;
-use uuid::Uuid;
 
 // The Order of the fiels are very important 
 #[derive(Queryable,Debug)]
@@ -55,13 +56,12 @@ pub struct NewUser {
 
 impl NewUser {
     pub fn from(registration: &Registration) -> NewUser {
-        let uuid = Uuid::new_v4();
-        let hype = uuid.to_hyphenated().to_string();
+        let fuzzy_id = util::fuzzy_id();
 
         NewUser {
             full_name: registration.full_name.to_owned(),
             email: registration.email.to_owned(),
-            fuzzy_id: hype.to_owned(),
+            fuzzy_id: fuzzy_id,
         }
     }
 }

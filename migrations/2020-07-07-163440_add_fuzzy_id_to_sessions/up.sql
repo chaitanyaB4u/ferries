@@ -1,0 +1,1 @@
+ALTER TABLE sessions ADD COLUMN fuzzy_id varchar(255) NOT NULL UNIQUE;

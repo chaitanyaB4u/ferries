@@ -2,8 +2,10 @@
 // People assemble here for a Purpose., eg buying a Jewellry
 
 use crate::schema::teams;
+use crate::commons::util;
+
 use chrono::NaiveDateTime;
-use uuid::Uuid;
+
 
 
 #[derive(Queryable,Debug)]
@@ -51,12 +53,10 @@ pub struct NewTeam {
 
 impl NewTeam  {
     pub fn from(new_team_request: &NewTeamRequest) -> NewTeam {
-        let uuid = Uuid::new_v4();
-        let hype = uuid.to_hyphenated().to_string();
-
+       
         NewTeam {
                 name:new_team_request.team_name.to_owned(),
-                fuzzy_id: hype
+                fuzzy_id: util::fuzzy_id()
         }
     }
 }

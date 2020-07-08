@@ -58,6 +58,8 @@ table! {
         actual_end_date -> Nullable<Datetime>,
         created_at -> Datetime,
         updated_at -> Datetime,
+        description -> Nullable<Text>,
+        fuzzy_id -> Varchar,
     }
 }
 
