@@ -39,7 +39,7 @@ enum Status {
 }
 
 // Fields that we can safely expose to APIs
-#[juniper::object(description = "Fields that we can safely expose to APIs")]
+#[juniper::object]
 impl Session {
 
     pub fn fuzzy_id(&self) -> &str {

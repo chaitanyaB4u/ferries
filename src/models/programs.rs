@@ -16,17 +16,13 @@ pub struct Program {
     pub description: Option<String>,
 }
 
-#[juniper::object(description = "Fields that we can safely expose to APIs")]
+#[juniper::object]
 impl Program {
 
     pub fn fuzzy_id(&self) -> &str {
         self.fuzzy_id.as_str()
     }
-
-    pub fn coach_id(&self) -> i32 {
-        self.coach_id
-    }
-
+    
     pub fn active(&self) -> bool {
         self.active
     }
