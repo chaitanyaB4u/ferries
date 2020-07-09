@@ -67,20 +67,6 @@ impl Session {
         self.duration
     }
 
-    pub fn status(&self) -> Status {
-        if self.actual_end_date.is_some() {
-            return Status::DONE;
-        }
-        if self.actual_start_date.is_some() {
-            return Status::PROGRESS;
-        }
-        if self.is_ready {
-            return Status::READY;
-        }
-        
-        Status::PLANNED
-    }
-
     pub fn scheduleStart(&self) -> NaiveDateTime {
         self.revised_start_date.unwrap_or(self.original_start_date)
     }
@@ -88,6 +74,29 @@ impl Session {
     pub fn scheduleEnd(&self) -> NaiveDateTime {
         self.revised_end_date.unwrap_or(self.original_end_date)
     }
+    
+    pub fn status(&self) -> Status {
+        if self.actual_end_date.is_some() {
+            return Status::DONE;
+        }
+        if self.actual_start_date.is_some() {
+            return Status::PROGRESS;
+        }
+
+        let rev_start_date = self.revised_start_date.unwrap_or(self.original_start_date);
+
+        if util::is_past_date(rev_start_date) {
+            return Status::OVERDUE
+        }
+
+        if self.is_ready {
+            return Status::READY;
+        }
+
+        Status::PLANNED
+    }
+
+
 }
 
 #[derive(juniper::GraphQLInputObject)]

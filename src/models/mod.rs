@@ -3,3 +3,4 @@ pub mod teams;
 pub mod sessions;
 pub mod programs;
 pub mod user_events;
+pub mod user_programs;

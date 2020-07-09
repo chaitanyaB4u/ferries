@@ -26,11 +26,6 @@ impl EventRow {
 
 }
 
-impl EventRow {
-    pub fn new(item: (Session, Program)) -> EventRow {
-        EventRow{session:item.0,program:item.1}
-    }
-}
 
 pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Vec<EventRow> {
     use crate::schema::programs::dsl::*;
@@ -43,7 +38,7 @@ pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Vec<
     let mut event_rows: Vec<EventRow> = Vec::new();
 
     for row in rows {
-        event_rows.push(EventRow::new(row));
+        event_rows.push(EventRow{session:row.0,program:row.1});
     }
 
     event_rows
