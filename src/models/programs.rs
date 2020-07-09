@@ -1,9 +1,18 @@
+/**
+ * A coach can offer mutilple Programs. We define the structure of
+ * the program. 
+ */
+
+use chrono::{NaiveDateTime};
+
 use crate::schema::programs;
 use crate::commons::chassis::{ValidationError};
 use crate::commons::util;
 
-use chrono::{NaiveDateTime};
 
+/**
+ * The structure represents One row of the programs table.
+ */
 #[derive(Queryable,Debug)]
 pub struct Program {
     pub id: i32,
@@ -16,7 +25,11 @@ pub struct Program {
     pub description: Option<String>,
 }
 
-#[juniper::object]
+/**
+ * Let us expose certain limited elements of the structure to the outside world
+ *
+ */
+#[juniper::object(description="The fields we offer to the Web-UI ")]
 impl Program {
 
     pub fn fuzzy_id(&self) -> &str {
@@ -39,7 +52,9 @@ impl Program {
     }
 }
 
-
+/**
+ * We receive a request from a coach to create a New Program
+ */
 #[derive(juniper::GraphQLInputObject)]
 pub struct NewProgramRequest {
     pub name: String,
@@ -47,6 +62,10 @@ pub struct NewProgramRequest {
     pub description: String
 }
 
+/**
+ * We validate the NewProgramRequest to inform back, if we miss any important
+ * fields before creating the Program.
+ */
 impl NewProgramRequest {
 
     pub fn validate(&self) ->Vec<ValidationError> {
@@ -71,7 +90,7 @@ impl NewProgramRequest {
 
 }
 
-// The Persistable entity
+// The Persistable entity with the Fuzzy_id injected by us.
 #[derive(Insertable)]
 #[table_name = "programs"]
 pub struct NewProgram {
@@ -82,6 +101,10 @@ pub struct NewProgram {
     pub description: String,
 }
 
+/**
+ * Transforming the NewProgramRequest into NewProgram by inject a unique
+ * fuyzz_id.
+ */
 impl NewProgram {
 
     pub fn from(request: &NewProgramRequest) -> NewProgram {

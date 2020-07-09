@@ -1,15 +1,16 @@
 // User is the first domain object that involves in almost all
 // the future transactions of the platform.
+// The users table houses all the users of this platform.
 
-// The users table houses all the users of the platform and shall be read
-// along with the emails table
+use chrono::NaiveDateTime;
 
 use crate::schema::users;
 use crate::commons::util;
 
-use chrono::NaiveDateTime;
 
-// The Order of the fiels are very important 
+// The Order of the fiels are very important
+// The User struct is purely for internal consumption. 
+// See the Juniper:object for the fields we exposed to outside 
 #[derive(Queryable,Debug)]
 pub struct User {
     pub id: i32,
@@ -22,7 +23,7 @@ pub struct User {
 }
 
 // Fields that we can safely expose to APIs
-#[juniper::object(description = "Fields that we can safely expose to APIs")]
+#[juniper::object(description = "The exposed attributes of the User Structure.")]
 impl User {
     pub fn fuzzy_id(&self) -> &str {
         self.fuzzy_id.as_str()
@@ -38,14 +39,14 @@ impl User {
 }
 
 // Registration represents the fields we obtain from user 
-// for Creating a new User in the system
+// while Creating a new User in the system
 #[derive(juniper::GraphQLInputObject)]
 pub struct Registration {
     pub full_name: String,
     pub email: String,
 }
 
-// Fields we require to persist into User
+// Fields we require to persist into the users table
 #[derive(Insertable)]
 #[table_name = "users"]
 pub struct NewUser {
@@ -54,6 +55,11 @@ pub struct NewUser {
     pub fuzzy_id: String,
 }
 
+// A way to transform the inbound registration request into the persistable
+// NewUser structure.
+
+// Let us generate the fuzzy_id, so that we can use it to find and return 
+// the NewUser structure to the requester, post-creation.
 impl NewUser {
     pub fn from(registration: &Registration) -> NewUser {
         let fuzzy_id = util::fuzzy_id();
