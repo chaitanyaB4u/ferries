@@ -3,8 +3,8 @@ use diesel::prelude::*;
 use crate::models::programs::{NewProgramRequest, NewProgram,Program};
 use crate::schema::programs::dsl::*;
 
-const ERROR_001: &'static str = "Program Creation Error:001";
-const ERROR_002: &'static str = "Post-Program Creation Error:002. Unable to Create Or Find the Program.";
+const ERROR_001: &'static str = "Program Creation. Error:001";
+const ERROR_002: &'static str = "Post-Program Creation. Error:002. Unable to Create Or Find the Program.";
 
 
 pub fn create_new_program(connection: &MysqlConnection, request: &NewProgramRequest) -> Result<Program,&'static str> {

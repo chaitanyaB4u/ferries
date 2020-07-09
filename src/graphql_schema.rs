@@ -7,6 +7,7 @@ use crate::models::users::{Registration, User};
 use crate::models::teams::{NewTeamRequest,Team,TeamQuery};
 use crate::models::sessions::{NewSessionRequest, Session};
 use crate::models::programs::{NewProgramRequest, Program};
+use crate::models::enrollments::{NewEnrollmentRequest, Enrollment};
 use crate::models::user_events::{get_events,EventRow,EventCriteria};
 use crate::models::user_programs::{get_active_programs,ProgramRow,ProgramCriteria};
 
@@ -15,8 +16,9 @@ use crate::services::users::{get_users, register};
 use crate::services::teams::{create_team,get_members};
 use crate::services::sessions::{create_session};
 use crate::services::programs::{create_new_program};
+use crate::services::enrollments::{create_new_enrollment};
 
-use crate::commons::chassis::{MutationResult,session_service_error,program_service_error};
+use crate::commons::chassis::{MutationResult,service_error};
 
 #[derive(Clone)]
 pub struct DBContext {
@@ -77,6 +79,22 @@ impl MutationRoot {
         Ok(result.expect("Unable to Complete Creating the new team."))
     }
 
+    fn create_enrollment(context: &DBContext, new_enrollment_request: NewEnrollmentRequest) ->MutationResult<Enrollment> {
+       
+        let errors = new_enrollment_request.validate();
+         if !errors.is_empty() {
+             return MutationResult(Err(errors));
+         }
+ 
+         let connection = context.db.get().unwrap();
+         let result = create_new_enrollment(&connection, &new_enrollment_request);
+ 
+         match result {
+             Ok(enrollment) => MutationResult(Ok(enrollment)),
+             Err(e) => service_error(e)
+         }
+     }
+
     fn create_program(context: &DBContext, new_program_request: NewProgramRequest) ->MutationResult<Program> {
        
        let errors = new_program_request.validate();
@@ -89,7 +107,7 @@ impl MutationRoot {
 
         match result {
             Ok(program) => MutationResult(Ok(program)),
-            Err(e) => program_service_error(e)
+            Err(e) => service_error(e)
         }
     }
 
@@ -105,7 +123,7 @@ impl MutationRoot {
 
         match result {
             Ok(session) => MutationResult(Ok(session)),
-            Err(e) => session_service_error(e),
+            Err(e) => service_error(e),
         }
     }
 }
