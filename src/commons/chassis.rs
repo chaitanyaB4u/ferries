@@ -1,3 +1,18 @@
+/**
+ * Important: The Mutation Result might seem like a Code Duplication, 
+ * but is unavoidable.
+ * 
+ * Excerpt from Graphql:Rust - Objects and Generics
+ * 
+ * Yet another point where GraphQL and Rust differs is in how generics work. 
+ * In Rust, almost any type could be generic - that is, take type parameters. 
+ * In GraphQL, there are only two generic types: lists and non-nullables.
+ * This poses a restriction on what you can expose in GraphQL from Rust: 
+ * no generic structs can be exposed - all type parameters must be bound. 
+ * For example, you can not make e.g. Result<T, E> into a GraphQL type, 
+ * but you can make e.g. Result<User, String> into a GraphQL type.
+ */
+ 
 use crate::models::sessions::{Session};
 use crate::models::programs::{Program};
 use crate::models::enrollments::{Enrollment};
