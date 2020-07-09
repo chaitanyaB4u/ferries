@@ -7,6 +7,7 @@ use crate::models::users::{Registration, User};
 use crate::models::teams::{NewTeamRequest,Team,TeamQuery};
 use crate::models::sessions::{NewSessionRequest, Session};
 use crate::models::programs::{NewProgramRequest, Program};
+use crate::models::user_events::{get_events,EventRow,EventCriteria};
 
 use crate::services::users::{get_users, register};
 use crate::services::teams::{create_team,get_members};
@@ -36,6 +37,12 @@ impl QueryRoot {
     fn get_members(context:&DBContext, team_query:TeamQuery) -> Vec<User> {
         let connection = context.db.get().unwrap();
         get_members(&connection,&team_query).expect("Something is Wrong")
+    }
+
+    #[graphql(description = "Get the Events for a User")]
+    fn get_sessions(context:&DBContext, criteria:EventCriteria) -> Vec<EventRow> { 
+        let connection = context.db.get().unwrap();
+        get_events(&connection,criteria)
     }
 }
 

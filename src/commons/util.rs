@@ -20,8 +20,6 @@ pub fn strip_seconds(given_date: NaiveDateTime) -> NaiveDateTime {
 pub fn is_valid_date(date_str: &str) -> bool {
     let parse_from_str = NaiveDateTime::parse_from_str;
     let given_date = parse_from_str(date_str, DATE_TIME_PATTERN);
-    
-    println!("From is_valid_date :{:?}",given_date);
 
     given_date.is_ok()
 }
