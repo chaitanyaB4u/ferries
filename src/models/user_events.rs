@@ -1,6 +1,8 @@
 use crate::models::programs::Program;
 use crate::models::sessions::Session;
 use diesel::prelude::*;
+use crate::schema::programs::dsl::*;
+use crate::schema::sessions::dsl::*;
 
 
 #[derive(juniper::GraphQLInputObject)]
@@ -28,9 +30,7 @@ impl EventRow {
 
 
 pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Vec<EventRow> {
-    use crate::schema::programs::dsl::*;
-    use crate::schema::sessions::dsl::*;
-
+   
     let data = sessions.inner_join(programs).load(connection);
 
     let rows: Vec<(Session, Program)> = data.unwrap();

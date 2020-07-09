@@ -1,6 +1,10 @@
 use crate::models::programs::Program;
 use crate::models::users::User;
 use diesel::prelude::*;
+use crate::schema::programs::dsl::*;
+use crate::schema::users::dsl::*;
+use crate::schema::users::dsl::fuzzy_id;
+
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct ProgramCriteria {
@@ -25,10 +29,11 @@ impl ProgramRow {
 }
 
 pub fn get_active_programs (connection: &MysqlConnection, criteria: ProgramCriteria) -> Vec<ProgramRow> {
-    use crate::schema::programs::dsl::*;
-    use crate::schema::users::dsl::*;
-
-    let data: Vec<(Program, User)> = programs.inner_join(users).load(connection).unwrap();
+ 
+    let data: Vec<(Program, User)> = programs
+        .inner_join(users)
+        .filter(fuzzy_id.eq(criteria.user_fuzzy_id))
+        .load(connection).unwrap();
 
     let mut rows: Vec<ProgramRow> = Vec::new();
 
