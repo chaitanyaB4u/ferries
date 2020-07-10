@@ -6,6 +6,7 @@ use crate::db_manager::MySqlConnectionPool;
 use crate::models::users::{Registration, User};
 use crate::models::teams::{NewTeamRequest,Team,TeamQuery};
 use crate::models::sessions::{NewSessionRequest, Session};
+use crate::models::notes::{NewNoteRequest, Note};
 use crate::models::programs::{NewProgramRequest, Program};
 use crate::models::enrollments::{NewEnrollmentRequest, Enrollment};
 use crate::models::user_events::{get_events,EventRow,EventCriteria};
@@ -15,6 +16,7 @@ use crate::models::user_programs::{get_active_programs,ProgramRow,ProgramCriteri
 use crate::services::users::{get_users, register};
 use crate::services::teams::{create_team,get_members};
 use crate::services::sessions::{create_session};
+use crate::services::notes::{create_new_note};
 use crate::services::programs::{create_new_program};
 use crate::services::enrollments::{create_new_enrollment};
 
@@ -123,6 +125,22 @@ impl MutationRoot {
 
         match result {
             Ok(session) => MutationResult(Ok(session)),
+            Err(e) => service_error(e),
+        }
+    }
+
+    fn create_note(context: &DBContext, new_note_request: NewNoteRequest) -> MutationResult<Note> {
+
+        let errors = new_note_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_new_note(&connection, &new_note_request);
+
+        match result {
+            Ok(note) => MutationResult(Ok(note)),
             Err(e) => service_error(e),
         }
     }

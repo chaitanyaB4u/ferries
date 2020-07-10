@@ -16,7 +16,7 @@
 use crate::models::sessions::{Session};
 use crate::models::programs::{Program};
 use crate::models::enrollments::{Enrollment};
-
+use crate::models::notes::{Note};
 
 #[derive(juniper::GraphQLObject)]
 pub struct ValidationError {
@@ -58,6 +58,17 @@ impl MutationResult<Program> {
 #[juniper::object(name = "EnrollmentResult")]
 impl MutationResult<Enrollment> {
     pub fn enrollment(&self) -> Option<&Enrollment> {
+        self.0.as_ref().ok()
+    }
+
+    pub fn error(&self) -> Option<&Vec<ValidationError>> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "NoteResult")]
+impl MutationResult<Note> {
+    pub fn note(&self) -> Option<&Note> {
         self.0.as_ref().ok()
     }
 
