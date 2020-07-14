@@ -3,7 +3,6 @@ use diesel::prelude::*;
 
 use crate::services::users;
 
-use crate::models::users::User;
 use crate::models::programs::{NewProgramRequest, NewProgram,Program};
 use crate::schema::programs::dsl::*;
 
@@ -17,8 +16,7 @@ pub fn create_new_program(connection: &MysqlConnection, request: &NewProgramRequ
     if user_result.is_err() {
         return Err(ERROR_003);
     }
-    let user: User = user_result.unwrap();
-    let new_program = NewProgram::from(request,user.id);
+    let new_program = NewProgram::from(request,user_result.unwrap().id);
 
     let result = diesel::insert_into(programs)
         .values(&new_program)
@@ -38,7 +36,7 @@ pub fn create_new_program(connection: &MysqlConnection, request: &NewProgramRequ
     } 
 }
 
-fn find_by_fuzzy_id(connection: &MysqlConnection,fuzzy: &str) -> QueryResult<Program> {
+pub fn find_by_fuzzy_id(connection: &MysqlConnection,fuzzy: &str) -> QueryResult<Program> {
     programs
         .filter(fuzzy_id.eq(fuzzy))
         .first(connection)

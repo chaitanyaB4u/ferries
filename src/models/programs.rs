@@ -81,7 +81,7 @@ impl NewProgramRequest {
         }
 
         if self.description.trim().is_empty() {
-            errors.push(ValidationError::new("desciption", "description of the program is a must."));
+            errors.push(ValidationError::new("description", "description of the program is a must."));
         }
 
         errors

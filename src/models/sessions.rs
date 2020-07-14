@@ -101,7 +101,7 @@ impl Session {
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct NewSessionRequest {
-    pub program_id: i32,
+    pub program_fuzzy_id: String,
     pub name: String,
     pub description: String,
     pub duration: i32,
@@ -131,8 +131,8 @@ impl NewSessionRequest {
             errors.push(ValidationError::new("duration","should be a minimum of 1 hour."));
         }
 
-        if self.program_id <= 0 {
-            errors.push(ValidationError::new("program_id","program is invalid."));
+        if self.program_fuzzy_id.trim().is_empty(){
+            errors.push(ValidationError::new("program_fuzzy_id","Program fuzzy id is a must."));
         }
 
         if self.name.trim().is_empty() {
@@ -140,7 +140,7 @@ impl NewSessionRequest {
         }
 
         if self.description.trim().is_empty() {
-            errors.push(ValidationError::new("desciption", "description of the session is a must."));
+            errors.push(ValidationError::new("description", "description of the session is a must."));
         }
 
         errors
@@ -162,7 +162,7 @@ pub struct NewSession {
 
 impl NewSession  {
 
-    pub fn from(request: &NewSessionRequest) -> NewSession {
+    pub fn from(request: &NewSessionRequest, program_id: i32) -> NewSession {
  
         let start_date = util::as_date(request.start_time.as_str());
         let duration = Duration::hours(request.duration as i64);
@@ -172,7 +172,7 @@ impl NewSession  {
         
         
         let new_session = NewSession {
-                program_id:request.program_id,
+                program_id:program_id,
                 name:request.name.to_owned(),
                 description:request.description.to_owned(),
                 duration:request.duration,
