@@ -40,7 +40,7 @@ pub fn register(connection: &MysqlConnection, registration: &Registration) -> Re
     }
 }
 
-fn find_by_fuzzy_id(connection: &MysqlConnection,fuzzy: &str) -> QueryResult<User> {
+pub fn find_by_fuzzy_id(connection: &MysqlConnection,fuzzy: &str) -> QueryResult<User> {
     users
         .filter(fuzzy_id.eq(fuzzy))
         .first(connection)

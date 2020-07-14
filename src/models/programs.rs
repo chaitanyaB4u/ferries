@@ -58,7 +58,7 @@ impl Program {
 #[derive(juniper::GraphQLInputObject)]
 pub struct NewProgramRequest {
     pub name: String,
-    pub coach_id: i32,
+    pub coach_fuzzy_id: String,
     pub description: String
 }
 
@@ -76,8 +76,8 @@ impl NewProgramRequest {
             errors.push(ValidationError::new("name", "name of the program is a must."));
         }
 
-        if self.coach_id <= 0 {
-            errors.push(ValidationError::new("coach_id", "coach is invalid."));
+        if self.coach_fuzzy_id.trim().is_empty() {
+            errors.push(ValidationError::new("coach_fuzzy_id", "coach fuzzy_id is a must"));
         }
 
         if self.description.trim().is_empty() {
@@ -107,13 +107,13 @@ pub struct NewProgram {
  */
 impl NewProgram {
 
-    pub fn from(request: &NewProgramRequest) -> NewProgram {
+    pub fn from(request: &NewProgramRequest,coach_id: i32) -> NewProgram {
 
         let fuzzy_id = util::fuzzy_id();
 
         NewProgram {
             name:request.name.to_owned(),
-            coach_id:request.coach_id,
+            coach_id:coach_id,
             active:true,
             fuzzy_id:fuzzy_id,
             description:request.description.to_owned()
