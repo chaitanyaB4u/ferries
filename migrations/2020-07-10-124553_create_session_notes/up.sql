@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS  session_notes (
     remind_at datetime,
     created_by_id int NOT NULL,
     is_private tinyint(1) NOT NULL DEFAULT '0',
- 	created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ 	  created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   	updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   	PRIMARY KEY (id),
     FOREIGN KEY (session_id) REFERENCES sessions(id),

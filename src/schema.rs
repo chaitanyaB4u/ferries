@@ -76,6 +76,16 @@ table! {
 }
 
 table! {
+    session_users (id) {
+        id -> Integer,
+        fuzzy_id -> Varchar,
+        session_id -> Integer,
+        user_id -> Integer,
+        user_type -> Varchar,
+    }
+}
+
+table! {
     session_visits (id) {
         id -> Integer,
         session_id -> Integer,
@@ -147,6 +157,8 @@ joinable!(session_boards -> users (created_by_id));
 joinable!(session_files -> session_notes (session_note_id));
 joinable!(session_notes -> sessions (session_id));
 joinable!(session_notes -> users (created_by_id));
+joinable!(session_users -> sessions (session_id));
+joinable!(session_users -> users (user_id));
 joinable!(session_visits -> sessions (session_id));
 joinable!(session_visits -> users (user_id));
 joinable!(sessions -> programs (program_id));
@@ -160,6 +172,7 @@ allow_tables_to_appear_in_same_query!(
     session_files,
     session_links,
     session_notes,
+    session_users,
     session_visits,
     sessions,
     team_members,
