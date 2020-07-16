@@ -8,7 +8,7 @@ use crate::models::teams::{NewTeamRequest,Team,TeamQuery};
 use crate::models::sessions::{NewSessionRequest, Session};
 use crate::models::notes::{NewNoteRequest, Note};
 use crate::models::programs::{NewProgramRequest, Program};
-use crate::models::enrollments::{NewEnrollmentRequest, Enrollment};
+use crate::models::enrollments::{NewEnrollmentRequest, Enrollment,EnrollmentCriteria};
 use crate::models::user_events::{get_events,EventRow,EventCriteria};
 use crate::models::user_programs::{get_active_programs,ProgramRow,ProgramCriteria};
 
@@ -18,7 +18,7 @@ use crate::services::teams::{create_team,get_members};
 use crate::services::sessions::{create_session};
 use crate::services::notes::{create_new_note};
 use crate::services::programs::{create_new_program};
-use crate::services::enrollments::{create_new_enrollment};
+use crate::services::enrollments::{create_new_enrollment,get_active_enrollments};
 
 use crate::commons::chassis::{MutationResult,service_error};
 
@@ -51,6 +51,13 @@ impl QueryRoot {
          get_active_programs(&connection,criteria)
     }
 
+    #[graphql(description = "Get the list of members enrolled into a Program")]
+     fn get_enrollments(context:&DBContext, criteria:EnrollmentCriteria) -> Vec<User> {
+         let connection = context.db.get().unwrap();
+         get_active_enrollments(&connection,criteria).unwrap()
+    }
+
+
     #[graphql(description = "Get the Events for a User")]
     fn get_sessions(context:&DBContext, criteria:EventCriteria) -> Vec<EventRow> { 
         let connection = context.db.get().unwrap();
@@ -81,6 +88,22 @@ impl MutationRoot {
         Ok(result.expect("Unable to Complete Creating the new team."))
     }
 
+    fn create_program(context: &DBContext, new_program_request: NewProgramRequest) ->MutationResult<Program> {
+       
+        let errors = new_program_request.validate();
+         if !errors.is_empty() {
+             return MutationResult(Err(errors));
+         }
+ 
+         let connection = context.db.get().unwrap();
+         let result = create_new_program(&connection, &new_program_request);
+ 
+         match result {
+             Ok(program) => MutationResult(Ok(program)),
+             Err(e) => service_error(e)
+         }
+    }
+
     fn create_enrollment(context: &DBContext, new_enrollment_request: NewEnrollmentRequest) ->MutationResult<Enrollment> {
        
         let errors = new_enrollment_request.validate();
@@ -95,23 +118,9 @@ impl MutationRoot {
              Ok(enrollment) => MutationResult(Ok(enrollment)),
              Err(e) => service_error(e)
          }
-     }
-
-    fn create_program(context: &DBContext, new_program_request: NewProgramRequest) ->MutationResult<Program> {
-       
-       let errors = new_program_request.validate();
-        if !errors.is_empty() {
-            return MutationResult(Err(errors));
-        }
-
-        let connection = context.db.get().unwrap();
-        let result = create_new_program(&connection, &new_program_request);
-
-        match result {
-            Ok(program) => MutationResult(Ok(program)),
-            Err(e) => service_error(e)
-        }
     }
+
+   
 
     fn create_session(context: &DBContext, new_session_request: NewSessionRequest) -> MutationResult<Session> {
 

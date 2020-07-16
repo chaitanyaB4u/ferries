@@ -112,6 +112,7 @@ impl Session {
 #[derive(juniper::GraphQLInputObject)]
 pub struct NewSessionRequest {
     pub program_fuzzy_id: String,
+    pub member_fuzzy_id: String,
     pub name: String,
     pub description: String,
     pub duration: i32,
@@ -142,6 +143,10 @@ impl NewSessionRequest {
 
         if self.program_fuzzy_id.trim().is_empty(){
             errors.push(ValidationError::new("program_fuzzy_id","Program fuzzy id is a must."));
+        }
+
+        if self.member_fuzzy_id.trim().is_empty(){
+            errors.push(ValidationError::new("member_fuzzy_id","Member fuzzy id is a must."));
         }
 
         if self.name.trim().is_empty() {

@@ -2,8 +2,8 @@ use diesel::prelude::*;
 
 use crate::commons::util;
 
-use crate::services::enrollments;
 use crate::services::programs;
+use crate::services::users;
 
 use crate::models::session_users::NewSessionUser;
 use crate::models::sessions::{NewSession, NewSessionRequest, Session};
@@ -25,7 +25,8 @@ pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest,
 
     // Obtain the People
     let coach: User = users.find(program.coach_id).first(connection).unwrap();
-    let member: User = enrollments::get_member(connection, program.id);
+    let member: User = users::find_by_fuzzy_id(connection, request.member_fuzzy_id.as_str())?;
+
     let people_involved: String = util::concat(coach.full_name.as_str(), member.full_name.as_str());
 
     // Inserting the Session

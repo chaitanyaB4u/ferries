@@ -1,6 +1,8 @@
+use diesel::prelude::*;
+
 use crate::models::programs::Program;
 use crate::models::users::User;
-use diesel::prelude::*;
+
 use crate::schema::programs::dsl::*;
 use crate::schema::users::dsl::*;
 use crate::schema::users::dsl::fuzzy_id;

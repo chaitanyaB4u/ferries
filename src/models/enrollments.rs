@@ -54,3 +54,7 @@ impl NewEnrollmentRequest {
     }
 }
 
+#[derive(juniper::GraphQLInputObject)]
+pub struct EnrollmentCriteria {
+    pub program_fuzzy_id: String,
+}
