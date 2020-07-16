@@ -8,6 +8,8 @@ use crate::schema::users;
 use crate::commons::util;
 
 
+
+
 // The Order of the fiels are very important
 // The User struct is purely for internal consumption. 
 // See the Juniper:object for the fields we exposed to outside 
@@ -69,5 +71,26 @@ impl NewUser {
             email: registration.email.to_owned(),
             fuzzy_id: fuzzy_id,
         }
+    }
+}
+
+
+const COACH: &'static str = "coach";
+const MEMBER: &'static str = "member";
+
+pub enum UserType {
+    COACH, 
+    MEMBER
+}
+
+impl UserType {
+    
+    pub fn as_str(&self) -> &'static str {
+
+        match self {
+            UserType::COACH => COACH,
+            UserType::MEMBER => MEMBER
+        }
+
     }
 }

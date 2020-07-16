@@ -1,6 +1,5 @@
 use diesel::prelude::*;
 
-
 use crate::services::users;
 
 use crate::models::programs::{NewProgramRequest, NewProgram,Program};
