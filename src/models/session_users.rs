@@ -10,8 +10,22 @@ pub struct SessionUser {
     pub fuzzy_id: String,
     pub session_id: i32,
     pub user_id: i32,
-    pub user_type: Option<String>,
+    pub user_type: String,
 }
+
+// Fields that we can safely expose to APIs
+#[juniper::object]
+impl SessionUser {
+
+    pub fn fuzzy_id(&self) -> &str {
+        self.fuzzy_id.as_str()
+    }
+
+    pub fn user_type(&self) -> &str {
+        self.user_type.as_str()
+    }
+}
+
 
 #[derive(Insertable)]
 #[table_name = "session_users"]
