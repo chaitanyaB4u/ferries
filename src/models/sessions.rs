@@ -26,6 +26,7 @@ pub struct Session {
     pub updated_at : NaiveDateTime,
     pub description : Option<String>,
     pub fuzzy_id: String,
+    pub people: Option<String>
 }
 
 #[derive(juniper::GraphQLEnum)]
@@ -56,6 +57,15 @@ impl Session {
 
     pub fn description(&self) -> &str {
         let value: &str = match &self.description {
+            None=>"_",
+            Some(value)=>value.as_str()
+        };
+
+        value
+    }
+
+    pub fn people(&self) -> &str {
+        let value: &str = match &self.people {
             None=>"_",
             Some(value)=>value.as_str()
         };
@@ -105,12 +115,11 @@ pub struct NewSessionRequest {
     pub name: String,
     pub description: String,
     pub duration: i32,
-    pub start_time: String,
+    pub start_time: String
 }
 
 
 impl NewSessionRequest {
-
     
     pub fn validate(&self) -> Vec<ValidationError> {
 
@@ -158,18 +167,18 @@ pub struct NewSession {
     pub original_end_date: NaiveDateTime,
     pub description: String,
     pub fuzzy_id: String,
+    pub people: String
 }
 
 impl NewSession  {
 
-    pub fn from(request: &NewSessionRequest, program_id: i32) -> NewSession {
+    pub fn from(request: &NewSessionRequest, program_id: i32, people: String) -> NewSession {
  
         let start_date = util::as_date(request.start_time.as_str());
         let duration = Duration::hours(request.duration as i64);
         let end_date = start_date.checked_add_signed(duration);
 
         let fuzzy_id = util::fuzzy_id();
-        
         
         let new_session = NewSession {
                 program_id:program_id,
@@ -179,6 +188,7 @@ impl NewSession  {
                 original_start_date:start_date,
                 original_end_date: end_date.unwrap_or(start_date),
                 fuzzy_id: fuzzy_id,
+                people:people.to_owned()
         };
 
         new_session

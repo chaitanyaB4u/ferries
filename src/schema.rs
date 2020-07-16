@@ -113,6 +113,7 @@ table! {
         updated_at -> Datetime,
         description -> Nullable<Text>,
         fuzzy_id -> Varchar,
+        people -> Nullable<Text>,
     }
 }
 

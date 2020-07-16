@@ -1,7 +1,12 @@
 use diesel::prelude::*;
 
+use crate::models::users::{User};
 use crate::models::enrollments::{NewEnrollmentRequest,Enrollment};
+
 use crate::schema::enrollments::dsl::*;
+use crate::schema::team_members::dsl::*;
+use crate::schema::users::dsl::*;
+use crate::schema::teams::dsl::*;
 
 const ERROR_001: &'static str = "Error in finding any prior enrollment. Error-001.";
 const WARNING: &'static str = "It seems you have already enrolled the team to this program";
@@ -40,8 +45,25 @@ pub fn create_new_enrollment(connection: &MysqlConnection, request: &NewEnrollme
 }
 
 fn find_by_request(connection: &MysqlConnection,request: &NewEnrollmentRequest) -> QueryResult<Enrollment> {
+    
+    use crate::schema::enrollments::dsl::team_id;
+
     enrollments
         .filter(program_id.eq(request.program_id))
         .filter(team_id.eq(request.team_id))
         .first(connection)
 }
+
+pub fn get_member(connection: &MysqlConnection, prog_id: i32) -> User {
+
+    let member_id: i32 = enrollments
+        .inner_join(teams.inner_join(team_members))
+        .filter(program_id.eq(prog_id))
+        .select(user_id)
+        .first(connection)
+        .unwrap();
+     
+    let member: User = users.find(member_id).first(connection).unwrap();
+        
+    member
+} 

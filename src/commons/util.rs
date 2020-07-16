@@ -39,3 +39,7 @@ pub fn fuzzy_id() -> String {
 
     hype.clone()
 }
+
+pub fn concat(str1: &str, str2: &str) -> String {
+    format!("{} and {}",str1,str2)
+}

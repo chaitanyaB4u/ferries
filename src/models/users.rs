@@ -11,7 +11,7 @@ use crate::commons::util;
 // The Order of the fiels are very important
 // The User struct is purely for internal consumption. 
 // See the Juniper:object for the fields we exposed to outside 
-#[derive(Queryable,Debug)]
+#[derive(Queryable,Debug,Identifiable)]
 pub struct User {
     pub id: i32,
     pub full_name: String,
