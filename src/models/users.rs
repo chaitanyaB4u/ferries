@@ -8,8 +8,6 @@ use crate::schema::users;
 use crate::commons::util;
 
 
-
-
 // The Order of the fiels are very important
 // The User struct is purely for internal consumption. 
 // See the Juniper:object for the fields we exposed to outside 

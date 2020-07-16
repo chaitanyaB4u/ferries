@@ -13,14 +13,13 @@ pub fn get_users(connection: &MysqlConnection) -> Vec<User> {
         .expect("Error Fetching users")
 }
 
-pub fn register(
-    connection: &MysqlConnection,
-    registration: &Registration,
-) -> Result<User, &'static str> {
+pub fn register(connection: &MysqlConnection,registration: &Registration) -> Result<User, &'static str> {
+    
     let result = find_by_email(connection, registration.email.as_str());
     if result.is_ok() {
         return Err(REGISTERED_ALREADY);
     }
+
     if registration.email.trim().len() == 0 {
         return Err(BLANK_EMAIL);
     }
@@ -49,6 +48,7 @@ fn find_by_email(connection: &MysqlConnection, email_str: &str) -> QueryResult<U
 
 fn create_user(connection: &MysqlConnection, registration: &Registration) -> QueryResult<User> {
     let new_user = NewUser::from(registration);
+    
     diesel::insert_into(users)
         .values(&new_user)
         .execute(connection)

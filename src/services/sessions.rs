@@ -35,8 +35,8 @@ pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest,
     let session = insert_session(connection,&new_session)?;
 
     // Inserting a pair of entries into the Session Users (For Coach & Member)
-    let new_session_coach = NewSessionUser::into(&session, &coach, UserType::COACH);
-    let new_session_member = NewSessionUser::into(&session, &member, UserType::MEMBER);
+    let new_session_coach = NewSessionUser::from(&session, &coach, UserType::COACH);
+    let new_session_member = NewSessionUser::from(&session, &member, UserType::MEMBER);
     insert_session_users(connection, &new_session_coach, &new_session_member)?;
 
     Ok(session)
