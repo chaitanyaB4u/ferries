@@ -14,7 +14,6 @@ use crate::schema::session_users::dsl::*;
 use crate::schema::sessions::dsl::*;
 use crate::schema::users::dsl::*;
 
-const INVALID_PROGRAM: &'static str = "Invalid Program Fuzzy Id. Error:001.";
 const SESSION_CREATION_ERROR: &'static str = "Unable to Create Session. Error:002";
 const SESSION_NOT_FOUND: &'static str = "Unable to Create Or Find the Session. Error:003.";
 const SESSION_USER_CREATION_ERROR: &'static str = "Unable to associate users to the session. Error: 004.";
@@ -23,7 +22,7 @@ const SESSION_USER_CREATION_ERROR: &'static str = "Unable to associate users to 
 pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest,) -> Result<Session, &'static str> {
 
     // Obtain the Program
-    let program = get_program(connection, request)?;
+    let program = programs::find_by_fuzzy_id(connection, request.program_fuzzy_id.as_str())?;
 
     // Obtain the People
     let coach: User = users.find(program.coach_id).first(connection).unwrap();
@@ -42,16 +41,6 @@ pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest,
     Ok(session)
 }
 
-fn get_program(connection: &MysqlConnection,request: &NewSessionRequest) -> Result<Program, &'static str> {
-
-    let program_result = programs::find_by_fuzzy_id(connection, request.program_fuzzy_id.as_str());
-    
-    if program_result.is_err() {
-        return Err(INVALID_PROGRAM);
-    }
-
-    Ok(program_result.unwrap())
-}
 
 fn insert_session(connection: &MysqlConnection,new_session: &NewSession) -> Result<Session, &'static str> {
 
