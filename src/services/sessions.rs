@@ -5,7 +5,6 @@ use crate::commons::util;
 use crate::services::enrollments;
 use crate::services::programs;
 
-use crate::models::programs::Program;
 use crate::models::session_users::NewSessionUser;
 use crate::models::sessions::{NewSession, NewSessionRequest, Session};
 use crate::models::users::{User,UserType};
