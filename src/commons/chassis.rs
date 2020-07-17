@@ -77,6 +77,17 @@ impl MutationResult<Note> {
     }
 }
 
+#[juniper::object(name = "Updates")]
+impl MutationResult<String> {
+    pub fn rows(&self) -> Option<&String> {
+        self.0.as_ref().ok()
+    }
+
+    pub fn error(&self) -> Option<&Vec<ValidationError>> {
+        self.0.as_ref().err()
+    }
+}
+
 
 pub fn service_error<T>(message: &str) -> MutationResult<T> {
     let mut v: Vec<ValidationError> = Vec::new();

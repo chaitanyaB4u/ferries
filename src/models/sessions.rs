@@ -7,7 +7,7 @@ use chrono::{NaiveDateTime,Duration};
 
 
 // The Order of the fiels are very important 
-#[derive(Queryable,Debug)]
+#[derive(Queryable,Debug,Identifiable)]
 pub struct Session {
     pub id:i32,
     pub program_id:i32,
@@ -26,7 +26,8 @@ pub struct Session {
     pub updated_at : NaiveDateTime,
     pub description : Option<String>,
     pub fuzzy_id: String,
-    pub people: Option<String>
+    pub people: Option<String>,
+    pub cancelled_at: Option<NaiveDateTime>,
 }
 
 #[derive(juniper::GraphQLEnum)]
@@ -86,6 +87,10 @@ impl Session {
     }
     
     pub fn status(&self) -> Status {
+        if self.cancelled_at.is_some() {
+            return Status::CANCELLED;
+        }
+
         if self.actual_end_date.is_some() {
             return Status::DONE;
         }
@@ -105,8 +110,6 @@ impl Session {
 
         Status::PLANNED
     }
-
-
 }
 
 #[derive(juniper::GraphQLInputObject)]
@@ -198,4 +201,18 @@ impl NewSession  {
 
         new_session
     }
+}
+
+#[derive(juniper::GraphQLEnum)]
+pub enum TargetState {
+    READY,
+    START,
+    DONE,
+    CANCEL
+}
+
+#[derive(juniper::GraphQLInputObject)]
+pub struct ChangeSessionStateRequest {
+    pub fuzzy_id: String,
+    pub target_state: TargetState
 }

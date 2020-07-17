@@ -24,11 +24,12 @@ pub fn is_valid_date(date_str: &str) -> bool {
     given_date.is_ok()
 }
 
-pub fn is_past_date(date: NaiveDateTime) -> bool {
-  
-    let now = Utc::now().naive_utc();
+pub fn now() -> NaiveDateTime {
+    Utc::now().naive_utc()
+}
 
-    strip_seconds(date) < strip_seconds(now) 
+pub fn is_past_date(date: NaiveDateTime) -> bool {
+    strip_seconds(date) < strip_seconds(now()) 
 }
 
 

@@ -5,7 +5,7 @@ use crate::db_manager::MySqlConnectionPool;
 
 use crate::models::users::{Registration, User};
 use crate::models::teams::{NewTeamRequest,Team,TeamQuery};
-use crate::models::sessions::{NewSessionRequest, Session};
+use crate::models::sessions::{NewSessionRequest, ChangeSessionStateRequest, Session};
 use crate::models::notes::{NewNoteRequest, Note};
 use crate::models::programs::{NewProgramRequest, Program};
 use crate::models::enrollments::{NewEnrollmentRequest, Enrollment,EnrollmentCriteria};
@@ -15,7 +15,7 @@ use crate::models::user_programs::{get_active_programs,ProgramRow,ProgramCriteri
 
 use crate::services::users::{get_users, register};
 use crate::services::teams::{create_team,get_members};
-use crate::services::sessions::{create_session};
+use crate::services::sessions::{create_session,change_session_state};
 use crate::services::notes::{create_new_note};
 use crate::services::programs::{create_new_program};
 use crate::services::enrollments::{create_new_enrollment,get_active_enrollments};
@@ -120,8 +120,6 @@ impl MutationRoot {
          }
     }
 
-   
-
     fn create_session(context: &DBContext, new_session_request: NewSessionRequest) -> MutationResult<Session> {
 
         let errors = new_session_request.validate();
@@ -134,6 +132,16 @@ impl MutationRoot {
 
         match result {
             Ok(session) => MutationResult(Ok(session)),
+            Err(e) => service_error(e),
+        }
+    }
+
+    fn alter_session_state(context: &DBContext, request: ChangeSessionStateRequest) -> MutationResult<String> {
+        let connection = context.db.get().unwrap();
+        let result = change_session_state(&connection, &request);
+        
+        match result {
+            Ok(rows) => MutationResult(Ok(String::from("Ok"))),
             Err(e) => service_error(e),
         }
     }

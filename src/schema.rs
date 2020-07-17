@@ -114,6 +114,7 @@ table! {
         description -> Nullable<Text>,
         fuzzy_id -> Varchar,
         people -> Nullable<Text>,
+        cancelled_at -> Nullable<Datetime>,
     }
 }
 
