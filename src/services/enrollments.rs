@@ -12,7 +12,7 @@ use crate::schema::enrollments::dsl::*;
 
 
 const ERROR_001: &'static str = "Error in finding any prior enrollment. Error-001.";
-const WARNING: &'static str = "It seems you have already enrolled the team to this program";
+const WARNING: &'static str = "It seems you have already enrolled the user to this program";
 const ERROR_002: &'static str = "Error in creating enrollment. Error-002.";
 const ERROR_003: &'static str = "Error in finding any post-enrollment. Error-003.";
 const QUERY_ERROR: &'static str = "Error in fetching enrolled members";
