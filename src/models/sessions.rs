@@ -93,14 +93,14 @@ impl Session {
             return Status::PROGRESS;
         }
 
+        if self.is_ready {
+            return Status::READY;
+        }
+
         let rev_start_date = self.revised_start_date.unwrap_or(self.original_start_date);
 
         if util::is_past_date(rev_start_date) {
             return Status::OVERDUE
-        }
-
-        if self.is_ready {
-            return Status::READY;
         }
 
         Status::PLANNED

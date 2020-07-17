@@ -11,7 +11,6 @@ use crate::services::programs;
 use crate::schema::enrollments::dsl::*;
 
 
-const ERROR_001: &'static str = "Error in finding any prior enrollment. Error-001.";
 const WARNING: &'static str = "It seems you have already enrolled the user to this program";
 const ERROR_002: &'static str = "Error in creating enrollment. Error-002.";
 const ERROR_003: &'static str = "Error in finding any post-enrollment. Error-003.";
@@ -52,16 +51,12 @@ fn insert_enrollment (connection: &MysqlConnection,program: &Program, user: &Use
 fn gate_prior_enrollment(connection: &MysqlConnection,program: &Program, user: &User) -> Result<bool, &'static str> {
     
     let result: QueryResult<Enrollment> = find_enrollment(connection,&program,&user);
-    
-    if result.is_err() {
-        return Err(ERROR_001);
-    }
   
-    if result.unwrap().id > 0 {
-        return Err(WARNING);   
+    if result.is_err() {
+        return Ok(true)
     }
 
-    Ok(true)
+    Err(WARNING)
 }
 
 fn find_enrollment(connection: &MysqlConnection,program: &Program, user: &User) -> QueryResult<Enrollment> {
