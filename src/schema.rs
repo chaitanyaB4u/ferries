@@ -2,9 +2,9 @@ table! {
     enrollments (id) {
         id -> Integer,
         program_id -> Integer,
-        team_id -> Integer,
         created_at -> Datetime,
         updated_at -> Datetime,
+        member_id -> Integer,
     }
 }
 
@@ -151,7 +151,7 @@ table! {
 }
 
 joinable!(enrollments -> programs (program_id));
-joinable!(enrollments -> teams (team_id));
+joinable!(enrollments -> users (member_id));
 joinable!(programs -> users (coach_id));
 joinable!(session_boards -> sessions (session_id));
 joinable!(session_boards -> users (created_by_id));

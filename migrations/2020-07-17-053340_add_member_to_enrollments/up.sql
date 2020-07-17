@@ -1,0 +1,2 @@
+ALTER TABLE enrollments ADD COLUMN member_id int NOT NULL DEFAULT 1; 
+ALTER TABLE enrollments ADD FOREIGN KEY (member_id) REFERENCES users(id) ON DELETE CASCADE;
