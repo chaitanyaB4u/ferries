@@ -1,0 +1,1 @@
+ALTER TABLE session_boards ADD COLUMN board_tag varchar(255) NOT NULL;

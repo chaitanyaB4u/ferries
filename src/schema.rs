@@ -31,6 +31,8 @@ table! {
         created_by_id -> Integer,
         created_at -> Datetime,
         updated_at -> Datetime,
+        session_user_id -> Integer,
+        board_tag -> Varchar,
     }
 }
 
@@ -72,6 +74,7 @@ table! {
         is_private -> Bool,
         created_at -> Datetime,
         updated_at -> Datetime,
+        session_user_id -> Integer,
     }
 }
 
@@ -154,9 +157,11 @@ table! {
 joinable!(enrollments -> programs (program_id));
 joinable!(enrollments -> users (member_id));
 joinable!(programs -> users (coach_id));
+joinable!(session_boards -> session_users (session_user_id));
 joinable!(session_boards -> sessions (session_id));
 joinable!(session_boards -> users (created_by_id));
 joinable!(session_files -> session_notes (session_note_id));
+joinable!(session_notes -> session_users (session_user_id));
 joinable!(session_notes -> sessions (session_id));
 joinable!(session_notes -> users (created_by_id));
 joinable!(session_users -> sessions (session_id));

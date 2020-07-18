@@ -77,6 +77,7 @@ pub fn get_active_enrollments(connection: &MysqlConnection, criteria: Enrollment
         .inner_join(users)
         .filter(program_id.eq(program.id))
         .select(users::all_columns())
+        .order_by(full_name.asc())
         .load(connection);
         
     if result.is_err() {

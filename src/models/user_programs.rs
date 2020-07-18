@@ -35,6 +35,7 @@ pub fn get_active_programs (connection: &MysqlConnection, criteria: ProgramCrite
     let data: Vec<(Program, User)> = programs
         .inner_join(users)
         .filter(fuzzy_id.eq(criteria.user_fuzzy_id))
+        .order_by(name.asc())
         .load(connection).unwrap();
 
     let mut rows: Vec<ProgramRow> = Vec::new();
