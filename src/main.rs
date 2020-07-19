@@ -4,14 +4,12 @@ extern crate juniper;
 extern crate diesel;
 
 use std::sync::Arc;
-use std::io::Write;
 
 use actix_cors::Cors;
 use actix_multipart::Multipart;
 use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
-use futures::{StreamExt, TryStreamExt};
 
 
 mod commons;
@@ -20,42 +18,15 @@ mod graphql_schema;
 mod models;
 mod schema;
 mod services;
+mod file_manager;
 
-
+use file_manager::{ASSET_DIR,manage_file_assets};
 use db_manager::establish_connection;
 use graphql_schema::{create_gq_schema, DBContext, GQSchema};
 
-const ASSET_DIR: &'static str = "/Users/harinimaniam/assets/";
 
-async fn upload(mut payload: Multipart) -> Result<HttpResponse, Error> {
-
-    while let Ok(Some(mut field)) = payload.try_next().await {
-  
-        let content_type = field.content_disposition().unwrap();
-        let filename = content_type.get_filename().unwrap();
-        let session_user_fuzzy_id = content_type.get_name().unwrap();
-
-        println!("fuzzyId is {:?}",session_user_fuzzy_id);
-        
-        let dir_path = format!("{}/{}/notes",ASSET_DIR,session_user_fuzzy_id);
-        std::fs::create_dir_all(dir_path).unwrap();
-
-        let filepath = format!("{}/{}/notes/{}", ASSET_DIR,session_user_fuzzy_id,sanitize_filename::sanitize(&filename));
-        
-        // File::create is blocking operation, use threadpool
-        let mut f = web::block(|| std::fs::File::create(filepath))
-            .await
-            .unwrap();
-        
-        // Field in turn is stream of *Bytes* object
-        while let Some(chunk) = field.next().await {
-            let data = chunk.unwrap();
-
-            // filesystem operations are blocking, we have to use threadpool
-            f = web::block(move || f.write_all(&data).map(|_| f)).await?;
-        }
-    }
-    Ok(HttpResponse::Ok().into())
+async fn upload(payload: Multipart) -> Result<HttpResponse, Error> {
+    manage_file_assets(payload).await
 }
 
 async fn graphiql() -> HttpResponse {
