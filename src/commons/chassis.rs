@@ -18,6 +18,7 @@ use crate::models::programs::{Program};
 use crate::models::enrollments::{Enrollment};
 use crate::models::notes::{Note};
 
+
 #[derive(juniper::GraphQLObject)]
 pub struct ValidationError {
     pub field: String,
@@ -93,5 +94,16 @@ pub fn service_error<T>(message: &str) -> MutationResult<T> {
     let mut v: Vec<ValidationError> = Vec::new();
     let ve = ValidationError{field: String::from("service"),message: String::from(message)};
     v.push(ve);
+    MutationResult(Err(v))
+}
+
+pub fn mutation_error<T>(error: diesel::result::Error) -> MutationResult<T> {
+
+    let message: String = error.to_string();
+
+    let mut v: Vec<ValidationError> = Vec::new();
+    let ve = ValidationError{field: String::from("service"),message: message};
+    v.push(ve);
+    
     MutationResult(Err(v))
 }

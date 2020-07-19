@@ -1,6 +1,8 @@
+
+use crate::models::session_users::SessionUser;
+
 use crate::schema::session_notes;
 use crate::schema::session_files;
-
 
 use crate::commons::chassis::{ValidationError};
 use chrono::{NaiveDateTime};
@@ -17,6 +19,7 @@ pub struct Note {
     pub is_private: bool,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+    pub session_user_id: i32,
 }
 
 #[juniper::object(description="The fields we offer to the Web-UI ")]
@@ -27,9 +30,6 @@ impl Note {
     }
     pub fn description(&self) -> &str {
        self.description.as_str()
-    }
-    pub fn created_by_id(&self) -> i32 {
-        self.created_by_id
     }
     pub fn is_private(&self) -> bool {
         self.is_private
@@ -44,8 +44,7 @@ impl Note {
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct NewNoteRequest{
-    pub session_id:  i32,
-    pub created_by_id: i32,
+    pub session_user_fuzzy_id:  String,
     pub description: String,
     pub files: Option<Vec<FileRequest>>,
 }
@@ -65,18 +64,12 @@ impl NewNoteRequest {
 
         let mut errors: Vec<ValidationError> = Vec::new();
 
-
-        if self.session_id <= 0 {
-            errors.push(ValidationError::new("session_id", "Session id is invalid."));
-        }
-
-
-        if self.created_by_id <= 0 {
-            errors.push(ValidationError::new("created_by_id", "User id is invalid."));
+        if self.session_user_fuzzy_id.trim().is_empty() {
+            errors.push(ValidationError::new("session_user_fuzzy_id", "Missing the session_user_fuzzy_id"));
         }
 
         if self.description.trim().is_empty() {
-            errors.push(ValidationError::new("desciption", "description of the program is a must."));
+            errors.push(ValidationError::new("desciption", "Description of the note is a must."));
         }
 
         errors
@@ -90,19 +83,21 @@ pub struct NewNote {
     pub created_by_id: i32,
     pub description: String,
     pub fuzzy_id: String,
+    pub session_user_id: i32,
 }
 
 impl NewNote {
 
-    pub fn from(request: &NewNoteRequest) -> NewNote {
+    pub fn from(request: &NewNoteRequest,session_user: SessionUser) -> NewNote {
 
         let fuzzy_id = util::fuzzy_id();
 
         NewNote {
-            session_id:request.session_id,
-            created_by_id:request.created_by_id,
+            session_id:session_user.session_id,
+            created_by_id:session_user.user_id,
             fuzzy_id:fuzzy_id,
-            description:request.description.to_owned()
+            description:request.description.to_owned(),
+            session_user_id:session_user.id
         }
     }
 }
@@ -117,7 +112,6 @@ pub struct NewNoteFile {
     pub file_path: String,
     pub file_type: Option<String>,
     pub file_size: Option<i32>,
-       
 }
 
 

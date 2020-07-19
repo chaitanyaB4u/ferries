@@ -20,7 +20,7 @@ use crate::services::notes::{create_new_note};
 use crate::services::programs::{create_new_program};
 use crate::services::enrollments::{create_new_enrollment,get_active_enrollments};
 
-use crate::commons::chassis::{MutationResult,service_error};
+use crate::commons::chassis::{MutationResult,service_error,mutation_error};
 
 #[derive(Clone)]
 pub struct DBContext {
@@ -158,7 +158,7 @@ impl MutationRoot {
 
         match result {
             Ok(note) => MutationResult(Ok(note)),
-            Err(e) => service_error(e),
+            Err(e) => mutation_error(e),
         }
     }
 }

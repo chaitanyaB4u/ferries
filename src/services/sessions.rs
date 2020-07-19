@@ -5,7 +5,7 @@ use crate::commons::util;
 use crate::services::programs;
 use crate::services::users;
 
-use crate::models::session_users::NewSessionUser;
+use crate::models::session_users::{NewSessionUser,SessionUser};
 use crate::models::sessions::{NewSession, NewSessionRequest, Session, ChangeSessionStateRequest,TargetState};
 use crate::models::users::{User,UserType};
 
@@ -15,6 +15,7 @@ use crate::schema::users::dsl::*;
 
 const SESSION_CREATION_ERROR: &'static str = "Unable to Create Session. Error:002";
 const SESSION_NOT_FOUND: &'static str = "Unable to Create Or Find the Session. Error:003.";
+
 const SESSION_USER_CREATION_ERROR: &'static str = "Unable to associate users to the session. Error: 004.";
 
 const SESSION_STATE_CHANGE_PROHIBITED: &'static str = "The session is either cancelled or completed. Hence change of state to the session is not permitted.";
@@ -41,6 +42,12 @@ pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest,
     insert_session_users(connection, &new_session_coach, &new_session_member)?;
 
     Ok(session)
+}
+
+pub fn find_session_user(connection: &MysqlConnection, session_user_fuzzy_id: &str) -> QueryResult<SessionUser> {
+    use crate::schema::session_users::dsl::fuzzy_id;
+
+    session_users.filter(fuzzy_id.eq(session_user_fuzzy_id)).first(connection)
 }
 
 pub fn change_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<usize, &'static str> {
@@ -104,10 +111,10 @@ fn insert_session(connection: &MysqlConnection,new_session: &NewSession) -> Resu
     find_by_fuzzy_id(connection, new_session.fuzzy_id.as_str())
 }
 
-fn find_by_fuzzy_id(connection: &MysqlConnection, fuzzy: &str) -> Result<Session, &'static str> {
+fn find_by_fuzzy_id(connection: &MysqlConnection, session_fuzzy_id: &str) -> Result<Session, &'static str> {
     use crate::schema::sessions::dsl::fuzzy_id;
 
-    let session_result = sessions.filter(fuzzy_id.eq(fuzzy)).first(connection);
+    let session_result = sessions.filter(fuzzy_id.eq(session_fuzzy_id)).first(connection);
 
     if session_result.is_err() {
         return Err(SESSION_NOT_FOUND);
