@@ -47,6 +47,7 @@ pub struct NewNoteRequest{
     pub session_user_fuzzy_id:  String,
     pub description: String,
     pub files: Option<Vec<FileRequest>>,
+    pub remind_at: Option<String>,
 }
 
 #[derive(juniper::GraphQLInputObject)]
@@ -84,11 +85,21 @@ pub struct NewNote {
     pub description: String,
     pub fuzzy_id: String,
     pub session_user_id: i32,
+    pub remind_at: Option<NaiveDateTime>,
 }
 
 impl NewNote {
 
     pub fn from(request: &NewNoteRequest,session_user: SessionUser) -> NewNote {
+
+        let remind_at = match &request.remind_at {
+            Some(value) => {
+                let date = util::as_date(value.as_str());
+                Some(date)
+            },
+            None => None,
+        };
+
 
         let fuzzy_id = util::fuzzy_id();
 
@@ -97,7 +108,8 @@ impl NewNote {
             created_by_id:session_user.user_id,
             fuzzy_id:fuzzy_id,
             description:request.description.to_owned(),
-            session_user_id:session_user.id
+            session_user_id:session_user.id,
+            remind_at: remind_at,
         }
     }
 }

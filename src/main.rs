@@ -25,20 +25,22 @@ mod services;
 use db_manager::establish_connection;
 use graphql_schema::{create_gq_schema, DBContext, GQSchema};
 
+const ASSET_DIR: &'static str = "/Users/harinimaniam/assets/";
+
 async fn upload(mut payload: Multipart) -> Result<HttpResponse, Error> {
 
     while let Ok(Some(mut field)) = payload.try_next().await {
   
         let content_type = field.content_disposition().unwrap();
         let filename = content_type.get_filename().unwrap();
-        let name = content_type.get_name().unwrap();
+        let session_user_fuzzy_id = content_type.get_name().unwrap();
 
-        println!("fuzzyId is {:?}",name);
+        println!("fuzzyId is {:?}",session_user_fuzzy_id);
         
-        let dir_path = format!("./tmp/{}",name);
+        let dir_path = format!("{}/{}/notes",ASSET_DIR,session_user_fuzzy_id);
         std::fs::create_dir_all(dir_path).unwrap();
 
-        let filepath = format!("./tmp/{}/{}", name,sanitize_filename::sanitize(&filename));
+        let filepath = format!("{}/{}/notes/{}", ASSET_DIR,session_user_fuzzy_id,sanitize_filename::sanitize(&filename));
         
         // File::create is blocking operation, use threadpool
         let mut f = web::block(|| std::fs::File::create(filepath))
@@ -94,7 +96,7 @@ async fn graphql(
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
-    std::fs::create_dir_all("./tmp").unwrap();
+    std::fs::create_dir_all(ASSET_DIR).unwrap();
     env_logger::init();
     dotenv::dotenv().ok();
 
