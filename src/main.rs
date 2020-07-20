@@ -20,13 +20,17 @@ mod schema;
 mod services;
 mod file_manager;
 
-use file_manager::{ASSET_DIR,manage_file_assets};
+use file_manager::{ASSET_DIR,manage_file_assets,fetch_board_file};
 use db_manager::establish_connection;
 use graphql_schema::{create_gq_schema, DBContext, GQSchema};
 
 
 async fn upload(payload: Multipart) -> Result<HttpResponse, Error> {
     manage_file_assets(payload).await
+}
+
+async fn board_file(request: HttpRequest) -> Result<HttpResponse, Error> {
+    fetch_board_file(request).await
 }
 
 async fn graphiql() -> HttpResponse {
@@ -86,6 +90,7 @@ async fn main() -> std::io::Result<()> {
             .route("graphql",web::post().to(graphql))
             .route("graphiql",web::get().to(graphiql))
             .route("upload",web::post().to(upload))
+            .route("board_file",web::get().to(board_file))
             .route("/",web::get().to(index))
     })
     .bind(&bind)?
