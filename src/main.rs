@@ -20,18 +20,23 @@ mod schema;
 mod services;
 mod file_manager;
 
-use file_manager::{ASSET_DIR,manage_file_assets,fetch_board_file};
+use file_manager::{SESSION_ASSET_DIR,PROGRAM_ASSET_DIR,manage_file_assets,fetch_board_file,fetch_program_cover_file};
 use db_manager::establish_connection;
 use graphql_schema::{create_gq_schema, DBContext, GQSchema};
-
+use actix_files::NamedFile;
 
 async fn upload(payload: Multipart) -> Result<HttpResponse, Error> {
     manage_file_assets(payload).await
 }
 
-async fn board_file(request: HttpRequest) -> Result<HttpResponse, Error> {
-    fetch_board_file(request).await
+async fn offer_board_file(_request: HttpRequest) -> Result<NamedFile, Error> {
+    fetch_board_file(_request).await
 }
+
+async fn offer_cover_file(_request: HttpRequest) -> Result<NamedFile,Error> {
+    fetch_program_cover_file(_request).await
+}
+
 
 async fn graphiql() -> HttpResponse {
     let html = graphiql_source("http://127.0.0.1:8088/graphql");
@@ -71,7 +76,10 @@ async fn graphql(
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
-    std::fs::create_dir_all(ASSET_DIR).unwrap();
+
+    std::fs::create_dir_all(SESSION_ASSET_DIR).unwrap();
+    std::fs::create_dir_all(PROGRAM_ASSET_DIR).unwrap();
+
     env_logger::init();
     dotenv::dotenv().ok();
 
@@ -89,8 +97,9 @@ async fn main() -> std::io::Result<()> {
             .wrap(Cors::new().supports_credentials().max_age(3600).finish())
             .route("graphql",web::post().to(graphql))
             .route("graphiql",web::get().to(graphiql))
-            .route("upload",web::post().to(upload))
-            .route("board_file",web::get().to(board_file))
+            .route("assets/upload",web::post().to(upload))
+            .route("assets/boards/{user_fuzzy_id}/{filename}",web::get().to(offer_board_file))
+            .route("assets/programs/{program_fuzzy_id}/cover/{filename}",web::get().to(offer_cover_file))
             .route("/",web::get().to(index))
     })
     .bind(&bind)?
