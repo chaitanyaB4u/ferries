@@ -67,14 +67,15 @@ pub async fn fetch_board_file(_request: HttpRequest) -> Result<NamedFile,Error> 
     Ok(NamedFile::open(file_name)?)
 }
 
-pub async fn fetch_program_cover_file(_request: HttpRequest) -> Result<NamedFile,Error> {
+pub async fn fetch_program_image_file(_request: HttpRequest) -> Result<NamedFile,Error> {
 
     let program_fuzzy_id: PathBuf = _request.match_info().query("program_fuzzy_id").parse().unwrap();
+    let purpose: PathBuf = _request.match_info().query("purpose").parse().unwrap();
     let asset_name: PathBuf = _request.match_info().query("filename").parse().unwrap();
 
     let mut file_name: PathBuf = PathBuf::from(PROGRAM_ASSET_DIR);
     file_name.push(program_fuzzy_id);
-    file_name.push("cover");
+    file_name.push(purpose);
     file_name.push(asset_name);
 
     if !file_name.exists() {

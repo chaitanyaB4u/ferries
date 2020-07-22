@@ -20,7 +20,7 @@ mod schema;
 mod services;
 mod file_manager;
 
-use file_manager::{SESSION_ASSET_DIR,PROGRAM_ASSET_DIR,manage_file_assets,fetch_board_file,fetch_program_cover_file};
+use file_manager::{SESSION_ASSET_DIR,PROGRAM_ASSET_DIR,manage_file_assets,fetch_board_file,fetch_program_image_file};
 use db_manager::establish_connection;
 use graphql_schema::{create_gq_schema, DBContext, GQSchema};
 use actix_files::NamedFile;
@@ -33,8 +33,8 @@ async fn offer_board_file(_request: HttpRequest) -> Result<NamedFile, Error> {
     fetch_board_file(_request).await
 }
 
-async fn offer_cover_file(_request: HttpRequest) -> Result<NamedFile,Error> {
-    fetch_program_cover_file(_request).await
+async fn offer_image_file(_request: HttpRequest) -> Result<NamedFile,Error> {
+    fetch_program_image_file(_request).await
 }
 
 
@@ -99,7 +99,7 @@ async fn main() -> std::io::Result<()> {
             .route("graphiql",web::get().to(graphiql))
             .route("assets/upload",web::post().to(upload))
             .route("assets/boards/{user_fuzzy_id}/{filename}",web::get().to(offer_board_file))
-            .route("assets/programs/{program_fuzzy_id}/cover/{filename}",web::get().to(offer_cover_file))
+            .route("assets/programs/{program_fuzzy_id}/{purpose}/{filename}",web::get().to(offer_image_file))
             .route("/",web::get().to(index))
     })
     .bind(&bind)?
