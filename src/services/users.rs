@@ -1,6 +1,7 @@
-use crate::models::users::{NewUser, Registration, User};
+use crate::models::users::{NewUser, Registration, User,LoginRequest};
 use crate::schema::users::dsl::*;
 use diesel::prelude::*;
+
 
 const REGISTERED_ALREADY: &'static str = "It seems you have already registered with us.";
 const BLANK_EMAIL: &'static str = "The email id is required.";
@@ -21,6 +22,10 @@ pub fn register(connection: &MysqlConnection,registration: &Registration) -> Res
     find_by_email(connection, registration.email.as_str())?;
  
     create_user(connection, registration)
+}
+
+pub fn authenticate(connection: &MysqlConnection, request:LoginRequest) -> QueryResult<User> {
+    users.filter(email.eq(request.email)).first(connection)
 }
 
 pub fn find_by_fuzzy_id(connection: &MysqlConnection, fuzzy: &str) -> Result<User,&'static str> {

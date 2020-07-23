@@ -18,6 +18,7 @@ table! {
         updated_at -> Datetime,
         fuzzy_id -> Varchar,
         description -> Nullable<Text>,
+        coach_name -> Varchar,
     }
 }
 
@@ -151,6 +152,7 @@ table! {
         blocked -> Bool,
         created_at -> Datetime,
         updated_at -> Datetime,
+        user_type -> Varchar,
     }
 }
 

@@ -2,7 +2,7 @@ use crate::commons::util;
 use crate::schema::session_users;
 
 use crate::models::sessions::Session;
-use crate::models::users::{User, UserType};
+use crate::models::users::{User};
 
 #[derive(Queryable, Debug, Identifiable)]
 pub struct SessionUser {
@@ -38,7 +38,7 @@ pub struct NewSessionUser {
 
 impl NewSessionUser {
 
-    pub fn from(session: &Session, user: &User, user_type: UserType) -> NewSessionUser {
+    pub fn from(session: &Session, user: &User, session_user_type: &str) -> NewSessionUser {
         
         let fuzzy_id = util::fuzzy_id();
         
@@ -46,7 +46,7 @@ impl NewSessionUser {
             fuzzy_id,
             session_id: session.id,
             user_id: user.id,
-            user_type: String::from(user_type.as_str()),
+            user_type: String::from(session_user_type)
         }
     }
 }

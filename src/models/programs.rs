@@ -5,6 +5,7 @@
 
 use chrono::{NaiveDateTime};
 
+use crate::models::users::User;
 use crate::schema::programs;
 use crate::commons::chassis::{ValidationError};
 use crate::commons::util;
@@ -23,6 +24,7 @@ pub struct Program {
     pub updated_at: NaiveDateTime,
     pub fuzzy_id: String,
     pub description: Option<String>,
+    pub coach_name: String,
 }
 
 /**
@@ -49,6 +51,10 @@ impl Program {
             None=>"_",
             Some(value)=>value.as_str()
         }
+    }
+
+    pub fn coach_name(&self) -> &str {
+        self.coach_name.as_str()
     }
 }
 
@@ -99,6 +105,7 @@ pub struct NewProgram {
     pub active: bool,
     pub fuzzy_id: String,
     pub description: String,
+    pub coach_name: String,
 }
 
 /**
@@ -107,16 +114,17 @@ pub struct NewProgram {
  */
 impl NewProgram {
 
-    pub fn from(request: &NewProgramRequest,coach_id: i32) -> NewProgram {
+    pub fn from(request: &NewProgramRequest,coach: &User) -> NewProgram {
 
         let fuzzy_id = util::fuzzy_id();
 
         NewProgram {
             name:request.name.to_owned(),
-            coach_id:coach_id,
-            active:true,
+            coach_id:coach.id,
+            active:false,
             fuzzy_id:fuzzy_id,
-            description:request.description.to_owned()
+            description:request.description.to_owned(),
+            coach_name:coach.full_name.to_owned()
         }
         
     }

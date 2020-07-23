@@ -4,6 +4,10 @@ use uuid::Uuid;
 
 const DATE_TIME_PATTERN: &'static str = "%Y-%m-%dT%H:%M:%SZ";
 
+pub const MEMBER: &'static str = "member";
+pub const COACH: &'static str  = "coach";    
+
+
 pub fn as_date(date_str: &str) -> NaiveDateTime {
 
     let parse_from_str = NaiveDateTime::parse_from_str;

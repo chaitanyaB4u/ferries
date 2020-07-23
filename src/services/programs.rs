@@ -29,7 +29,7 @@ pub fn create_new_program(connection: &MysqlConnection, request: &NewProgramRequ
     let coach = get_coach(connection, request)?;
 
     //Transform result into new_program
-    let new_program = NewProgram::from(request,coach.id);
+    let new_program = NewProgram::from(request,&coach);
 
     insert_program(connection, &new_program)
 

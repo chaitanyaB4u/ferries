@@ -7,7 +7,7 @@ use crate::services::users;
 
 use crate::models::session_users::{NewSessionUser,SessionUser};
 use crate::models::sessions::{NewSession, NewSessionRequest, Session, ChangeSessionStateRequest,TargetState};
-use crate::models::users::{User,UserType};
+use crate::models::users::{User};
 
 use crate::schema::session_users::dsl::*;
 use crate::schema::sessions::dsl::*;
@@ -37,8 +37,8 @@ pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest,
     let session = insert_session(connection,&new_session)?;
 
     // Inserting a pair of entries into the Session Users (For Coach & Member)
-    let new_session_coach = NewSessionUser::from(&session, &coach, UserType::COACH);
-    let new_session_member = NewSessionUser::from(&session, &member, UserType::MEMBER);
+    let new_session_coach = NewSessionUser::from(&session, &coach, util::COACH);
+    let new_session_member = NewSessionUser::from(&session, &member,util::MEMBER);
     insert_session_users(connection, &new_session_coach, &new_session_member)?;
 
     Ok(session)

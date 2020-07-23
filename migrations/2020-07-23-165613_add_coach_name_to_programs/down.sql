@@ -1,0 +1,1 @@
+alter table programs drop column coach_name;

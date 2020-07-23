@@ -3,17 +3,17 @@ use juniper::{FieldResult, RootNode};
 
 use crate::db_manager::MySqlConnectionPool;
 
-use crate::models::users::{Registration, User};
+use crate::models::users::{Registration, User,LoginRequest};
 use crate::models::teams::{NewTeamRequest,Team,TeamQuery};
 use crate::models::sessions::{NewSessionRequest, ChangeSessionStateRequest, Session};
 use crate::models::notes::{NewNoteRequest, Note};
 use crate::models::programs::{NewProgramRequest, Program};
 use crate::models::enrollments::{NewEnrollmentRequest, Enrollment,EnrollmentCriteria};
 use crate::models::user_events::{get_events,EventRow,EventCriteria};
-use crate::models::user_programs::{get_active_programs,ProgramRow,ProgramCriteria};
+use crate::models::user_programs::{get_programs,ProgramCriteria};
 
 
-use crate::services::users::{get_users, register};
+use crate::services::users::{get_users, register, authenticate};
 use crate::services::teams::{create_team,get_members};
 use crate::services::sessions::{create_session,change_session_state};
 use crate::services::notes::{create_new_note};
@@ -33,6 +33,14 @@ pub struct QueryRoot;
 
 #[juniper::object(Context = DBContext,description="Graph Query Root")]
 impl QueryRoot {
+
+    #[graphql(description = "Authenticate a user with email and password")]
+    fn authenticate(context: &DBContext, request: LoginRequest) -> FieldResult<User> {
+        let connection = context.db.get().unwrap();
+        let user = authenticate(&connection,request)?;
+        Ok(user)
+    }
+
     #[graphql(description = "Get the top 100 Users")]
     fn get_users(context: &DBContext) -> Vec<User> {
         let connection = context.db.get().unwrap();
@@ -45,10 +53,10 @@ impl QueryRoot {
         get_members(&connection,&team_query).expect("Something is Wrong")
     }
 
-    #[graphql(description = "Get the Programs of a User")]
-     fn get_programs(context:&DBContext, criteria:ProgramCriteria) -> Vec<ProgramRow> {
+    #[graphql(description = "Get All the Programs of a Coach Or Member Or Latest")]
+     fn get_programs(context:&DBContext, criteria:ProgramCriteria) -> Vec<Program> {
          let connection = context.db.get().unwrap();
-         get_active_programs(&connection,criteria)
+         get_programs(&connection,&criteria)
     }
 
     #[graphql(description = "Get the list of members enrolled into a Program")]

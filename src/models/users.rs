@@ -20,6 +20,7 @@ pub struct User {
     pub blocked: bool,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+    pub user_type: String,
 }
 
 // Fields that we can safely expose to APIs
@@ -35,6 +36,10 @@ impl User {
 
     pub fn name(&self) -> &str {
         self.full_name.as_str()
+    }
+
+    pub fn user_type(&self) -> &str {
+        self.user_type.as_str()
     }
 }
 
@@ -53,6 +58,7 @@ pub struct NewUser {
     pub full_name: String,
     pub email: String,
     pub fuzzy_id: String,
+    pub user_type: String,
 }
 
 // A way to transform the inbound registration request into the persistable
@@ -68,27 +74,14 @@ impl NewUser {
             full_name: registration.full_name.to_owned(),
             email: registration.email.to_owned(),
             fuzzy_id: fuzzy_id,
+            user_type: String::from(util::MEMBER)
         }
     }
 }
 
-
-const COACH: &'static str = "coach";
-const MEMBER: &'static str = "member";
-
-pub enum UserType {
-    COACH, 
-    MEMBER
-}
-
-impl UserType {
-    
-    pub fn as_str(&self) -> &'static str {
-
-        match self {
-            UserType::COACH => COACH,
-            UserType::MEMBER => MEMBER
-        }
-
-    }
+// The User Name and Password as received from the User during the Login Process
+#[derive(juniper::GraphQLInputObject)]
+pub struct LoginRequest {
+    pub email: String,
+    pub password: String,
 }

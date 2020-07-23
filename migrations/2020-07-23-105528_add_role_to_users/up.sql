@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN user_type varchar(255) NOT NULL DEFAULT 'member';
