@@ -14,7 +14,7 @@ use crate::commons::util;
 /**
  * The structure represents One row of the programs table.
  */
-#[derive(Queryable,Debug)]
+#[derive(Queryable,Debug,Identifiable)]
 pub struct Program {
     pub id: i32,
     pub name: String,
@@ -128,4 +128,17 @@ impl NewProgram {
         }
         
     }
+}
+
+#[derive(juniper::GraphQLEnum)]
+#[derive(PartialEq)]
+pub enum TargetState {
+    ACTIVATE,
+    DEACTIVATE
+}
+
+#[derive(juniper::GraphQLInputObject)]
+pub struct ChangeProgramStateRequest {
+    pub fuzzy_id: String,
+    pub target_state: TargetState
 }

@@ -7,7 +7,7 @@ use crate::models::users::{Registration, User,LoginRequest};
 use crate::models::teams::{NewTeamRequest,Team,TeamQuery};
 use crate::models::sessions::{NewSessionRequest, ChangeSessionStateRequest, Session};
 use crate::models::notes::{NewNoteRequest, Note};
-use crate::models::programs::{NewProgramRequest, Program};
+use crate::models::programs::{NewProgramRequest, Program, ChangeProgramStateRequest};
 use crate::models::enrollments::{NewEnrollmentRequest, Enrollment,EnrollmentCriteria};
 use crate::models::user_events::{get_events,EventRow,EventCriteria};
 use crate::models::user_programs::{get_programs,ProgramCriteria};
@@ -17,7 +17,7 @@ use crate::services::users::{get_users, register, authenticate};
 use crate::services::teams::{create_team,get_members};
 use crate::services::sessions::{create_session,change_session_state};
 use crate::services::notes::{create_new_note};
-use crate::services::programs::{create_new_program};
+use crate::services::programs::{create_new_program, change_program_state};
 use crate::services::enrollments::{create_new_enrollment,get_active_enrollments};
 
 use crate::commons::chassis::{MutationResult,service_error,mutation_error};
@@ -154,6 +154,17 @@ impl MutationRoot {
         }
     }
 
+
+    fn alter_program_state(context: &DBContext, request: ChangeProgramStateRequest) -> MutationResult<String> {
+        let connection = context.db.get().unwrap();
+        let result = change_program_state(&connection, &request);
+
+        match result {
+            Ok(rows) => MutationResult(Ok(String::from("Ok"))),
+            Err(e) => service_error(e),
+        }
+    }
+    
     fn create_note(context: &DBContext, new_note_request: NewNoteRequest) -> MutationResult<Note> {
 
         let errors = new_note_request.validate();
