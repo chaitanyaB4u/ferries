@@ -59,6 +59,12 @@ impl QueryRoot {
          get_programs(&connection,&criteria)
     }
 
+    #[graphql(description = "Get a Single Program")]
+     fn find_program(context:&DBContext, criteria:ProgramCriteria) -> Vec<Program> {
+         let connection = context.db.get().unwrap();
+         get_programs(&connection,&criteria)
+    }
+
     #[graphql(description = "Get the list of members enrolled into a Program")]
      fn get_enrollments(context:&DBContext, criteria:EnrollmentCriteria) -> Vec<User> {
          let connection = context.db.get().unwrap();
