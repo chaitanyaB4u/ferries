@@ -48,6 +48,16 @@ impl QueryResult<Vec<ProgramRow>> {
     }
 }
 
+#[juniper::object(name="ProgramFinderResult")]
+impl QueryResult<ProgramRow> {
+    pub fn program(&self) -> Option<&ProgramRow> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
 pub fn query_error<T>(error: diesel::result::Error) -> QueryResult<T> {
 
     let message: String = error.to_string();

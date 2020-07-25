@@ -143,8 +143,3 @@ pub struct ChangeProgramStateRequest {
     pub target_state: TargetState
 }
 
-#[derive(juniper::GraphQLInputObject)]
-pub struct Criteria {
-    pub fuzzy_id: String,
-}
-

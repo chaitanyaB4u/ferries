@@ -7,16 +7,16 @@ use crate::models::users::{Registration, User,LoginRequest};
 use crate::models::teams::{NewTeamRequest,Team,TeamQuery};
 use crate::models::sessions::{NewSessionRequest, ChangeSessionStateRequest, Session};
 use crate::models::notes::{NewNoteRequest, Note};
-use crate::models::programs::{NewProgramRequest, Program, ChangeProgramStateRequest, Criteria};
+use crate::models::programs::{NewProgramRequest, Program, ChangeProgramStateRequest};
 use crate::models::enrollments::{NewEnrollmentRequest, Enrollment,EnrollmentCriteria};
 use crate::models::user_events::{get_events,EventRow,EventCriteria};
-use crate::models::user_programs::{get_programs, ProgramCriteria,ProgramRow};
+use crate::models::user_programs::{get_programs,find_program, ProgramCriteria,ProgramRow};
 
 use crate::services::users::{get_users, register, authenticate};
 use crate::services::teams::{create_team,get_members};
 use crate::services::sessions::{create_session,change_session_state};
 use crate::services::notes::{create_new_note};
-use crate::services::programs::{create_new_program, change_program_state,find_by_fuzzy_id};
+use crate::services::programs::{create_new_program, change_program_state};
 use crate::services::enrollments::{create_new_enrollment,get_active_enrollments};
 
 use crate::commons::chassis::{QueryResult,query_error,MutationResult,service_error,mutation_error};
@@ -53,7 +53,7 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get All the Programs of a Coach Or Member Or Latest")]
-     fn get_programs(context:&DBContext, criteria:ProgramCriteria) -> QueryResult<Vec<ProgramRow>> {
+    fn get_programs(context:&DBContext, criteria:ProgramCriteria) -> QueryResult<Vec<ProgramRow>> {
          let connection = context.db.get().unwrap();
          let result = get_programs(&connection,&criteria);
 
@@ -64,14 +64,18 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get a Single Program")]
-     fn find_program(context:&DBContext, criteria:Criteria) -> FieldResult<Program> {
+    fn find_program(context:&DBContext, criteria:ProgramCriteria) -> QueryResult<ProgramRow> {
          let connection = context.db.get().unwrap();
-         let result = find_by_fuzzy_id(&connection, &criteria.fuzzy_id.as_str())?;
-         Ok(result)
+         let result = find_program(&connection, &criteria);
+
+         match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
     }
 
     #[graphql(description = "Get the list of members enrolled into a Program")]
-     fn get_enrollments(context:&DBContext, criteria:EnrollmentCriteria) -> Vec<User> {
+    fn get_enrollments(context:&DBContext, criteria:EnrollmentCriteria) -> Vec<User> {
          let connection = context.db.get().unwrap();
          get_active_enrollments(&connection,criteria).unwrap()
     }

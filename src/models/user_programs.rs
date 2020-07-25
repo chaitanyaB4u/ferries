@@ -21,6 +21,7 @@ pub enum Desire {
 #[derive(juniper::GraphQLInputObject)]
 pub struct ProgramCriteria {
     user_fuzzy_id: String,
+    program_fuzzy_id: String,
     desire: Desire,
 }
 
@@ -51,6 +52,20 @@ pub fn get_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) ->
         Desire::ENROLLED => get_enrolled_programs(connection, criteria),
         Desire::YOURS => get_coach_programs(connection, criteria),
     }
+}
+
+pub type ProgramFinderResult = Result<ProgramRow, diesel::result::Error>;
+
+pub fn find_program(connection: &MysqlConnection,criteria: &ProgramCriteria)->ProgramFinderResult {
+  
+    use crate::schema::programs::dsl::fuzzy_id;
+
+    let pc: ProgramType = programs
+        .inner_join(coaches)
+        .filter(fuzzy_id.eq(&criteria.program_fuzzy_id))
+        .first(connection)?;
+
+    Ok(ProgramRow{program:pc.0, coach:pc.1})    
 }
 
 fn get_enrolled_programs(connection: &MysqlConnection,criteria: &ProgramCriteria) -> ProgramResult {
@@ -86,6 +101,7 @@ fn get_coach_programs(connection: &MysqlConnection,criteria: &ProgramCriteria) -
 
     Ok(to_program_rows(data))
 }
+
 
 fn get_latest_programs(connection: &MysqlConnection)-> ProgramResult {
 
