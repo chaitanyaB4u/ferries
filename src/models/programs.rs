@@ -14,17 +14,17 @@ use crate::commons::util;
 /**
  * The structure represents One row of the programs table.
  */
-#[derive(Queryable,Debug,Identifiable)]
+#[derive(Queryable,Debug,Identifiable,Associations)]
 pub struct Program {
     pub id: i32,
     pub name: String,
-    pub coach_id: i32,
     pub active: bool,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub fuzzy_id: String,
     pub description: Option<String>,
     pub coach_name: String,
+    pub coach_id: i32,
 }
 
 /**
@@ -147,3 +147,4 @@ pub struct ChangeProgramStateRequest {
 pub struct Criteria {
     pub fuzzy_id: String,
 }
+

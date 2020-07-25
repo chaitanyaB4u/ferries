@@ -17,7 +17,12 @@ use crate::models::sessions::{Session};
 use crate::models::programs::{Program};
 use crate::models::enrollments::{Enrollment};
 use crate::models::notes::{Note};
+use crate::models::user_programs::{ProgramRow};
 
+#[derive(juniper::GraphQLObject)]
+pub struct QueryError {
+    pub message: String,
+}
 
 #[derive(juniper::GraphQLObject)]
 pub struct ValidationError {
@@ -29,6 +34,27 @@ impl ValidationError {
     pub fn new(field: &str, message: &str) -> ValidationError{
         ValidationError{field:String::from(field),message:String::from(message)}   
     }
+}
+
+pub struct QueryResult<T>(pub Result<T,QueryError>);
+
+#[juniper::object(name="ProgramsResult")]
+impl QueryResult<Vec<ProgramRow>> {
+    pub fn programs(&self) -> Option<&Vec<ProgramRow>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+pub fn query_error<T>(error: diesel::result::Error) -> QueryResult<T> {
+
+    let message: String = error.to_string();
+
+    let e = QueryError{message: message};
+    
+    QueryResult(Err(e))
 }
 
 pub struct MutationResult<T>(pub Result<T, Vec<ValidationError>>);

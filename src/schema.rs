@@ -1,4 +1,16 @@
 table! {
+    coaches (id) {
+        id -> Integer,
+        user_id -> Integer,
+        full_name -> Varchar,
+        email -> Varchar,
+        fuzzy_id -> Varchar,
+        created_at -> Datetime,
+        updated_at -> Datetime,
+    }
+}
+
+table! {
     enrollments (id) {
         id -> Integer,
         program_id -> Integer,
@@ -12,13 +24,13 @@ table! {
     programs (id) {
         id -> Integer,
         name -> Varchar,
-        coach_id -> Integer,
         active -> Bool,
         created_at -> Datetime,
         updated_at -> Datetime,
         fuzzy_id -> Varchar,
         description -> Nullable<Text>,
         coach_name -> Varchar,
+        coach_id -> Integer,
     }
 }
 
@@ -156,9 +168,10 @@ table! {
     }
 }
 
+joinable!(coaches -> users (user_id));
 joinable!(enrollments -> programs (program_id));
 joinable!(enrollments -> users (member_id));
-joinable!(programs -> users (coach_id));
+joinable!(programs -> coaches (coach_id));
 joinable!(session_boards -> session_users (session_user_id));
 joinable!(session_boards -> sessions (session_id));
 joinable!(session_boards -> users (created_by_id));
@@ -175,6 +188,7 @@ joinable!(team_members -> teams (team_id));
 joinable!(team_members -> users (user_id));
 
 allow_tables_to_appear_in_same_query!(
+    coaches,
     enrollments,
     programs,
     session_boards,

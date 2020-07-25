@@ -3,9 +3,11 @@ use diesel::prelude::*;
 use crate::models::enrollments::Enrollment;
 use crate::models::programs::Program;
 use crate::models::users::User;
+use crate::models::coaches::Coach;
 
 use crate::schema::enrollments::dsl::*;
 use crate::schema::programs::dsl::*;
+use crate::schema::coaches::dsl::*;
 use crate::schema::users::dsl::*;
 
 
@@ -22,7 +24,28 @@ pub struct ProgramCriteria {
     desire: Desire,
 }
 
-pub fn get_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) -> Vec<Program> {
+pub struct ProgramRow {
+    pub program: Program,
+    pub coach: Coach,
+}
+
+#[juniper::object]
+impl ProgramRow {
+   
+    pub fn program(&self) -> &Program {
+        &self.program
+    }
+
+    pub fn coach(&self) -> &Coach {
+        &self.coach
+    }
+}
+
+type ProgramType = (Program,Coach);
+pub type ProgramResult = Result<Vec<ProgramRow>,diesel::result::Error>;
+
+pub fn get_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) -> ProgramResult {
+
     match &criteria.desire {
         Desire::EXPLORE => get_latest_programs(connection),
         Desire::ENROLLED => get_enrolled_programs(connection, criteria),
@@ -30,52 +53,62 @@ pub fn get_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) ->
     }
 }
 
-pub fn get_enrolled_programs(connection: &MysqlConnection,criteria: &ProgramCriteria) -> Vec<Program> {
+fn get_enrolled_programs(connection: &MysqlConnection,criteria: &ProgramCriteria) -> ProgramResult {
+    
     use crate::schema::users::dsl::fuzzy_id;
-    type Row = (Enrollment, User, Program);
+    type Row = (Enrollment, User, ProgramType);
 
     let data: Vec<Row> = enrollments
         .inner_join(users)
-        .inner_join(programs)
+        .inner_join(programs.inner_join(coaches))
         .filter(fuzzy_id.eq(&criteria.user_fuzzy_id))
-        .load(connection)
-        .unwrap();
+        .load(connection)?;
 
-    let mut rows: Vec<Program> = Vec::new();
+    let mut rows: Vec<ProgramRow> = Vec::new();
+
     for item in data {
-        rows.push(item.2);
+        let pc = item.2;
+        rows.push(ProgramRow{program:pc.0,coach:pc.1});
     }
-    rows
+
+    Ok(rows)
 }
 
-pub fn get_coach_programs(connection: &MysqlConnection,criteria: &ProgramCriteria) -> Vec<Program> {
-    use crate::schema::users::dsl::fuzzy_id;
+fn get_coach_programs(connection: &MysqlConnection,criteria: &ProgramCriteria) -> ProgramResult {
+  
+    use crate::schema::coaches::dsl::fuzzy_id;
 
-    let data: Vec<(Program, User)> = programs
-        .inner_join(users)
+    let data: Vec<ProgramType> = programs
+        .inner_join(coaches)
         .filter(fuzzy_id.eq(&criteria.user_fuzzy_id))
         .order_by(name.asc())
-        .load(connection)
-        .unwrap();
+        .load(connection)?;
 
-    let mut rows: Vec<Program> = Vec::new();
-
-    for item in data {
-        rows.push(item.0);
-    }
-
-    rows
+    Ok(to_program_rows(data))
 }
 
-fn get_latest_programs(connection: &MysqlConnection)->Vec<Program> {
+fn get_latest_programs(connection: &MysqlConnection)-> ProgramResult {
 
     use crate::schema::programs::dsl::created_at;
 
-    programs
+    let data: Vec<ProgramType> = programs
+    .inner_join(coaches)
     .order_by(created_at.asc())
     .filter(active.eq(true))
     .limit(10)
-    .load(connection)
-    .unwrap()
+    .load(connection)?;
+
+    Ok(to_program_rows(data))
+   
 }
 
+fn to_program_rows(data: Vec<ProgramType>) -> Vec<ProgramRow> {
+
+    let mut rows: Vec<ProgramRow> = Vec::new();
+
+    for pc in data {
+        rows.push(ProgramRow{program:pc.0, coach:pc.1});
+    }
+
+    rows
+}
