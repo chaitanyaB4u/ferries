@@ -10,9 +10,7 @@ use crate::models::notes::{NewNoteRequest, Note};
 use crate::models::programs::{NewProgramRequest, Program, ChangeProgramStateRequest, Criteria};
 use crate::models::enrollments::{NewEnrollmentRequest, Enrollment,EnrollmentCriteria};
 use crate::models::user_events::{get_events,EventRow,EventCriteria};
-use crate::models::user_programs::get_programs;
-use crate::models::user_programs::Criteria as up_criteria;
-
+use crate::models::user_programs::{get_programs, ProgramCriteria};
 
 use crate::services::users::{get_users, register, authenticate};
 use crate::services::teams::{create_team,get_members};
@@ -55,7 +53,7 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get All the Programs of a Coach Or Member Or Latest")]
-     fn get_programs(context:&DBContext, criteria:up_criteria) -> Vec<Program> {
+     fn get_programs(context:&DBContext, criteria:ProgramCriteria) -> Vec<Program> {
          let connection = context.db.get().unwrap();
          get_programs(&connection,&criteria)
     }

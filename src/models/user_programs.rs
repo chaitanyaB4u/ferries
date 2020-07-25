@@ -17,12 +17,12 @@ pub enum Desire {
 }
 
 #[derive(juniper::GraphQLInputObject)]
-pub struct Criteria {
+pub struct ProgramCriteria {
     user_fuzzy_id: String,
     desire: Desire,
 }
 
-pub fn get_programs(connection: &MysqlConnection, criteria: &Criteria) -> Vec<Program> {
+pub fn get_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) -> Vec<Program> {
     match &criteria.desire {
         Desire::EXPLORE => get_latest_programs(connection),
         Desire::ENROLLED => get_enrolled_programs(connection, criteria),
@@ -30,7 +30,7 @@ pub fn get_programs(connection: &MysqlConnection, criteria: &Criteria) -> Vec<Pr
     }
 }
 
-pub fn get_enrolled_programs(connection: &MysqlConnection,criteria: &Criteria) -> Vec<Program> {
+pub fn get_enrolled_programs(connection: &MysqlConnection,criteria: &ProgramCriteria) -> Vec<Program> {
     use crate::schema::users::dsl::fuzzy_id;
     type Row = (Enrollment, User, Program);
 
@@ -48,7 +48,7 @@ pub fn get_enrolled_programs(connection: &MysqlConnection,criteria: &Criteria) -
     rows
 }
 
-pub fn get_coach_programs(connection: &MysqlConnection,criteria: &Criteria) -> Vec<Program> {
+pub fn get_coach_programs(connection: &MysqlConnection,criteria: &ProgramCriteria) -> Vec<Program> {
     use crate::schema::users::dsl::fuzzy_id;
 
     let data: Vec<(Program, User)> = programs
