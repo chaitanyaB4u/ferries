@@ -10,7 +10,7 @@ use crate::models::notes::{NewNoteRequest, Note};
 use crate::models::programs::{NewProgramRequest, Program, ChangeProgramStateRequest};
 use crate::models::enrollments::{NewEnrollmentRequest, Enrollment,EnrollmentCriteria};
 use crate::models::user_events::{get_events,EventRow,EventCriteria};
-use crate::models::user_programs::{get_programs,find_program, ProgramCriteria,ProgramRow};
+use crate::models::user_programs::{get_programs,ProgramCriteria,ProgramRow};
 
 use crate::services::users::{get_users, register, authenticate};
 use crate::services::teams::{create_team,get_members};
@@ -52,7 +52,7 @@ impl QueryRoot {
         get_members(&connection,&team_query).expect("Something is Wrong")
     }
 
-    #[graphql(description = "Get All the Programs of a Coach Or Member Or Latest")]
+    #[graphql(description = "Get Programs of a Coach Or Member Or Latest 10.")]
     fn get_programs(context:&DBContext, criteria:ProgramCriteria) -> QueryResult<Vec<ProgramRow>> {
          let connection = context.db.get().unwrap();
          let result = get_programs(&connection,&criteria);
@@ -63,16 +63,6 @@ impl QueryRoot {
         }
     }
 
-    #[graphql(description = "Get a Single Program")]
-    fn find_program(context:&DBContext, criteria:ProgramCriteria) -> QueryResult<ProgramRow> {
-         let connection = context.db.get().unwrap();
-         let result = find_program(&connection, &criteria);
-
-         match result {
-            Ok(value) => QueryResult(Ok(value)),
-            Err(e) => query_error(e),
-        }
-    }
 
     #[graphql(description = "Get the list of members enrolled into a Program")]
     fn get_enrollments(context:&DBContext, criteria:EnrollmentCriteria) -> Vec<User> {
