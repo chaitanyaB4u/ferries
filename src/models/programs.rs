@@ -5,7 +5,7 @@
 
 use chrono::{NaiveDateTime};
 
-use crate::models::users::User;
+use crate::models::coaches::Coach;
 use crate::schema::programs;
 use crate::commons::chassis::{ValidationError};
 use crate::commons::util;
@@ -114,7 +114,7 @@ pub struct NewProgram {
  */
 impl NewProgram {
 
-    pub fn from(request: &NewProgramRequest,coach: &User) -> NewProgram {
+    pub fn from(request: &NewProgramRequest,coach: &Coach) -> NewProgram {
 
         let fuzzy_id = util::fuzzy_id();
 

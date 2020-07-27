@@ -55,6 +55,7 @@ impl ProgramRow {
 }
 
 type ProgramType = (Program, Coach);
+
 pub type ProgramResult = Result<Vec<ProgramRow>, diesel::result::Error>;
 
 pub fn get_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) -> ProgramResult {

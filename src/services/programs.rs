@@ -1,10 +1,10 @@
 use diesel::prelude::*;
 
-use crate::services::users;
 
-use crate::models::users::{User};
+use crate::models::coaches::{Coach};
 use crate::models::programs::{NewProgramRequest, NewProgram,Program,ChangeProgramStateRequest,TargetState};
 
+use crate::schema::coaches::dsl::*;
 use crate::schema::programs::dsl::*;
 
 const INVALID_PROGRAM: &'static str = "Invalid Program Fuzzy Id. Error:001.";
@@ -15,6 +15,8 @@ const PROGRAM_SAME_STATE_ERROR: &'static str = "Program is already in the target
  
 pub fn find_by_fuzzy_id(connection: &MysqlConnection,fuzzy: &str) -> Result<Program, &'static str> {
     
+    use crate::schema::programs::dsl::fuzzy_id;
+
     let result = programs.filter(fuzzy_id.eq(fuzzy)).first(connection);
 
     if result.is_err() {
@@ -37,19 +39,24 @@ pub fn create_new_program(connection: &MysqlConnection, request: &NewProgramRequ
 
 }
 
-fn get_coach(connection: &MysqlConnection, request: &NewProgramRequest) ->Result<User, &'static str> {
+fn get_coach(connection: &MysqlConnection, request: &NewProgramRequest) ->Result<Coach, &'static str> {
 
-    let user_result = users::find_by_fuzzy_id(connection, request.coach_fuzzy_id.as_str());
-    if user_result.is_err() {
+    use crate::schema::coaches::dsl::fuzzy_id;
+
+    let coach_fuzzy_id = request.coach_fuzzy_id.as_str();
+
+    let coach_result = coaches.filter(fuzzy_id.eq(coach_fuzzy_id)).first(connection);
+
+    if coach_result.is_err() {
         return Err(INVALID_COACH);
     }
 
-    Ok(user_result.unwrap())
+    Ok(coach_result.unwrap())
 }
 
 fn insert_program(connection: &MysqlConnection, new_program: &NewProgram) ->Result<Program, &'static str> {
 
-    let result = diesel::insert_into(programs) .values(new_program).execute(connection);
+    let result = diesel::insert_into(programs).values(new_program).execute(connection);
 
     if result.is_err() {
         return Err(PROGRAM_CREATION_ERROR);

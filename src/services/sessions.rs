@@ -8,10 +8,12 @@ use crate::services::users;
 use crate::models::session_users::{NewSessionUser,SessionUser};
 use crate::models::sessions::{NewSession, NewSessionRequest, Session, ChangeSessionStateRequest,TargetState};
 use crate::models::users::{User};
+use crate::models::coaches::{Coach};
 
 use crate::schema::session_users::dsl::*;
 use crate::schema::sessions::dsl::*;
 use crate::schema::users::dsl::*;
+use crate::schema::coaches::dsl::*;
 
 const SESSION_CREATION_ERROR: &'static str = "Unable to Create Session. Error:002";
 const SESSION_NOT_FOUND: &'static str = "Unable to Create Or Find the Session. Error:003.";
@@ -26,8 +28,10 @@ pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest,
     // Obtain the Program
     let program = programs::find_by_fuzzy_id(connection, request.program_fuzzy_id.as_str())?;
 
-    // Obtain the People
-    let coach: User = users.find(program.coach_id).first(connection).unwrap();
+    // Obtain the People (We need the User corresponds to the Coach)
+    let coach: Coach = coaches.find(program.coach_id).first(connection).unwrap();
+    let coach: User = users.find(coach.user_id).first(connection).unwrap();
+    
     let member: User = users::find_by_fuzzy_id(connection, request.member_fuzzy_id.as_str())?;
 
     let people_involved: String = util::concat(coach.full_name.as_str(), member.full_name.as_str());
