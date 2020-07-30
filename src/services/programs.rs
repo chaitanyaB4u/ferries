@@ -2,7 +2,7 @@ use diesel::prelude::*;
 
 
 use crate::models::coaches::{Coach};
-use crate::models::programs::{NewProgramRequest, NewProgram,Program,ChangeProgramStateRequest,TargetState};
+use crate::models::programs::{NewProgramRequest, NewProgram,Program,ChangeProgramStateRequest,ProgramTargetState};
 
 use crate::schema::coaches::dsl::*;
 use crate::schema::programs::dsl::*;
@@ -73,9 +73,9 @@ pub fn change_program_state(connection: &MysqlConnection, request: &ChangeProgra
     validate_target_state(program, request)?;
     
     let result = match request.target_state {
-        TargetState::ACTIVATE => 
+        ProgramTargetState::ACTIVATE => 
             diesel::update(program).set(active.eq(true)).execute(connection),
-        TargetState::DEACTIVATE =>    
+        ProgramTargetState::DEACTIVATE =>    
             diesel::update(program).set(active.eq(false)).execute(connection)
     };
 
@@ -89,10 +89,10 @@ pub fn change_program_state(connection: &MysqlConnection, request: &ChangeProgra
 
 fn validate_target_state(program: &Program, request: &ChangeProgramStateRequest) -> Result<bool,&'static str> {
 
-    if program.active && request.target_state == TargetState::ACTIVATE {
+    if program.active && request.target_state == ProgramTargetState::ACTIVATE {
         return Err(PROGRAM_SAME_STATE_ERROR);
     }
-    if !program.active && request.target_state == TargetState::DEACTIVATE {
+    if !program.active && request.target_state == ProgramTargetState::DEACTIVATE {
         return Err(PROGRAM_SAME_STATE_ERROR);
     }
 

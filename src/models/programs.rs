@@ -132,7 +132,7 @@ impl NewProgram {
 
 #[derive(juniper::GraphQLEnum)]
 #[derive(PartialEq)]
-pub enum TargetState {
+pub enum ProgramTargetState {
     ACTIVATE,
     DEACTIVATE
 }
@@ -140,6 +140,6 @@ pub enum TargetState {
 #[derive(juniper::GraphQLInputObject)]
 pub struct ChangeProgramStateRequest {
     pub fuzzy_id: String,
-    pub target_state: TargetState
+    pub target_state: ProgramTargetState
 }
 

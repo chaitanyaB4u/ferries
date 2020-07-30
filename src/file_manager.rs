@@ -10,8 +10,8 @@ use std::path::PathBuf;
 pub const SESSION_ASSET_DIR: &'static str = "/Users/harinimaniam/assets/sessions";
 
 pub const PROGRAM_ASSET_DIR: &'static str = "/Users/harinimaniam/assets/programs";
-
-pub async fn manage_file_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
+ 
+pub async fn manage_notes_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let mut file_paths: Vec<String> = Vec::new();
 
     while let Ok(Some(mut field)) = payload.try_next().await {
@@ -54,6 +54,36 @@ pub async fn manage_file_assets(mut payload: Multipart) -> Result<HttpResponse, 
         .body(json_response))
 }
 
+pub async fn manage_program_content(_request: HttpRequest, mut payload: Multipart) -> Result<HttpResponse, Error> {
+    let program_fuzzy_id: String = _request.match_info().query("program_fuzzy_id").parse().unwrap();
+    let purpose: String = _request.match_info().query("purpose").parse().unwrap();
+
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        let content_type = field.content_disposition().unwrap();
+        
+        let filename = content_type.get_name().unwrap();
+
+        // Ensure to create a directory for the program content.
+        let dir_path = format!("{}/{}/{}", PROGRAM_ASSET_DIR, program_fuzzy_id, purpose);
+        std::fs::create_dir_all(dir_path).unwrap();
+
+        let file_path = format!("{}/{}/{}/{}", PROGRAM_ASSET_DIR, program_fuzzy_id, purpose,filename);
+       
+        // File::create is blocking operation, use threadpool
+        let mut f = web::block(|| std::fs::File::create(file_path)).await.unwrap();
+
+        // Field in turn is stream of *Bytes* object
+        while let Some(chunk) = field.next().await {
+            let data = chunk.unwrap();
+
+            // filesystem operations are blocking, we have to use threadpool
+            f = web::block(move || f.write_all(&data).map(|_| f)).await?;
+        }
+    }
+
+    Ok(HttpResponse::Ok().body("Ok"))
+}
+
 pub async fn fetch_board_file(_request: HttpRequest) -> Result<NamedFile,Error> {
 
     let session_user_fuzzy_id: PathBuf = _request.match_info().query("session_user_fuzzy_id").parse().unwrap();
@@ -67,7 +97,7 @@ pub async fn fetch_board_file(_request: HttpRequest) -> Result<NamedFile,Error> 
     Ok(NamedFile::open(file_name)?)
 }
 
-pub async fn fetch_program_image_file(_request: HttpRequest) -> Result<NamedFile,Error> {
+pub async fn fetch_program_content(_request: HttpRequest) -> Result<NamedFile,Error> {
 
     let program_fuzzy_id: PathBuf = _request.match_info().query("program_fuzzy_id").parse().unwrap();
     let purpose: PathBuf = _request.match_info().query("purpose").parse().unwrap();
@@ -78,17 +108,5 @@ pub async fn fetch_program_image_file(_request: HttpRequest) -> Result<NamedFile
     file_name.push(purpose);
     file_name.push(asset_name);
 
-    if !file_name.exists() {
-        file_name = get_no_file_path();
-    }
-
     Ok(NamedFile::open(file_name)?)
-}
-
-fn get_no_file_path() -> PathBuf {
-
-    let mut file_name = PathBuf::from(PROGRAM_ASSET_DIR);
-    file_name.push("cover.png");
-
-    file_name
 }
