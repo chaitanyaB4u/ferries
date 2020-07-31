@@ -66,7 +66,7 @@ impl MutationResult<Session> {
         self.0.as_ref().ok()
     }
 
-    pub fn error(&self) -> Option<&Vec<ValidationError>> {
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
         self.0.as_ref().err()
     }
 }
@@ -78,7 +78,7 @@ impl MutationResult<Program> {
         self.0.as_ref().ok()
     }
 
-    pub fn error(&self) -> Option<&Vec<ValidationError>> {
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
         self.0.as_ref().err()
     }
 }
@@ -89,7 +89,7 @@ impl MutationResult<Enrollment> {
         self.0.as_ref().ok()
     }
 
-    pub fn error(&self) -> Option<&Vec<ValidationError>> {
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
         self.0.as_ref().err()
     }
 }
@@ -100,7 +100,7 @@ impl MutationResult<Note> {
         self.0.as_ref().ok()
     }
 
-    pub fn error(&self) -> Option<&Vec<ValidationError>> {
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
         self.0.as_ref().err()
     }
 }
@@ -111,7 +111,7 @@ impl MutationResult<String> {
         self.0.as_ref().ok()
     }
 
-    pub fn error(&self) -> Option<&Vec<ValidationError>> {
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
         self.0.as_ref().err()
     }
 }

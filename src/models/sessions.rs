@@ -85,6 +85,18 @@ impl Session {
     pub fn scheduleEnd(&self) -> NaiveDateTime {
         self.revised_end_date.unwrap_or(self.original_end_date)
     }
+
+    pub fn isClosed(&self) -> bool {
+        if self.cancelled_at.is_some() {
+            return true;
+        }
+
+        if self.actual_end_date.is_some() {
+            return true;
+        }
+        
+        return false;
+    }
     
     pub fn status(&self) -> Status {
         if self.cancelled_at.is_some() {
