@@ -12,12 +12,13 @@
  * For example, you can not make e.g. Result<T, E> into a GraphQL type, 
  * but you can make e.g. Result<User, String> into a GraphQL type.
  */
- 
+
 use crate::models::sessions::{Session};
 use crate::models::programs::{Program};
 use crate::models::enrollments::{Enrollment};
 use crate::models::notes::{Note};
 use crate::models::user_programs::{ProgramRow};
+use crate::models::user_events::{SessionPeople};
 
 #[derive(juniper::GraphQLObject)]
 pub struct QueryError {
@@ -41,6 +42,16 @@ pub struct QueryResult<T>(pub Result<T,QueryError>);
 #[juniper::object(name="ProgramsResult")]
 impl QueryResult<Vec<ProgramRow>> {
     pub fn programs(&self) -> Option<&Vec<ProgramRow>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name="SessionUsers")]
+impl QueryResult<SessionPeople> {
+    pub fn users(&self) -> Option<&SessionPeople> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {

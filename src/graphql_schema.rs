@@ -9,7 +9,7 @@ use crate::models::sessions::{NewSessionRequest, ChangeSessionStateRequest, Sess
 use crate::models::notes::{NewNoteRequest, Note};
 use crate::models::programs::{NewProgramRequest, Program, ChangeProgramStateRequest};
 use crate::models::enrollments::{NewEnrollmentRequest, Enrollment,EnrollmentCriteria};
-use crate::models::user_events::{get_events,EventRow,EventCriteria};
+use crate::models::user_events::{get_events,get_people,EventRow,EventCriteria,SessionCriteria,SessionPeople};
 use crate::models::user_programs::{get_programs,ProgramCriteria,ProgramRow};
 
 use crate::services::users::{get_users, register, authenticate};
@@ -75,6 +75,17 @@ impl QueryRoot {
     fn get_sessions(context:&DBContext, criteria:EventCriteria) -> Vec<EventRow> { 
         let connection = context.db.get().unwrap();
         get_events(&connection,criteria)
+    }
+
+    #[graphql(description = "Get the People participating in an Event")]
+    fn get_session_users(context:&DBContext, criteria:SessionCriteria) -> QueryResult<SessionPeople> {
+        let connection = context.db.get().unwrap();
+        let result = get_people(&connection,criteria);
+
+        match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
     }
 }
 
