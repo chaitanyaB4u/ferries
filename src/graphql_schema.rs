@@ -160,12 +160,12 @@ impl MutationRoot {
         }
     }
 
-    fn alter_session_state(context: &DBContext, request: ChangeSessionStateRequest) -> MutationResult<String> {
+    fn alter_session_state(context: &DBContext, request: ChangeSessionStateRequest) -> MutationResult<Session> {
         let connection = context.db.get().unwrap();
         let result = change_session_state(&connection, &request);
         
         match result {
-            Ok(rows) => MutationResult(Ok(String::from("Ok"))),
+            Ok(session) => MutationResult(Ok(session)),
             Err(e) => service_error(e),
         }
     }

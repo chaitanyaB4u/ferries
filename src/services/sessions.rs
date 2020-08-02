@@ -54,9 +54,12 @@ pub fn find_session_user(connection: &MysqlConnection, session_user_fuzzy_id: &s
     session_users.filter(fuzzy_id.eq(session_user_fuzzy_id)).first(connection)
 }
 
-pub fn change_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<usize, &'static str> {
+pub fn change_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<Session, &'static str> {
     can_change_session_state(connection,request)?;
-    do_alter_session_state(connection,request)
+    
+    do_alter_session_state(connection,request)?;
+
+    find_by_fuzzy_id(connection,&request.fuzzy_id.as_str())
 }
 
 fn can_change_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<usize, &'static str> {
