@@ -93,10 +93,12 @@ pub async fn fetch_list_of_boards(_request: HttpRequest) -> Result<HttpResponse,
     dir_name.push(session_user_fuzzy_id);
     dir_name.push("boards");
     
-    let entries =   fs::read_dir(dir_name)?
+    let mut entries =   fs::read_dir(dir_name)?
                     .map(|res| res.map(|e| e.file_name().into_string()))
                     .collect::<Result<Vec<_>, std::io::Error>>()?;
 
+    entries.sort();
+    
     let json_response = serde_json::to_string(&entries)?;
 
     Ok(HttpResponse::Ok()
