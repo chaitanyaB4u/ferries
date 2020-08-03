@@ -1,8 +1,5 @@
 use diesel::prelude::*;
 
-use std::collections::HashMap;
-
-use crate::commons::util;
 use crate::models::programs::Program;
 use crate::models::session_users::SessionUser;
 use crate::models::sessions::Session;
@@ -74,38 +71,26 @@ pub struct SessionCriteria {
 }
 
 pub struct SessionPeople {
-    pub coach: Option<User>,
-    pub member: Option<User>,
+    pub session_user: SessionUser,
+    pub user: User,
 }
 
 #[juniper::object]
 impl SessionPeople {
-    pub fn coach(&self) -> &Option<User> {
-        &self.coach
+    pub fn session_user(&self) -> &SessionUser {
+        &self.session_user
     }
 
-    pub fn member(&self) -> &Option<User> {
-        &self.member
-    }
-}
-
-impl SessionPeople {
-    pub fn new(coach: Option<&User>, member: Option<&User>) -> SessionPeople {
-        SessionPeople {
-            coach: deref(coach),
-            member: deref(member),
-        }
+    pub fn user(&self) -> &User {
+        &self.user
     }
 }
 
-pub fn deref(a_user: Option<&User>) -> Option<User> {
-    let some_user = a_user?;
-    Some(some_user.clone())
-}
 
-pub type PeopleResult = Result<SessionPeople, diesel::result::Error>;
+pub type PeopleResult = Result<Vec<SessionPeople>, diesel::result::Error>;
 
 pub fn get_people(connection: &MysqlConnection, criteria: SessionCriteria) -> PeopleResult {
+    
     let result_session_id = sessions
         .filter(sessions::fuzzy_id.eq(criteria.fuzzy_id))
         .select(sessions::id)
@@ -116,13 +101,10 @@ pub fn get_people(connection: &MysqlConnection, criteria: SessionCriteria) -> Pe
         .filter(session_id.eq(result_session_id))
         .load(connection)?;
 
-    let user_map: HashMap<String, User> = result
+    let session_people: Vec<SessionPeople> = result
         .iter()
-        .map(|tuple| (tuple.0.user_type.clone(), tuple.1.clone()))
+        .map(|tuple| SessionPeople{session_user:tuple.0.clone(), user:tuple.1.clone()})
         .collect();
 
-    let coach = user_map.get(util::COACH);
-    let member = user_map.get(util::MEMBER);
-
-    Ok(SessionPeople::new(coach, member))
+    Ok(session_people)
 }

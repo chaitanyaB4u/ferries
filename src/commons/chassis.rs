@@ -50,8 +50,8 @@ impl QueryResult<Vec<ProgramRow>> {
 }
 
 #[juniper::object(name="SessionUsers")]
-impl QueryResult<SessionPeople> {
-    pub fn users(&self) -> Option<&SessionPeople> {
+impl QueryResult<Vec<SessionPeople>> {
+    pub fn users(&self) -> Option<&Vec<SessionPeople>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {

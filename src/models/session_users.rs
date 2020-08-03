@@ -4,6 +4,7 @@ use crate::schema::session_users;
 use crate::models::sessions::Session;
 use crate::models::users::{User};
 
+#[derive(Clone)]
 #[derive(Queryable, Debug, Identifiable)]
 pub struct SessionUser {
     pub id: i32,

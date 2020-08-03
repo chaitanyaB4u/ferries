@@ -11,7 +11,6 @@ use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
 
-
 mod commons;
 mod db_manager;
 mod graphql_schema;
@@ -20,7 +19,7 @@ mod schema;
 mod services;
 mod file_manager;
 
-use file_manager::{SESSION_ASSET_DIR,PROGRAM_ASSET_DIR,manage_notes_file,fetch_board_file,manage_program_content,fetch_program_content};
+use file_manager::{SESSION_ASSET_DIR,PROGRAM_ASSET_DIR,manage_notes_file,fetch_list_of_boards,fetch_board_file,manage_program_content,fetch_program_content};
 use db_manager::establish_connection;
 use graphql_schema::{create_gq_schema, DBContext, GQSchema};
 use actix_files::NamedFile;
@@ -33,6 +32,9 @@ async fn upload_program_content(_request: HttpRequest, payload: Multipart) -> Re
     manage_program_content(_request,payload).await
 }
 
+async fn list_of_boards(_request: HttpRequest) -> Result<HttpResponse, Error> {
+    fetch_list_of_boards(_request).await
+} 
 async fn offer_board_file(_request: HttpRequest) -> Result<NamedFile, Error> {
     fetch_board_file(_request).await
 }
@@ -103,7 +105,8 @@ async fn main() -> std::io::Result<()> {
             .route("graphql",web::post().to(graphql))
             .route("graphiql",web::get().to(graphiql))
             .route("assets/upload",web::post().to(upload_notes_file))
-            .route("assets/boards/{user_fuzzy_id}/{filename}",web::get().to(offer_board_file))
+            .route("assets/boards/{session_user_fuzzy_id}",web::get().to(list_of_boards))
+            .route("assets/boards/{session_user_fuzzy_id}/{filename}",web::get().to(offer_board_file))
             .route("assets/programs/{program_fuzzy_id}/{purpose}",web::post().to(upload_program_content))
             .route("assets/programs/{program_fuzzy_id}/{purpose}/{filename}",web::get().to(offer_program_content))
             .route("/",web::get().to(index))

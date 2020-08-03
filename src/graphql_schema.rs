@@ -78,7 +78,7 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get the People participating in an Event")]
-    fn get_session_users(context:&DBContext, criteria:SessionCriteria) -> QueryResult<SessionPeople> {
+    fn get_session_users(context:&DBContext, criteria:SessionCriteria) -> QueryResult<Vec<SessionPeople>> {
         let connection = context.db.get().unwrap();
         let result = get_people(&connection,criteria);
 

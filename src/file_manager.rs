@@ -2,6 +2,7 @@ use crate::commons::util::fuzzy_id;
 use actix_multipart::Multipart;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use futures::{StreamExt, TryStreamExt};
+use std::fs;
 use std::io::Write;
 use actix_files::NamedFile;
 use std::path::PathBuf;
@@ -83,6 +84,26 @@ pub async fn manage_program_content(_request: HttpRequest, mut payload: Multipar
 
     Ok(HttpResponse::Ok().body("Ok"))
 }
+
+pub async fn fetch_list_of_boards(_request: HttpRequest) -> Result<HttpResponse, Error> {
+
+    let session_user_fuzzy_id: PathBuf = _request.match_info().query("session_user_fuzzy_id").parse().unwrap();
+
+    let mut dir_name: PathBuf = PathBuf::from(SESSION_ASSET_DIR);
+    dir_name.push(session_user_fuzzy_id);
+    dir_name.push("boards");
+    
+    let entries =   fs::read_dir(dir_name)?
+                    .map(|res| res.map(|e| e.file_name().into_string()))
+                    .collect::<Result<Vec<_>, std::io::Error>>()?;
+
+    let json_response = serde_json::to_string(&entries)?;
+
+    Ok(HttpResponse::Ok()
+        .content_type("application/json")
+        .body(json_response))
+}
+
 
 pub async fn fetch_board_file(_request: HttpRequest) -> Result<NamedFile,Error> {
 
