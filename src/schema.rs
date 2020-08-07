@@ -17,6 +17,44 @@ table! {
         created_at -> Datetime,
         updated_at -> Datetime,
         member_id -> Integer,
+        fuzzy_id -> Varchar,
+    }
+}
+
+table! {
+    objectives (id) {
+        id -> Integer,
+        enrollment_id -> Integer,
+        fuzzy_id -> Varchar,
+        duration -> Integer,
+        original_start_date -> Datetime,
+        original_end_date -> Datetime,
+        revised_start_date -> Nullable<Datetime>,
+        revised_end_date -> Nullable<Datetime>,
+        actual_start_date -> Nullable<Datetime>,
+        actual_end_date -> Nullable<Datetime>,
+        created_at -> Datetime,
+        updated_at -> Datetime,
+    }
+}
+
+table! {
+    observations (id) {
+        id -> Integer,
+        enrollment_id -> Integer,
+        fuzzy_id -> Varchar,
+        created_at -> Datetime,
+        updated_at -> Datetime,
+    }
+}
+
+table! {
+    options (id) {
+        id -> Integer,
+        enrollment_id -> Integer,
+        fuzzy_id -> Varchar,
+        created_at -> Datetime,
+        updated_at -> Datetime,
     }
 }
 
@@ -131,6 +169,44 @@ table! {
         fuzzy_id -> Varchar,
         people -> Nullable<Text>,
         cancelled_at -> Nullable<Datetime>,
+        enrollment_id -> Integer,
+    }
+}
+
+table! {
+    task_links (id) {
+        id -> Integer,
+        source_task_id -> Integer,
+        target_task_id -> Integer,
+        lead_time -> Integer,
+        buffer_time -> Integer,
+        coordinates -> Text,
+        priority -> Integer,
+        is_forward -> Bool,
+    }
+}
+
+table! {
+    tasks (id) {
+        id -> Integer,
+        enrollment_id -> Integer,
+        fuzzy_id -> Varchar,
+        name -> Varchar,
+        duration -> Integer,
+        min -> Integer,
+        max -> Integer,
+        actor_id -> Integer,
+        original_start_date -> Datetime,
+        original_end_date -> Datetime,
+        revised_start_date -> Nullable<Datetime>,
+        revised_end_date -> Nullable<Datetime>,
+        offered_start_date -> Nullable<Datetime>,
+        offered_end_date -> Nullable<Datetime>,
+        actual_start_date -> Nullable<Datetime>,
+        actual_end_date -> Nullable<Datetime>,
+        locked -> Bool,
+        created_at -> Datetime,
+        updated_at -> Datetime,
     }
 }
 
@@ -171,6 +247,9 @@ table! {
 joinable!(coaches -> users (user_id));
 joinable!(enrollments -> programs (program_id));
 joinable!(enrollments -> users (member_id));
+joinable!(objectives -> enrollments (enrollment_id));
+joinable!(observations -> enrollments (enrollment_id));
+joinable!(options -> enrollments (enrollment_id));
 joinable!(programs -> coaches (coach_id));
 joinable!(session_boards -> session_users (session_user_id));
 joinable!(session_boards -> sessions (session_id));
@@ -183,13 +262,19 @@ joinable!(session_users -> sessions (session_id));
 joinable!(session_users -> users (user_id));
 joinable!(session_visits -> sessions (session_id));
 joinable!(session_visits -> users (user_id));
+joinable!(sessions -> enrollments (enrollment_id));
 joinable!(sessions -> programs (program_id));
+joinable!(tasks -> enrollments (enrollment_id));
+joinable!(tasks -> users (actor_id));
 joinable!(team_members -> teams (team_id));
 joinable!(team_members -> users (user_id));
 
 allow_tables_to_appear_in_same_query!(
     coaches,
     enrollments,
+    objectives,
+    observations,
+    options,
     programs,
     session_boards,
     session_files,
@@ -198,6 +283,8 @@ allow_tables_to_appear_in_same_query!(
     session_users,
     session_visits,
     sessions,
+    task_links,
+    tasks,
     team_members,
     teams,
     users,
