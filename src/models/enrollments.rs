@@ -13,6 +13,7 @@ pub struct Enrollment {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub member_id: i32,
+    pub fuzzy_id: String
 }
 
 #[juniper::object(description = "The fields we offer to the Web-UI ")]

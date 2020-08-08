@@ -28,6 +28,7 @@ pub struct Session {
     pub fuzzy_id: String,
     pub people: Option<String>,
     pub cancelled_at: Option<NaiveDateTime>,
+    pub enrollment_id: i32
 }
 
 #[derive(juniper::GraphQLEnum)]
