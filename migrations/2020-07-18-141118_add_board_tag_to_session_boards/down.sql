@@ -1,1 +1,0 @@
-ALTER TABLE session_boards DROP COLUMN board_tag;

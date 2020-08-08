@@ -10,23 +10,22 @@ use crate::commons::util;
 
 #[derive(Queryable,Debug)]
 pub struct Note {
-    pub id: i32,
-    pub fuzzy_id:  String,
-    pub session_id:  i32,
+    pub id: String,
+    pub session_id:  String,
+    pub created_by_id: String,
+    pub session_user_id: String,
     pub description: String,
     pub remind_at: Option<NaiveDateTime>,
-    pub created_by_id: i32,
     pub is_private: bool,
     pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
-    pub session_user_id: i32,
+    pub updated_at: NaiveDateTime
 }
 
 #[juniper::object(description="The fields we offer to the Web-UI ")]
 impl Note {
 
-    pub fn fuzzy_id(&self) -> &str {
-        self.fuzzy_id.as_str()
+    pub fn id(&self) -> &str {
+        self.id.as_str()
     }
     pub fn description(&self) -> &str {
        self.description.as_str()
@@ -44,7 +43,7 @@ impl Note {
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct NewNoteRequest{
-    pub session_user_fuzzy_id:  String,
+    pub session_user_id:  String,
     pub description: String,
     pub files: Option<Vec<FileRequest>>,
     pub remind_at: Option<String>,
@@ -65,8 +64,8 @@ impl NewNoteRequest {
 
         let mut errors: Vec<ValidationError> = Vec::new();
 
-        if self.session_user_fuzzy_id.trim().is_empty() {
-            errors.push(ValidationError::new("session_user_fuzzy_id", "Missing the session_user_fuzzy_id"));
+        if self.session_user_id.trim().is_empty() {
+            errors.push(ValidationError::new("session_user_id", "Missing the session_user_fuzzy_id"));
         }
 
         if self.description.trim().is_empty() {
@@ -80,12 +79,12 @@ impl NewNoteRequest {
 #[derive(Insertable)]
 #[table_name = "session_notes"]
 pub struct NewNote {
-    pub session_id:  i32,
-    pub created_by_id: i32,
+    pub id: String,
+    pub session_id:  String,
+    pub created_by_id: String,
+    pub session_user_id: String,
     pub description: String,
-    pub fuzzy_id: String,
-    pub session_user_id: i32,
-    pub remind_at: Option<NaiveDateTime>,
+    pub remind_at: Option<NaiveDateTime>
 }
 
 impl NewNote {
@@ -104,9 +103,9 @@ impl NewNote {
         let fuzzy_id = util::fuzzy_id();
 
         NewNote {
+            id:fuzzy_id,
             session_id:session_user.session_id,
             created_by_id:session_user.user_id,
-            fuzzy_id:fuzzy_id,
             description:request.description.to_owned(),
             session_user_id:session_user.id,
             remind_at: remind_at,
@@ -118,8 +117,8 @@ impl NewNote {
 #[derive(Insertable)]
 #[table_name = "session_files"]
 pub struct NewNoteFile {
-    pub fuzzy_id: String,
-    pub session_note_id: i32,
+    pub id: String,
+    pub session_note_id: String,
     pub file_name: String,
     pub file_path: String,
     pub file_type: Option<String>,
@@ -129,13 +128,13 @@ pub struct NewNoteFile {
 
 impl NewNoteFile {
 
-    pub fn from(request: &FileRequest, session_note_id: i32) -> NewNoteFile {
+    pub fn from(request: &FileRequest, session_note_id: String) -> NewNoteFile {
 
         let fuzzy_id = util::fuzzy_id();
 
         NewNoteFile {
-            session_note_id:session_note_id,
-            fuzzy_id:fuzzy_id,
+            id:fuzzy_id,
+            session_note_id:session_note_id.to_owned(),
             file_path:request.path.to_owned(),
             file_name:request.name.to_owned(),
             file_type:Some(request.r#type.to_owned()),

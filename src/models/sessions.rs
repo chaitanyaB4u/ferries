@@ -9,9 +9,12 @@ use chrono::{NaiveDateTime,Duration};
 // The Order of the fiels are very important 
 #[derive(Queryable,Debug,Identifiable)]
 pub struct Session {
-    pub id:i32,
-    pub program_id:i32,
+    pub id:String,
     pub name:String,
+    pub description : Option<String>,
+    pub program_id:String,
+    pub enrollment_id:String,
+    pub people: Option<String>,
     pub duration:i32,
     pub original_start_date : NaiveDateTime,
     pub original_end_date : NaiveDateTime,
@@ -22,13 +25,9 @@ pub struct Session {
     pub is_ready:bool,
     pub actual_start_date : Option<NaiveDateTime>,
     pub actual_end_date : Option<NaiveDateTime>,
+    pub cancelled_at: Option<NaiveDateTime>,
     pub created_at : NaiveDateTime,
     pub updated_at : NaiveDateTime,
-    pub description : Option<String>,
-    pub fuzzy_id: String,
-    pub people: Option<String>,
-    pub cancelled_at: Option<NaiveDateTime>,
-    pub enrollment_id: i32
 }
 
 #[derive(juniper::GraphQLEnum)]
@@ -45,12 +44,16 @@ enum Status {
 #[juniper::object]
 impl Session {
 
-    pub fn fuzzy_id(&self) -> &str {
-        self.fuzzy_id.as_str()
+    pub fn id(&self) -> &str {
+        self.id.as_str()
     }
 
-    pub fn program_id(&self) -> i32 {
-        self.program_id
+    pub fn program_id(&self) -> &str {
+        self.program_id.as_str()
+    }
+
+    pub fn enrollment_id(&self) -> &str {
+        self.enrollment_id.as_str()
     }
 
     pub fn name(&self) -> &str {
@@ -127,8 +130,8 @@ impl Session {
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct NewSessionRequest {
-    pub program_fuzzy_id: String,
-    pub member_fuzzy_id: String,
+    pub program_id: String,
+    pub member_id: String,
     pub name: String,
     pub description: String,
     pub duration: i32,
@@ -157,12 +160,12 @@ impl NewSessionRequest {
             errors.push(ValidationError::new("duration","should be a minimum of 1 hour."));
         }
 
-        if self.program_fuzzy_id.trim().is_empty(){
-            errors.push(ValidationError::new("program_fuzzy_id","Program fuzzy id is a must."));
+        if self.program_id.trim().is_empty(){
+            errors.push(ValidationError::new("program_id","Program fuzzy id is a must."));
         }
 
-        if self.member_fuzzy_id.trim().is_empty(){
-            errors.push(ValidationError::new("member_fuzzy_id","Member fuzzy id is a must."));
+        if self.member_id.trim().is_empty(){
+            errors.push(ValidationError::new("member_id","Member fuzzy id is a must."));
         }
 
         if self.name.trim().is_empty() {
@@ -181,19 +184,20 @@ impl NewSessionRequest {
 #[derive(Insertable)]
 #[table_name = "sessions"]
 pub struct NewSession {
-    pub program_id: i32,
+    pub id:String,
     pub name: String,
+    pub description: String,
+    pub program_id: String,
+    pub enrollment_id:String,  
+    pub people: String, 
     pub duration: i32,
     pub original_start_date: NaiveDateTime,
     pub original_end_date: NaiveDateTime,
-    pub description: String,
-    pub fuzzy_id: String,
-    pub people: String
 }
 
 impl NewSession  {
 
-    pub fn from(request: &NewSessionRequest, program_id: i32, people: String) -> NewSession {
+    pub fn from(request: &NewSessionRequest, enrollment_id: String, people: String) -> NewSession {
  
         let start_date = util::as_date(request.start_time.as_str());
         let duration = Duration::hours(request.duration as i64);
@@ -202,14 +206,15 @@ impl NewSession  {
         let fuzzy_id = util::fuzzy_id();
         
         let new_session = NewSession {
-                program_id:program_id,
+                id:fuzzy_id,
                 name:request.name.to_owned(),
                 description:request.description.to_owned(),
+                program_id:request.program_id.to_owned(),
+                enrollment_id:enrollment_id,
+                people:people.to_owned(),
                 duration:request.duration,
                 original_start_date:start_date,
-                original_end_date: end_date.unwrap_or(start_date),
-                fuzzy_id: fuzzy_id,
-                people:people.to_owned()
+                original_end_date: end_date.unwrap_or(start_date)
         };
 
         new_session
@@ -226,6 +231,6 @@ pub enum TargetState {
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct ChangeSessionStateRequest {
-    pub fuzzy_id: String,
+    pub id: String,
     pub target_state: TargetState
 }

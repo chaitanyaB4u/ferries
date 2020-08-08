@@ -7,10 +7,9 @@ use crate::models::users::{User};
 #[derive(Clone)]
 #[derive(Queryable, Debug, Identifiable)]
 pub struct SessionUser {
-    pub id: i32,
-    pub fuzzy_id: String,
-    pub session_id: i32,
-    pub user_id: i32,
+    pub id: String,
+    pub session_id: String,
+    pub user_id: String,
     pub user_type: String,
 }
 
@@ -18,8 +17,16 @@ pub struct SessionUser {
 #[juniper::object]
 impl SessionUser {
 
-    pub fn fuzzy_id(&self) -> &str {
-        self.fuzzy_id.as_str()
+    pub fn id(&self) -> &str {
+        self.id.as_str()
+    }
+
+    pub fn session_id(&self) -> &str {
+        self.session_id.as_str()
+    }
+
+    pub fn user_id(&self) -> &str {
+        self.user_id.as_str()
     }
 
     pub fn user_type(&self) -> &str {
@@ -31,9 +38,9 @@ impl SessionUser {
 #[derive(Insertable)]
 #[table_name = "session_users"]
 pub struct NewSessionUser {
-    pub fuzzy_id: String,
-    pub session_id: i32,
-    pub user_id: i32,
+    pub id: String,
+    pub session_id: String,
+    pub user_id: String,
     pub user_type: String,
 }
 
@@ -44,9 +51,9 @@ impl NewSessionUser {
         let fuzzy_id = util::fuzzy_id();
         
         NewSessionUser {
-            fuzzy_id,
-            session_id: session.id,
-            user_id: user.id,
+            id:fuzzy_id,
+            session_id: session.id.to_owned(),
+            user_id: user.id.to_owned(),
             user_type: String::from(session_user_type)
         }
     }

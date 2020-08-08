@@ -1,1 +1,0 @@
- insert into coaches (id,user_id,full_name,email,fuzzy_id) values(1,10,'Gopal','gopal@pm-powerconsulting.com','54c6a93e-0253-4d08-9125-eec9488a8f1e');

@@ -13,12 +13,13 @@
  * but you can make e.g. Result<User, String> into a GraphQL type.
  */
 
-use crate::models::sessions::{Session};
-use crate::models::programs::{Program};
-use crate::models::enrollments::{Enrollment};
-use crate::models::notes::{Note};
-use crate::models::user_programs::{ProgramRow};
-use crate::models::user_events::{SessionPeople};
+use crate::models::sessions::Session;
+use crate::models::programs::Program;
+use crate::models::enrollments::Enrollment;
+use crate::models::notes::Note;
+use crate::models::user_programs::ProgramRow;
+use crate::models::user_events::SessionPeople;
+use crate::models::objectives::Objective;
 
 #[derive(juniper::GraphQLObject)]
 pub struct QueryError {
@@ -108,6 +109,17 @@ impl MutationResult<Enrollment> {
 #[juniper::object(name = "NoteResult")]
 impl MutationResult<Note> {
     pub fn note(&self) -> Option<&Note> {
+        self.0.as_ref().ok()
+    }
+
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "ObjectiveResult")]
+impl MutationResult<Objective> {
+    pub fn objective(&self) -> Option<&Objective> {
         self.0.as_ref().ok()
     }
 

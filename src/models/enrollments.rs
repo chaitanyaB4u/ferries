@@ -8,41 +8,46 @@ use crate::schema::enrollments;
 
 #[derive(Queryable, Debug, Identifiable)]
 pub struct Enrollment {
-    pub id: i32,
-    pub program_id: i32,
+    pub id: String,
+    pub program_id: String,
+    pub member_id: String,
     pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
-    pub member_id: i32,
-    pub fuzzy_id: String
+    pub updated_at: NaiveDateTime
 }
 
 #[juniper::object(description = "The fields we offer to the Web-UI ")]
 impl Enrollment {
-    pub fn id(&self) -> i32 {
-        self.id
+    pub fn id(&self) -> &str {
+        self.id.as_str()
+    }
+    pub fn program_id(&self) -> &str {
+        self.program_id.as_str()
+    }
+    pub fn member_id(&self) -> &str {
+        self.member_id.as_str()
     }
 }
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct NewEnrollmentRequest {
-    pub program_fuzzy_id: String,
-    pub user_fuzzy_id: String,
+    pub program_id: String,
+    pub user_id: String,
 }
 
 impl NewEnrollmentRequest {
     pub fn validate(&self) -> Vec<ValidationError> {
         let mut errors: Vec<ValidationError> = Vec::new();
 
-        if self.program_fuzzy_id.trim().is_empty() {
+        if self.program_id.trim().is_empty() {
             errors.push(ValidationError::new(
-                "program_fuzzy_id",
+                "program_id",
                 "The Program id is invalid.",
             ));
         }
 
-        if self.user_fuzzy_id.trim().is_empty() {
+        if self.user_id.trim().is_empty() {
             errors.push(ValidationError::new(
-                "user_fuzzy_id",
+                "user_id",
                 "The User id is invalid.",
             ));
         }
@@ -53,21 +58,21 @@ impl NewEnrollmentRequest {
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct EnrollmentCriteria {
-    pub program_fuzzy_id: String,
+    pub program_id: String,
 }
 
 #[derive(Insertable)]
 #[table_name = "enrollments"]
 pub struct NewEnrollment {
-    pub program_id: i32,
-    pub member_id: i32,
+    pub program_id: String,
+    pub member_id: String,
 }
 
 impl NewEnrollment {
     pub fn from(program: &Program, user: &User) -> NewEnrollment {
         NewEnrollment {
-            program_id: program.id,
-            member_id: user.id,
+            program_id: program.id.to_owned(),
+            member_id: user.id.to_owned(),
         }
     }
 }

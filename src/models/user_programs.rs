@@ -3,12 +3,10 @@ use diesel::prelude::*;
 use crate::models::coaches::Coach;
 use crate::models::enrollments::Enrollment;
 use crate::models::programs::Program;
-use crate::models::users::User;
 
 use crate::schema::coaches::dsl::*;
 use crate::schema::enrollments::dsl::*;
 use crate::schema::programs::dsl::*;
-use crate::schema::users::dsl::*;
 
 #[derive(juniper::GraphQLEnum)]
 pub enum Desire {
@@ -20,8 +18,8 @@ pub enum Desire {
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct ProgramCriteria {
-    user_fuzzy_id: String,
-    program_fuzzy_id: String,
+    user_id: String,
+    program_id: String,
     desire: Desire,
 }
 
@@ -63,20 +61,18 @@ pub fn get_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) ->
         Desire::EXPLORE => get_latest_programs(connection),
         Desire::ENROLLED => get_enrolled_programs(connection, criteria),
         Desire::YOURS => get_coach_programs(connection, criteria),
-        Desire::SINGLE => find_program_by_fuzzy_id(connection, criteria),
+        Desire::SINGLE => find_program(connection, criteria),
     }
 }
 
 fn is_enrolled(connection: &MysqlConnection, criteria: &ProgramCriteria) -> EnrollmentStatus {
-    use crate::schema::programs::dsl::fuzzy_id;
-    use crate::schema::users::dsl::fuzzy_id as user_fuzzy_id;
+   
+    use crate::schema::enrollments::dsl::id;
 
     let enrollment_data: QueryResult<String> = enrollments
-        .inner_join(users)
-        .inner_join(programs)
-        .filter(user_fuzzy_id.eq(&criteria.user_fuzzy_id))
-        .filter(fuzzy_id.eq(&criteria.program_fuzzy_id))
-        .select(user_fuzzy_id)
+        .filter(member_id.eq(&criteria.user_id))
+        .filter(program_id.eq(&criteria.program_id))
+        .select(id)
         .first(connection);
 
     match enrollment_data {
@@ -86,12 +82,12 @@ fn is_enrolled(connection: &MysqlConnection, criteria: &ProgramCriteria) -> Enro
 
 }
 
-fn find_program_by_fuzzy_id(connection: &MysqlConnection, criteria: &ProgramCriteria) -> ProgramResult {
-    use crate::schema::programs::dsl::fuzzy_id;
+fn find_program(connection: &MysqlConnection, criteria: &ProgramCriteria) -> ProgramResult {
+    use crate::schema::programs::dsl::id;
 
     let result: (Program,Coach) = programs
         .inner_join(coaches)
-        .filter(fuzzy_id.eq(&criteria.program_fuzzy_id))
+        .filter(id.eq(&criteria.program_id))
         .first(connection)?;
 
     let enrollment_status = is_enrolled(connection, criteria);
@@ -101,23 +97,19 @@ fn find_program_by_fuzzy_id(connection: &MysqlConnection, criteria: &ProgramCrit
     Ok(vec![program_row])
 }
 
-fn get_enrolled_programs(
-    connection: &MysqlConnection,
-    criteria: &ProgramCriteria,
-) -> ProgramResult {
-    use crate::schema::users::dsl::fuzzy_id;
-    type Row = (Enrollment, User, ProgramType);
+fn get_enrolled_programs(connection: &MysqlConnection,criteria: &ProgramCriteria) -> ProgramResult {
+    
+    type Row = (Enrollment, ProgramType);
 
     let data: Vec<Row> = enrollments
-        .inner_join(users)
         .inner_join(programs.inner_join(coaches))
-        .filter(fuzzy_id.eq(&criteria.user_fuzzy_id))
+        .filter(member_id.eq(&criteria.user_id))
         .load(connection)?;
 
     let mut rows: Vec<ProgramRow> = Vec::new();
 
     for item in data {
-        let pc = item.2;
+        let pc = item.1;
         rows.push(ProgramRow {
             program: pc.0,
             coach: pc.1,
@@ -129,11 +121,11 @@ fn get_enrolled_programs(
 }
 
 fn get_coach_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) -> ProgramResult {
-    use crate::schema::coaches::dsl::fuzzy_id;
+    use crate::schema::coaches::dsl::id;
 
     let data: Vec<ProgramType> = programs
         .inner_join(coaches)
-        .filter(fuzzy_id.eq(&criteria.user_fuzzy_id))
+        .filter(id.eq(&criteria.user_id))
         .order_by(name.asc())
         .load(connection)?;
 

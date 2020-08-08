@@ -4,20 +4,20 @@ use juniper::{FieldResult, RootNode};
 use crate::db_manager::MySqlConnectionPool;
 
 use crate::models::users::{Registration, User,LoginRequest};
-use crate::models::teams::{NewTeamRequest,Team,TeamQuery};
 use crate::models::sessions::{NewSessionRequest, ChangeSessionStateRequest, Session};
 use crate::models::notes::{NewNoteRequest, Note};
 use crate::models::programs::{NewProgramRequest, Program, ChangeProgramStateRequest};
 use crate::models::enrollments::{NewEnrollmentRequest, Enrollment,EnrollmentCriteria};
 use crate::models::user_events::{get_events,get_people,EventRow,EventCriteria,SessionCriteria,SessionPeople};
 use crate::models::user_programs::{get_programs,ProgramCriteria,ProgramRow};
+use crate::models::objectives::{NewObjectiveRequest,Objective};
 
 use crate::services::users::{get_users, register, authenticate};
-use crate::services::teams::{create_team,get_members};
 use crate::services::sessions::{create_session,change_session_state};
 use crate::services::notes::{create_new_note};
 use crate::services::programs::{create_new_program, change_program_state};
 use crate::services::enrollments::{create_new_enrollment,get_active_enrollments};
+use crate::services::objectives::create_objective;
 
 use crate::commons::chassis::{QueryResult,query_error,MutationResult,service_error,mutation_error};
 
@@ -46,11 +46,6 @@ impl QueryRoot {
         get_users(&connection)
     }
 
-    #[graphql(description = "Get the Members of a Team")]
-    fn get_members(context:&DBContext, team_query:TeamQuery) -> Vec<User> {
-        let connection = context.db.get().unwrap();
-        get_members(&connection,&team_query).expect("Something is Wrong")
-    }
 
     #[graphql(description = "Get Programs of a Coach Or Member Or Latest 10.")]
     fn get_programs(context:&DBContext, criteria:ProgramCriteria) -> QueryResult<Vec<ProgramRow>> {
@@ -105,12 +100,6 @@ impl MutationRoot {
         }
     }
 
-    fn create_team(context: &DBContext, new_team_request: NewTeamRequest) -> FieldResult<Team> {
-        let connection = context.db.get().unwrap();
-        let result = create_team(&connection, &new_team_request);
-        
-        Ok(result.expect("Unable to Complete Creating the new team."))
-    }
 
     fn create_program(context: &DBContext, new_program_request: NewProgramRequest) ->MutationResult<Program> {
        
@@ -157,6 +146,22 @@ impl MutationRoot {
         match result {
             Ok(session) => MutationResult(Ok(session)),
             Err(e) => service_error(e),
+        }
+    }
+
+    fn create_objective(context: &DBContext, new_objective_request: NewObjectiveRequest) -> MutationResult<Objective> {
+
+        let errors = new_objective_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_objective(&connection, &new_objective_request);
+
+        match result {
+            Ok(objective) => MutationResult(Ok(objective)),
+            Err(e) => mutation_error(e),
         }
     }
 

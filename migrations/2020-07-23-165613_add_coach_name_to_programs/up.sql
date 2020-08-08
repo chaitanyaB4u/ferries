@@ -1,1 +1,0 @@
-ALTER TABLE programs ADD COLUMN coach_name varchar(255) NOT NULL DEFAULT 'coach';

@@ -11,15 +11,15 @@ use crate::services::programs;
 use crate::schema::enrollments::dsl::*;
 
 
-const WARNING: &'static str = "It seems you have already enrolled the user to this program";
+const WARNING: &'static str = "It seems you have already enrolled in this program";
 const ERROR_002: &'static str = "Error in creating enrollment. Error-002.";
 const ERROR_003: &'static str = "Error in finding any post-enrollment. Error-003.";
 const QUERY_ERROR: &'static str = "Error in fetching enrolled members";
 
 pub fn create_new_enrollment(connection: &MysqlConnection, request: &NewEnrollmentRequest) -> Result<Enrollment,&'static str> {
 
-    let user: User = users::find_by_fuzzy_id(connection,request.user_fuzzy_id.as_str())?;
-    let program: Program = programs::find_by_fuzzy_id(connection,request.program_fuzzy_id.as_str())?;
+    let user: User = users::find(connection,request.user_id.as_str())?;
+    let program: Program = programs::find(connection,request.program_id.as_str())?;
 
     gate_prior_enrollment(connection, &program, &user)?;
     insert_enrollment(connection, &program, &user)?;
@@ -62,8 +62,8 @@ fn gate_prior_enrollment(connection: &MysqlConnection,program: &Program, user: &
 fn find_enrollment(connection: &MysqlConnection,program: &Program, user: &User) -> QueryResult<Enrollment> {
     
     enrollments
-        .filter(program_id.eq(program.id))
-        .filter(member_id.eq(user.id))
+        .filter(program_id.eq(program.id.to_owned()))
+        .filter(member_id.eq(user.id.to_owned()))
         .first(connection)
 }
 
@@ -71,11 +71,9 @@ pub fn get_active_enrollments(connection: &MysqlConnection, criteria: Enrollment
 
     use crate::schema::users::dsl::*;
 
-    let program = programs::find_by_fuzzy_id(connection,criteria.program_fuzzy_id.as_str())?;
-
     let result: QueryResult<Vec<User>>  = enrollments
         .inner_join(users)
-        .filter(program_id.eq(program.id))
+        .filter(program_id.eq(criteria.program_id))
         .select(users::all_columns())
         .order_by(full_name.asc())
         .load(connection);

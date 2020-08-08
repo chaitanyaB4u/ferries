@@ -3,11 +3,10 @@ use chrono::NaiveDateTime;
 
 #[derive(Queryable,Debug)]
 pub struct Coach {
-    pub id: i32,
-    pub user_id: i32,
+    pub id: String,
+    pub user_id: String,
     pub full_name: String,
     pub email: String,
-    pub fuzzy_id: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
@@ -15,8 +14,12 @@ pub struct Coach {
 // Fields that we can safely expose to APIs
 #[juniper::object(description = "The exposed attributes of the Coach Structure.")]
 impl Coach {
-    pub fn fuzzy_id(&self) -> &str {
-        self.fuzzy_id.as_str()
+    pub fn id(&self) -> &str {
+        self.id.as_str()
+    }
+
+    pub fn user_id(&self) -> &str {
+        self.user_id.as_str()
     }
 
     pub fn email(&self) -> &str {
@@ -26,6 +29,4 @@ impl Coach {
     pub fn name(&self) -> &str {
         self.full_name.as_str()
     }
-
-   
 }

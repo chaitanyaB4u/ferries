@@ -14,21 +14,20 @@ use crate::commons::util;
 #[derive(Clone)]
 #[derive(Queryable,Debug,Identifiable)]
 pub struct User {
-    pub id: i32,
+    pub id: String,
     pub full_name: String,
     pub email: String,
-    pub fuzzy_id: String,
     pub blocked: bool,
+    pub user_type: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
-    pub user_type: String,
 }
 
 // Fields that we can safely expose to APIs
 #[juniper::object(description = "The exposed attributes of the User Structure.")]
 impl User {
-    pub fn fuzzy_id(&self) -> &str {
-        self.fuzzy_id.as_str()
+    pub fn id(&self) -> &str {
+        self.id.as_str()
     }
 
     pub fn email(&self) -> &str {
@@ -56,9 +55,9 @@ pub struct Registration {
 #[derive(Insertable)]
 #[table_name = "users"]
 pub struct NewUser {
+    pub id: String,
     pub full_name: String,
     pub email: String,
-    pub fuzzy_id: String,
     pub user_type: String,
 }
 
@@ -72,9 +71,9 @@ impl NewUser {
         let fuzzy_id = util::fuzzy_id();
 
         NewUser {
+            id: fuzzy_id,
             full_name: registration.full_name.to_owned(),
             email: registration.email.to_owned(),
-            fuzzy_id: fuzzy_id,
             user_type: String::from(util::MEMBER)
         }
     }

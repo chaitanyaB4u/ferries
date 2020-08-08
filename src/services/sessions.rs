@@ -26,13 +26,13 @@ const SESSION_UPDATE_ERROR: &'static str = "Unable to complete the requested act
 pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest,) -> Result<Session, &'static str> {
 
     // Obtain the Program
-    let program = programs::find_by_fuzzy_id(connection, request.program_fuzzy_id.as_str())?;
+    let program = programs::find(connection, request.program_id.as_str())?;
 
     // Obtain the People (We need the User corresponds to the Coach)
     let coach: Coach = coaches.find(program.coach_id).first(connection).unwrap();
     let coach: User = users.find(coach.user_id).first(connection).unwrap();
     
-    let member: User = users::find_by_fuzzy_id(connection, request.member_fuzzy_id.as_str())?;
+    let member: User = users::find(connection, request.member_id.as_str())?;
 
     let people_involved: String = util::concat(coach.full_name.as_str(), member.full_name.as_str());
 
@@ -48,10 +48,10 @@ pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest,
     Ok(session)
 }
 
-pub fn find_session_user(connection: &MysqlConnection, session_user_fuzzy_id: &str) -> QueryResult<SessionUser> {
-    use crate::schema::session_users::dsl::fuzzy_id;
+pub fn find_session_user(connection: &MysqlConnection, session_user_id: &str) -> QueryResult<SessionUser> {
+    use crate::schema::session_users::dsl::id;
 
-    session_users.filter(fuzzy_id.eq(session_user_fuzzy_id)).first(connection)
+    session_users.filter(id.eq(session_user_id)).first(connection)
 }
 
 pub fn change_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<Session, &'static str> {
@@ -59,13 +59,13 @@ pub fn change_session_state(connection: &MysqlConnection, request: &ChangeSessio
     
     do_alter_session_state(connection,request)?;
 
-    find_by_fuzzy_id(connection,&request.fuzzy_id.as_str())
+    find(connection,&request.id.as_str())
 }
 
 fn can_change_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<usize, &'static str> {
-    let session_fuzzy_id = &request.fuzzy_id.as_str();
+    let the_id = &request.id.as_str();
 
-    let session = find_by_fuzzy_id(connection,session_fuzzy_id)?;
+    let session = find(connection,the_id)?;
 
     let flag = session.cancelled_at.is_none() && session.actual_end_date.is_none();
 
@@ -78,10 +78,10 @@ fn can_change_session_state(connection: &MysqlConnection, request: &ChangeSessio
 
 fn do_alter_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<usize, &'static str> {
     
-    use crate::schema::sessions::dsl::fuzzy_id;
+    use crate::schema::sessions::dsl::id;
 
-    let session_fuzzy_id = &request.fuzzy_id.as_str();
-    let target_session = sessions.filter(fuzzy_id.eq(session_fuzzy_id));
+    let the_session_id = &request.id.as_str();
+    let target_session = sessions.filter(id.eq(the_session_id));
     let now = util::now();
 
     let result = match request.target_state {
@@ -115,13 +115,13 @@ fn insert_session(connection: &MysqlConnection,new_session: &NewSession) -> Resu
         return Err(SESSION_CREATION_ERROR);
     }
  
-    find_by_fuzzy_id(connection, new_session.fuzzy_id.as_str())
+    find(connection, new_session.id.as_str())
 }
 
-fn find_by_fuzzy_id(connection: &MysqlConnection, session_fuzzy_id: &str) -> Result<Session, &'static str> {
-    use crate::schema::sessions::dsl::fuzzy_id;
+fn find(connection: &MysqlConnection, the_id: &str) -> Result<Session, &'static str> {
+    use crate::schema::sessions::dsl::id;
 
-    let session_result = sessions.filter(fuzzy_id.eq(session_fuzzy_id)).first(connection);
+    let session_result = sessions.filter(id.eq(the_id)).first(connection);
 
     if session_result.is_err() {
         return Err(SESSION_NOT_FOUND);

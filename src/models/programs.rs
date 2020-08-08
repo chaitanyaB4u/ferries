@@ -16,15 +16,14 @@ use crate::commons::util;
  */
 #[derive(Queryable,Debug,Identifiable,Associations)]
 pub struct Program {
-    pub id: i32,
+    pub id: String,
     pub name: String,
-    pub active: bool,
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
-    pub fuzzy_id: String,
     pub description: Option<String>,
+    pub active: bool,
     pub coach_name: String,
-    pub coach_id: i32,
+    pub coach_id: String,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime
 }
 
 /**
@@ -34,8 +33,8 @@ pub struct Program {
 #[juniper::object(description="The fields we offer to the Web-UI ")]
 impl Program {
 
-    pub fn fuzzy_id(&self) -> &str {
-        self.fuzzy_id.as_str()
+    pub fn id(&self) -> &str {
+        self.id.as_str()
     }
     
     pub fn active(&self) -> bool {
@@ -56,6 +55,10 @@ impl Program {
     pub fn coach_name(&self) -> &str {
         self.coach_name.as_str()
     }
+
+    pub fn coach_id(&self) -> &str {
+        self.coach_id.as_str()
+    }
 }
 
 /**
@@ -64,7 +67,7 @@ impl Program {
 #[derive(juniper::GraphQLInputObject)]
 pub struct NewProgramRequest {
     pub name: String,
-    pub coach_fuzzy_id: String,
+    pub coach_id: String,
     pub description: String
 }
 
@@ -82,8 +85,8 @@ impl NewProgramRequest {
             errors.push(ValidationError::new("name", "name of the program is a must."));
         }
 
-        if self.coach_fuzzy_id.trim().is_empty() {
-            errors.push(ValidationError::new("coach_fuzzy_id", "coach fuzzy_id is a must"));
+        if self.coach_id.trim().is_empty() {
+            errors.push(ValidationError::new("coach_id", "coach id is a must"));
         }
 
         if self.description.trim().is_empty() {
@@ -100,12 +103,12 @@ impl NewProgramRequest {
 #[derive(Insertable)]
 #[table_name = "programs"]
 pub struct NewProgram {
+    pub id: String,
     pub name: String,
-    pub coach_id: i32,
-    pub active: bool,
-    pub fuzzy_id: String,
     pub description: String,
+    pub active: bool,
     pub coach_name: String,
+    pub coach_id: String
 }
 
 /**
@@ -119,12 +122,12 @@ impl NewProgram {
         let fuzzy_id = util::fuzzy_id();
 
         NewProgram {
+            id:fuzzy_id,
             name:request.name.to_owned(),
-            coach_id:coach.id,
-            active:false,
-            fuzzy_id:fuzzy_id,
             description:request.description.to_owned(),
-            coach_name:coach.full_name.to_owned()
+            active:false,
+            coach_name:coach.full_name.to_owned(),
+            coach_id:coach.id.to_owned()
         }
         
     }
@@ -139,7 +142,7 @@ pub enum ProgramTargetState {
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct ChangeProgramStateRequest {
-    pub fuzzy_id: String,
+    pub id: String,
     pub target_state: ProgramTargetState
 }
 

@@ -8,13 +8,12 @@ use crate::models::users::User;
 use crate::schema::programs::dsl::*;
 use crate::schema::session_users;
 use crate::schema::session_users::dsl::*;
-use crate::schema::sessions;
 use crate::schema::sessions::dsl::*;
 use crate::schema::users::dsl::*;
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct EventCriteria {
-    user_fuzzy_id: String,
+    user_id: String,
 }
 
 pub struct EventRow {
@@ -39,10 +38,10 @@ impl EventRow {
 }
 
 pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Vec<EventRow> {
-    use crate::schema::users::dsl::fuzzy_id;
+    use crate::schema::users::dsl::id;
 
     let user: User = users
-        .filter(fuzzy_id.eq(criteria.user_fuzzy_id))
+        .filter(id.eq(criteria.user_id))
         .first(connection)
         .unwrap();
 
@@ -67,7 +66,7 @@ pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Vec<
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct SessionCriteria {
-    fuzzy_id: String,
+    id: String,
 }
 
 pub struct SessionPeople {
@@ -91,14 +90,9 @@ pub type PeopleResult = Result<Vec<SessionPeople>, diesel::result::Error>;
 
 pub fn get_people(connection: &MysqlConnection, criteria: SessionCriteria) -> PeopleResult {
     
-    let result_session_id = sessions
-        .filter(sessions::fuzzy_id.eq(criteria.fuzzy_id))
-        .select(sessions::id)
-        .first::<i32>(connection)?;
-
     let result: Vec<(SessionUser, User)> = session_users
         .inner_join(users)
-        .filter(session_id.eq(result_session_id))
+        .filter(session_id.eq(criteria.id))
         .load(connection)?;
 
     let session_people: Vec<SessionPeople> = result
