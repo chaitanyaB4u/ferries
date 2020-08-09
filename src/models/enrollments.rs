@@ -4,6 +4,8 @@ use crate::models::programs::Program;
 use crate::models::users::User;
 
 use crate::commons::chassis::ValidationError;
+use crate::commons::util;
+
 use crate::schema::enrollments;
 
 #[derive(Queryable, Debug, Identifiable)]
@@ -64,13 +66,16 @@ pub struct EnrollmentCriteria {
 #[derive(Insertable)]
 #[table_name = "enrollments"]
 pub struct NewEnrollment {
+    pub id:String,
     pub program_id: String,
     pub member_id: String,
 }
 
 impl NewEnrollment {
     pub fn from(program: &Program, user: &User) -> NewEnrollment {
+        let fuzzy_id = util::fuzzy_id();
         NewEnrollment {
+            id:fuzzy_id,
             program_id: program.id.to_owned(),
             member_id: user.id.to_owned(),
         }

@@ -13,7 +13,7 @@ use crate::schema::enrollments::dsl::*;
 
 const WARNING: &'static str = "It seems you have already enrolled in this program";
 const ERROR_002: &'static str = "Error in creating enrollment. Error-002.";
-const ERROR_003: &'static str = "Error in finding any post-enrollment. Error-003.";
+const ERROR_003: &'static str = "Error in finding enrollment for the program and member. Error-003.";
 const QUERY_ERROR: &'static str = "Error in fetching enrolled members";
 
 pub fn create_new_enrollment(connection: &MysqlConnection, request: &NewEnrollmentRequest) -> Result<Enrollment,&'static str> {
@@ -24,15 +24,7 @@ pub fn create_new_enrollment(connection: &MysqlConnection, request: &NewEnrollme
     gate_prior_enrollment(connection, &program, &user)?;
     insert_enrollment(connection, &program, &user)?;
 
-    let finder_result: QueryResult<Enrollment> = find_enrollment(connection,&program,&user);
-
-    match finder_result {
-        Ok(enrollment) => Ok(enrollment),
-        Err(_) => {
-            return Err(ERROR_003);
-        }
-    } 
-    
+    find(connection,&program,&user)  
 }
 
 fn insert_enrollment (connection: &MysqlConnection,program: &Program, user: &User) -> Result<usize, &'static str> {
@@ -50,7 +42,7 @@ fn insert_enrollment (connection: &MysqlConnection,program: &Program, user: &Use
 
 fn gate_prior_enrollment(connection: &MysqlConnection,program: &Program, user: &User) -> Result<bool, &'static str> {
     
-    let result: QueryResult<Enrollment> = find_enrollment(connection,&program,&user);
+    let result = find(connection,&program,&user);
   
     if result.is_err() {
         return Ok(true)
@@ -59,12 +51,18 @@ fn gate_prior_enrollment(connection: &MysqlConnection,program: &Program, user: &
     Err(WARNING)
 }
 
-fn find_enrollment(connection: &MysqlConnection,program: &Program, user: &User) -> QueryResult<Enrollment> {
+pub fn find(connection: &MysqlConnection,program: &Program, user: &User) -> Result<Enrollment, &'static str> {
     
-    enrollments
+    let result = enrollments
         .filter(program_id.eq(program.id.to_owned()))
         .filter(member_id.eq(user.id.to_owned()))
-        .first(connection)
+        .first(connection);
+
+    if result.is_err() {
+        return Err(ERROR_003);
+    }
+    
+    Ok(result.unwrap())
 }
 
 pub fn get_active_enrollments(connection: &MysqlConnection, criteria: EnrollmentCriteria) -> Result<Vec<User>,&'static str> {

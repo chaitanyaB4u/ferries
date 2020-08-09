@@ -4,16 +4,16 @@ use crate::commons::util;
 
 use crate::services::programs;
 use crate::services::users;
+use crate::services::enrollments;
 
 use crate::models::session_users::{NewSessionUser,SessionUser};
 use crate::models::sessions::{NewSession, NewSessionRequest, Session, ChangeSessionStateRequest,TargetState};
-use crate::models::users::{User};
-use crate::models::coaches::{Coach};
+use crate::models::users::User;
+use crate::models::enrollments::Enrollment;
 
 use crate::schema::session_users::dsl::*;
 use crate::schema::sessions::dsl::*;
-use crate::schema::users::dsl::*;
-use crate::schema::coaches::dsl::*;
+
 
 const SESSION_CREATION_ERROR: &'static str = "Unable to Create Session. Error:002";
 const SESSION_NOT_FOUND: &'static str = "Unable to Create Or Find the Session. Error:003.";
@@ -23,21 +23,22 @@ const SESSION_USER_CREATION_ERROR: &'static str = "Unable to associate users to 
 const SESSION_STATE_CHANGE_PROHIBITED: &'static str = "The session is either cancelled or completed. Hence change of state to the session is not permitted.";
 const SESSION_UPDATE_ERROR: &'static str = "Unable to complete the requested action on the state";
 
-pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest,) -> Result<Session, &'static str> {
+pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest) -> Result<Session, &'static str> {
 
     // Obtain the Program
     let program = programs::find(connection, request.program_id.as_str())?;
 
     // Obtain the People (We need the User corresponds to the Coach)
-    let coach: Coach = coaches.find(program.coach_id).first(connection).unwrap();
-    let coach: User = users.find(coach.user_id).first(connection).unwrap();
+    let coach: User = users::find(connection,program.coach_id.as_str())?;
     
-    let member: User = users::find(connection, request.member_id.as_str())?;
+    let member: User = users::find(connection,request.member_id.as_str())?;
+
+    let _enrollment: Enrollment = enrollments::find(connection, &program, &member)?;
 
     let people_involved: String = util::concat(coach.full_name.as_str(), member.full_name.as_str());
 
     // Inserting the Session
-    let new_session = NewSession::from(request, program.id, people_involved);
+    let new_session = NewSession::from(request, _enrollment.id, people_involved);
     let session = insert_session(connection,&new_session)?;
 
     // Inserting a pair of entries into the Session Users (For Coach & Member)
