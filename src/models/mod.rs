@@ -8,3 +8,4 @@ pub mod user_events;
 pub mod user_programs;
 pub mod coaches;
 pub mod objectives;
+pub mod tasks;

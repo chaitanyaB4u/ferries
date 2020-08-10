@@ -20,6 +20,7 @@ use crate::models::notes::Note;
 use crate::models::user_programs::ProgramRow;
 use crate::models::user_events::SessionPeople;
 use crate::models::objectives::Objective;
+use crate::models::tasks::Task;
 
 #[derive(juniper::GraphQLObject)]
 pub struct QueryError {
@@ -43,6 +44,16 @@ pub struct QueryResult<T>(pub Result<T,QueryError>);
 #[juniper::object(name="ProgramsResult")]
 impl QueryResult<Vec<ProgramRow>> {
     pub fn programs(&self) -> Option<&Vec<ProgramRow>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name="ObjectivesResult")]
+impl QueryResult<Vec<Objective>> {
+    pub fn objectives(&self) -> Option<&Vec<Objective>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {
@@ -120,6 +131,17 @@ impl MutationResult<Note> {
 #[juniper::object(name = "ObjectiveResult")]
 impl MutationResult<Objective> {
     pub fn objective(&self) -> Option<&Objective> {
+        self.0.as_ref().ok()
+    }
+
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "TaskResult")]
+impl MutationResult<Task> {
+    pub fn task(&self) -> Option<&Task> {
         self.0.as_ref().ok()
     }
 

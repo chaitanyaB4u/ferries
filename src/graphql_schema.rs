@@ -10,14 +10,16 @@ use crate::models::programs::{NewProgramRequest, Program, ChangeProgramStateRequ
 use crate::models::enrollments::{NewEnrollmentRequest, Enrollment,EnrollmentCriteria};
 use crate::models::user_events::{get_events,get_people,EventRow,EventCriteria,SessionCriteria,SessionPeople};
 use crate::models::user_programs::{get_programs,ProgramCriteria,ProgramRow};
-use crate::models::objectives::{NewObjectiveRequest,Objective};
+use crate::models::objectives::{NewObjectiveRequest,Objective,ObjectiveCriteria};
+use crate::models::tasks::{NewTaskRequest,Task};
 
 use crate::services::users::{get_users, register, authenticate};
 use crate::services::sessions::{create_session,change_session_state};
 use crate::services::notes::{create_new_note};
 use crate::services::programs::{create_new_program, change_program_state};
 use crate::services::enrollments::{create_new_enrollment,get_active_enrollments};
-use crate::services::objectives::create_objective;
+use crate::services::objectives::{create_objective, get_objectives};
+use crate::services::tasks::create_task;
 
 use crate::commons::chassis::{QueryResult,query_error,MutationResult,service_error,mutation_error};
 
@@ -58,11 +60,21 @@ impl QueryRoot {
         }
     }
 
-
     #[graphql(description = "Get the list of members enrolled into a Program")]
     fn get_enrollments(context:&DBContext, criteria:EnrollmentCriteria) -> Vec<User> {
          let connection = context.db.get().unwrap();
          get_active_enrollments(&connection,criteria).unwrap()
+    }
+
+    #[graphql(description = "Get the list of objectives for an Enrollment")]
+    fn get_objectives(context:&DBContext, criteria:ObjectiveCriteria) -> QueryResult<Vec<Objective>> {
+         let connection = context.db.get().unwrap();
+         let result = get_objectives(&connection,criteria);
+
+         match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
     }
 
 
@@ -161,6 +173,22 @@ impl MutationRoot {
 
         match result {
             Ok(objective) => MutationResult(Ok(objective)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn create_task(context: &DBContext, new_task_request: NewTaskRequest) -> MutationResult<Task> {
+
+        let errors = new_task_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_task(&connection, &new_task_request);
+
+        match result {
+            Ok(task) => MutationResult(Ok(task)),
             Err(e) => mutation_error(e),
         }
     }

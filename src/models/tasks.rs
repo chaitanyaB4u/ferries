@@ -1,20 +1,27 @@
-use crate::schema::objectives;
+use crate::schema::tasks;
 use crate::commons::util;
 use crate::commons::chassis::{ValidationError};
 
 use chrono::{NaiveDateTime,Duration};
 
 #[derive(Queryable,Debug,Identifiable)]
-pub struct Objective {
+pub struct Task {
     pub id:String,
     pub enrollment_id:String,
+    pub actor_id: String,
+    pub name: String,
     pub duration:i32,
+    pub min: i32,
+    pub max: i32,
     pub original_start_date : NaiveDateTime,
     pub original_end_date : NaiveDateTime,
     pub revised_start_date : Option<NaiveDateTime>,
     pub revised_end_date : Option<NaiveDateTime>,
+    pub offered_start_date : Option<NaiveDateTime>,
+    pub offered_end_date : Option<NaiveDateTime>,
     pub actual_start_date : Option<NaiveDateTime>,
     pub actual_end_date : Option<NaiveDateTime>,
+    pub locked : bool,
     pub created_at : NaiveDateTime,
     pub updated_at : NaiveDateTime,
 }
@@ -29,8 +36,7 @@ enum Status {
 }
 
 #[juniper::object]
-impl Objective {
-
+impl Task {
     pub fn id(&self) -> &str {
         self.id.as_str()
     }
@@ -39,8 +45,20 @@ impl Objective {
         self.enrollment_id.as_str()
     }
 
+    pub fn actor_id(&self) -> &str {
+        self.actor_id.as_str()
+    }
+
     pub fn duration(&self) -> i32 {
         self.duration
+    }
+
+    pub fn min(&self) -> i32 {
+        self.min
+    }
+
+    pub fn max(&self) -> i32 {
+        self.max
     }
 
     pub fn scheduleStart(&self) -> NaiveDateTime {
@@ -80,20 +98,23 @@ impl Objective {
     }
 }
 
+
 #[derive(juniper::GraphQLInputObject)]
-pub struct NewObjectiveRequest {
-    pub enrollment_id: String,
-    pub duration: i32,
-    pub start_time: String
+pub struct NewTaskRequest {
+    pub enrollment_id:String,
+    pub actor_id: String,
+    pub start_time: String,
+    pub duration:i32,
+    pub min: i32,
+    pub max: i32
 }
 
+impl NewTaskRequest {
 
-impl NewObjectiveRequest {
-    
     pub fn validate(&self) -> Vec<ValidationError> {
 
         let mut errors: Vec<ValidationError> = Vec::new();
-        
+
         let given_time = self.start_time.as_str();
 
         if !util::is_valid_date(given_time) {
@@ -104,7 +125,7 @@ impl NewObjectiveRequest {
         if util::is_past_date(date) {
             errors.push(ValidationError::new("start_time","should be a future date."));
         }
-        
+
         if self.duration <= 0 {
             errors.push(ValidationError::new("duration","should be a minimum of 1 hour."));
         }
@@ -117,40 +138,36 @@ impl NewObjectiveRequest {
     }
 }
 
-// The Persistable entity
 #[derive(Insertable)]
-#[table_name = "objectives"]
-pub struct NewObjective {
+#[table_name = "tasks"]
+pub struct NewTask {
     pub id:String,
     pub enrollment_id:String,  
+    pub actor_id:String,
     pub duration: i32,
     pub original_start_date: NaiveDateTime,
     pub original_end_date: NaiveDateTime,
 }
 
-impl NewObjective  {
+impl NewTask {
 
-    pub fn from(request: &NewObjectiveRequest) -> NewObjective {
- 
+    pub fn from(request: &NewTaskRequest) -> NewTask {
+
         let start_date = util::as_date(request.start_time.as_str());
         let duration = Duration::hours(request.duration as i64);
         let end_date = start_date.checked_add_signed(duration);
 
         let fuzzy_id = util::fuzzy_id();
-        
-        let new_objective = NewObjective {
-                id:fuzzy_id,
-                enrollment_id:request.enrollment_id.to_owned(),
-                duration:request.duration,
-                original_start_date:start_date,
-                original_end_date: end_date.unwrap_or(start_date)
+
+        let new_task = NewTask {
+            id:fuzzy_id,
+            enrollment_id:request.enrollment_id.to_owned(),
+            actor_id:request.actor_id.to_owned(),
+            duration:request.duration,
+            original_start_date:start_date,
+            original_end_date: end_date.unwrap_or(start_date)
         };
 
-        new_objective
+        new_task
     }
-}
-
-#[derive(juniper::GraphQLInputObject)]
-pub struct ObjectiveCriteria {
-    pub enrollment_id: String,
 }
