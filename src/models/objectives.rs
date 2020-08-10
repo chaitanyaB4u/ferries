@@ -17,6 +17,7 @@ pub struct Objective {
     pub actual_end_date : Option<NaiveDateTime>,
     pub created_at : NaiveDateTime,
     pub updated_at : NaiveDateTime,
+    pub description : Option<String>,
 }
 
 #[derive(juniper::GraphQLEnum)]
@@ -78,13 +79,22 @@ impl Objective {
 
         Status::PLANNED
     }
+
+    pub fn description(&self) -> &str {
+        let value: &str = match &self.description {
+            None=>"_",
+            Some(value)=>value.as_str()
+        };
+        value
+    }
 }
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct NewObjectiveRequest {
     pub enrollment_id: String,
     pub duration: i32,
-    pub start_time: String
+    pub start_time: String,
+    pub description: String
 }
 
 
@@ -126,6 +136,7 @@ pub struct NewObjective {
     pub duration: i32,
     pub original_start_date: NaiveDateTime,
     pub original_end_date: NaiveDateTime,
+    pub description: String,
 }
 
 impl NewObjective  {
@@ -143,7 +154,8 @@ impl NewObjective  {
                 enrollment_id:request.enrollment_id.to_owned(),
                 duration:request.duration,
                 original_start_date:start_date,
-                original_end_date: end_date.unwrap_or(start_date)
+                original_end_date: end_date.unwrap_or(start_date),
+                description: request.description.to_owned()
         };
 
         new_objective

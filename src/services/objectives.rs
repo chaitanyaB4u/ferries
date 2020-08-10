@@ -12,6 +12,9 @@ pub fn create_objective(connection: &MysqlConnection, request: &NewObjectiveRequ
     objectives.filter(id.eq(new_objective.id.to_owned())).first(connection)
 }
 
+/**
+ * Let us stuff the content form the file system
+ */
 pub fn get_objectives(connection: &MysqlConnection, criteria: ObjectiveCriteria) -> Result<Vec<Objective>,diesel::result::Error> {
 
     objectives

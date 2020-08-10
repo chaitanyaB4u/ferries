@@ -32,6 +32,7 @@ table! {
         actual_end_date -> Nullable<Datetime>,
         created_at -> Datetime,
         updated_at -> Datetime,
+        description -> Nullable<Text>,
     }
 }
 
@@ -141,6 +142,7 @@ table! {
         locked -> Bool,
         created_at -> Datetime,
         updated_at -> Datetime,
+        description -> Nullable<Text>,
     }
 }
 
