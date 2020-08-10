@@ -21,6 +21,8 @@ use crate::models::user_programs::ProgramRow;
 use crate::models::user_events::SessionPeople;
 use crate::models::objectives::Objective;
 use crate::models::tasks::Task;
+use crate::models::options::Constraint;
+use crate::models::observations::Observation;
 
 #[derive(juniper::GraphQLObject)]
 pub struct QueryError {
@@ -54,6 +56,36 @@ impl QueryResult<Vec<ProgramRow>> {
 #[juniper::object(name="ObjectivesResult")]
 impl QueryResult<Vec<Objective>> {
     pub fn objectives(&self) -> Option<&Vec<Objective>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name="OptionsResult")]
+impl QueryResult<Vec<Constraint>> {
+    pub fn options(&self) -> Option<&Vec<Constraint>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name="ObservationsResult")]
+impl QueryResult<Vec<Observation>> {
+    pub fn observations(&self) -> Option<&Vec<Observation>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name="TasksResult")]
+impl QueryResult<Vec<Task>> {
+    pub fn tasks(&self) -> Option<&Vec<Task>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {
@@ -131,6 +163,28 @@ impl MutationResult<Note> {
 #[juniper::object(name = "ObjectiveResult")]
 impl MutationResult<Objective> {
     pub fn objective(&self) -> Option<&Objective> {
+        self.0.as_ref().ok()
+    }
+
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "OptionResult")]
+impl MutationResult<Constraint> {
+    pub fn options(&self) -> Option<&Constraint> {
+        self.0.as_ref().ok()
+    }
+
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "ObservationResult")]
+impl MutationResult<Observation> {
+    pub fn observation(&self) -> Option<&Observation> {
         self.0.as_ref().ok()
     }
 

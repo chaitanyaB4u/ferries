@@ -63,6 +63,11 @@ pub struct EnrollmentCriteria {
     pub program_id: String,
 }
 
+#[derive(juniper::GraphQLInputObject)]
+pub struct PlanCriteria {
+    pub enrollment_id: String,
+}
+
 #[derive(Insertable)]
 #[table_name = "enrollments"]
 pub struct NewEnrollment {

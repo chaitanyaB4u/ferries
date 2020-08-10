@@ -37,6 +37,26 @@ table! {
 }
 
 table! {
+    observations (id) {
+        id -> Varchar,
+        enrollment_id -> Varchar,
+        description -> Nullable<Text>,
+        created_at -> Datetime,
+        updated_at -> Datetime,
+    }
+}
+
+table! {
+    options (id) {
+        id -> Varchar,
+        enrollment_id -> Varchar,
+        description -> Nullable<Text>,
+        created_at -> Datetime,
+        updated_at -> Datetime,
+    }
+}
+
+table! {
     programs (id) {
         id -> Varchar,
         name -> Varchar,
@@ -162,6 +182,8 @@ joinable!(coaches -> users (user_id));
 joinable!(enrollments -> programs (program_id));
 joinable!(enrollments -> users (member_id));
 joinable!(objectives -> enrollments (enrollment_id));
+joinable!(observations -> enrollments (enrollment_id));
+joinable!(options -> enrollments (enrollment_id));
 joinable!(programs -> coaches (coach_id));
 joinable!(session_files -> session_notes (session_note_id));
 joinable!(session_notes -> session_users (session_user_id));
@@ -178,6 +200,8 @@ allow_tables_to_appear_in_same_query!(
     coaches,
     enrollments,
     objectives,
+    observations,
+    options,
     programs,
     session_files,
     session_notes,

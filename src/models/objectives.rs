@@ -161,8 +161,3 @@ impl NewObjective  {
         new_objective
     }
 }
-
-#[derive(juniper::GraphQLInputObject)]
-pub struct ObjectiveCriteria {
-    pub enrollment_id: String,
-}

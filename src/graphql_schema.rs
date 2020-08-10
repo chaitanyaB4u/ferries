@@ -7,11 +7,13 @@ use crate::models::users::{Registration, User,LoginRequest};
 use crate::models::sessions::{NewSessionRequest, ChangeSessionStateRequest, Session};
 use crate::models::notes::{NewNoteRequest, Note};
 use crate::models::programs::{NewProgramRequest, Program, ChangeProgramStateRequest};
-use crate::models::enrollments::{NewEnrollmentRequest, Enrollment,EnrollmentCriteria};
+use crate::models::enrollments::{NewEnrollmentRequest, Enrollment,EnrollmentCriteria, PlanCriteria};
 use crate::models::user_events::{get_events,get_people,EventRow,EventCriteria,SessionCriteria,SessionPeople};
 use crate::models::user_programs::{get_programs,ProgramCriteria,ProgramRow};
-use crate::models::objectives::{NewObjectiveRequest,Objective,ObjectiveCriteria};
+use crate::models::objectives::{NewObjectiveRequest,Objective};
 use crate::models::tasks::{NewTaskRequest,Task};
+use crate::models::options::{NewOptionRequest,Constraint};
+use crate::models::observations::{NewObservationRequest,Observation};
 
 use crate::services::users::{get_users, register, authenticate};
 use crate::services::sessions::{create_session,change_session_state};
@@ -19,7 +21,9 @@ use crate::services::notes::{create_new_note};
 use crate::services::programs::{create_new_program, change_program_state};
 use crate::services::enrollments::{create_new_enrollment,get_active_enrollments};
 use crate::services::objectives::{create_objective, get_objectives};
-use crate::services::tasks::create_task;
+use crate::services::tasks::{create_task,get_tasks};
+use crate::services::options::{create_option, get_options};
+use crate::services::observations::{create_observation, get_observations};
 
 use crate::commons::chassis::{QueryResult,query_error,MutationResult,service_error,mutation_error};
 
@@ -67,7 +71,7 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get the list of objectives for an Enrollment")]
-    fn get_objectives(context:&DBContext, criteria:ObjectiveCriteria) -> QueryResult<Vec<Objective>> {
+    fn get_objectives(context:&DBContext, criteria:PlanCriteria) -> QueryResult<Vec<Objective>> {
          let connection = context.db.get().unwrap();
          let result = get_objectives(&connection,criteria);
 
@@ -77,6 +81,38 @@ impl QueryRoot {
         }
     }
 
+    #[graphql(description = "Get the list of options for an Enrollment")]
+    fn get_options(context:&DBContext, criteria:PlanCriteria) -> QueryResult<Vec<Constraint>> {
+         let connection = context.db.get().unwrap();
+         let result = get_options(&connection,criteria);
+
+         match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
+    }
+
+    #[graphql(description = "Get the list of observations for an Enrollment")]
+    fn get_observations(context:&DBContext, criteria:PlanCriteria) -> QueryResult<Vec<Observation>> {
+         let connection = context.db.get().unwrap();
+         let result = get_observations(&connection,criteria);
+
+         match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
+    }
+
+    #[graphql(description = "Get the list of tasks for an Enrollment")]
+    fn get_tasks(context:&DBContext, criteria:PlanCriteria) -> QueryResult<Vec<Task>> {
+         let connection = context.db.get().unwrap();
+         let result = get_tasks(&connection,criteria);
+
+         match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
+    }
 
     #[graphql(description = "Get the Events for a User")]
     fn get_sessions(context:&DBContext, criteria:EventCriteria) -> Vec<EventRow> { 
@@ -173,6 +209,38 @@ impl MutationRoot {
 
         match result {
             Ok(objective) => MutationResult(Ok(objective)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn create_option(context: &DBContext, new_option_request: NewOptionRequest) -> MutationResult<Constraint> {
+
+        let errors = new_option_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_option(&connection, &new_option_request);
+
+        match result {
+            Ok(option) => MutationResult(Ok(option)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn create_observation(context: &DBContext, new_observation_request: NewObservationRequest) -> MutationResult<Observation> {
+
+        let errors = new_observation_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_observation(&connection, &new_observation_request);
+
+        match result {
+            Ok(option) => MutationResult(Ok(option)),
             Err(e) => mutation_error(e),
         }
     }

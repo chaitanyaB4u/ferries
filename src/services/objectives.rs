@@ -1,7 +1,8 @@
 use diesel::prelude::*;
 
-use crate::models::objectives::{NewObjective,NewObjectiveRequest,Objective, ObjectiveCriteria};
+use crate::models::objectives::{NewObjective,NewObjectiveRequest,Objective};
 use crate::schema::objectives::dsl::*;
+use crate::models::enrollments::PlanCriteria;
 
 pub fn create_objective(connection: &MysqlConnection, request: &NewObjectiveRequest) -> Result<Objective, diesel::result::Error> {
 
@@ -15,7 +16,7 @@ pub fn create_objective(connection: &MysqlConnection, request: &NewObjectiveRequ
 /**
  * Let us stuff the content form the file system
  */
-pub fn get_objectives(connection: &MysqlConnection, criteria: ObjectiveCriteria) -> Result<Vec<Objective>,diesel::result::Error> {
+pub fn get_objectives(connection: &MysqlConnection, criteria: PlanCriteria) -> Result<Vec<Objective>,diesel::result::Error> {
 
     objectives
         .filter(enrollment_id.eq(criteria.enrollment_id))

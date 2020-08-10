@@ -4,4 +4,6 @@ pub mod enrollments;
 pub mod sessions;
 pub mod notes;
 pub mod objectives;
+pub mod options;
+pub mod observations;
 pub mod tasks;
