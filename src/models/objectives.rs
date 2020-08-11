@@ -141,7 +141,7 @@ impl NewObjective  {
     pub fn from(request: &NewObjectiveRequest) -> NewObjective {
  
         let start_date = util::as_date(request.start_time.as_str());
-        let end_date = util::as_date(request.start_time.as_str());
+        let end_date = util::as_date(request.end_time.as_str());
         
         let fuzzy_id = util::fuzzy_id();
         

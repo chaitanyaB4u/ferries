@@ -42,6 +42,10 @@ impl Task {
         self.id.as_str()
     }
 
+    pub fn name(&self) -> &str {
+        self.name.as_str()
+    }
+
     pub fn enrollment_id(&self) -> &str {
         self.enrollment_id.as_str()
     }
@@ -112,9 +116,8 @@ pub struct NewTaskRequest {
     pub actor_id: String,
     pub start_time: String,
     pub duration: i32,
-    pub min: i32,
-    pub max: i32,
     pub description: String,
+    pub name: String,
 }
 
 impl NewTaskRequest {
@@ -163,6 +166,7 @@ pub struct NewTask {
     pub original_start_date: NaiveDateTime,
     pub original_end_date: NaiveDateTime,
     pub description: String,
+    pub name: String,
 }
 
 impl NewTask {
@@ -180,7 +184,8 @@ impl NewTask {
             duration: request.duration,
             original_start_date: start_date,
             original_end_date: end_date.unwrap_or(start_date),
-            description: request.description.to_owned()
+            description: request.description.to_owned(),
+            name:request.name.to_owned(),
         };
 
         new_task
