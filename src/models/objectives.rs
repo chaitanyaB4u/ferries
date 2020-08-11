@@ -2,7 +2,7 @@ use crate::schema::objectives;
 use crate::commons::util;
 use crate::commons::chassis::{ValidationError};
 
-use chrono::{NaiveDateTime,Duration};
+use chrono::{NaiveDateTime};
 
 #[derive(Queryable,Debug,Identifiable)]
 pub struct Objective {
@@ -92,8 +92,8 @@ impl Objective {
 #[derive(juniper::GraphQLInputObject)]
 pub struct NewObjectiveRequest {
     pub enrollment_id: String,
-    pub duration: i32,
     pub start_time: String,
+    pub end_time: String,
     pub description: String
 }
 
@@ -115,10 +115,7 @@ impl NewObjectiveRequest {
             errors.push(ValidationError::new("start_time","should be a future date."));
         }
         
-        if self.duration <= 0 {
-            errors.push(ValidationError::new("duration","should be a minimum of 1 hour."));
-        }
-
+        
         if self.enrollment_id.trim().is_empty(){
             errors.push(ValidationError::new("enrollment_id","Enrollment Id is a must."));
         }
@@ -144,17 +141,16 @@ impl NewObjective  {
     pub fn from(request: &NewObjectiveRequest) -> NewObjective {
  
         let start_date = util::as_date(request.start_time.as_str());
-        let duration = Duration::hours(request.duration as i64);
-        let end_date = start_date.checked_add_signed(duration);
-
+        let end_date = util::as_date(request.start_time.as_str());
+        
         let fuzzy_id = util::fuzzy_id();
         
         let new_objective = NewObjective {
                 id:fuzzy_id,
                 enrollment_id:request.enrollment_id.to_owned(),
-                duration:request.duration,
+                duration:1,
                 original_start_date:start_date,
-                original_end_date: end_date.unwrap_or(start_date),
+                original_end_date: end_date,
                 description: request.description.to_owned()
         };
 
