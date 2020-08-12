@@ -143,3 +143,8 @@ impl NewNoteFile {
 
     }
 }
+
+#[derive(juniper::GraphQLInputObject)]
+pub struct NoteCriteria {
+    pub session_user_id: String,
+}

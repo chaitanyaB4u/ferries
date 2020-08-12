@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 
-use crate::models::notes::{NewNoteRequest,NewNote, NewNoteFile, Note};
+use crate::models::notes::{NewNoteRequest,NewNote, NewNoteFile, Note, NoteCriteria};
 
 use crate::services::sessions::find_session_user;
 
@@ -37,6 +37,13 @@ fn insert_files(connection: &MysqlConnection, request: &NewNoteRequest, note: &N
                 .collect();
 
     diesel::insert_into(session_files).values(insert_files).execute(connection)
+}
+
+pub fn get_notes(connection: &MysqlConnection, criteria: NoteCriteria) -> Result<Vec<Note>,diesel::result::Error> {
+
+    session_notes
+        .filter(session_user_id.eq(criteria.session_user_id))
+        .load(connection)
 }
 
 fn find(connection: &MysqlConnection,the_id: &str) -> QueryResult<Note> {

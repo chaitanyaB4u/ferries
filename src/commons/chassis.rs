@@ -93,6 +93,16 @@ impl QueryResult<Vec<Task>> {
     }
 }
 
+#[juniper::object(name="NotesResult")]
+impl QueryResult<Vec<Note>> {
+    pub fn notes(&self) -> Option<&Vec<Note>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
 #[juniper::object(name="SessionUsers")]
 impl QueryResult<Vec<SessionPeople>> {
     pub fn users(&self) -> Option<&Vec<SessionPeople>> {

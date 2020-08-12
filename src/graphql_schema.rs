@@ -5,7 +5,7 @@ use crate::db_manager::MySqlConnectionPool;
 
 use crate::models::users::{Registration, User,LoginRequest};
 use crate::models::sessions::{NewSessionRequest, ChangeSessionStateRequest, Session};
-use crate::models::notes::{NewNoteRequest, Note};
+use crate::models::notes::{NewNoteRequest, Note, NoteCriteria};
 use crate::models::programs::{NewProgramRequest, Program, ChangeProgramStateRequest};
 use crate::models::enrollments::{NewEnrollmentRequest, Enrollment,EnrollmentCriteria, PlanCriteria};
 use crate::models::user_events::{get_events,get_people,EventRow,EventCriteria,SessionCriteria,SessionPeople};
@@ -17,7 +17,7 @@ use crate::models::observations::{NewObservationRequest,Observation};
 
 use crate::services::users::{get_users, register, authenticate};
 use crate::services::sessions::{create_session,change_session_state};
-use crate::services::notes::{create_new_note};
+use crate::services::notes::{create_new_note, get_notes};
 use crate::services::programs::{create_new_program, change_program_state};
 use crate::services::enrollments::{create_new_enrollment,get_active_enrollments};
 use crate::services::objectives::{create_objective, get_objectives};
@@ -107,6 +107,17 @@ impl QueryRoot {
     fn get_tasks(context:&DBContext, criteria:PlanCriteria) -> QueryResult<Vec<Task>> {
          let connection = context.db.get().unwrap();
          let result = get_tasks(&connection,criteria);
+
+         match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
+    }
+
+    #[graphql(description = "Get the list of notes for a SessionUser")]
+    fn get_notes(context:&DBContext, criteria:NoteCriteria) -> QueryResult<Vec<Note>> {
+         let connection = context.db.get().unwrap();
+         let result = get_notes(&connection,criteria);
 
          match result {
             Ok(value) => QueryResult(Ok(value)),
