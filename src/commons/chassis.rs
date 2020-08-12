@@ -65,7 +65,7 @@ impl QueryResult<Vec<Objective>> {
 
 #[juniper::object(name="OptionsResult")]
 impl QueryResult<Vec<Constraint>> {
-    pub fn options(&self) -> Option<&Vec<Constraint>> {
+    pub fn constraints(&self) -> Option<&Vec<Constraint>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {
@@ -173,7 +173,7 @@ impl MutationResult<Objective> {
 
 #[juniper::object(name = "OptionResult")]
 impl MutationResult<Constraint> {
-    pub fn options(&self) -> Option<&Constraint> {
+    pub fn constraint(&self) -> Option<&Constraint> {
         self.0.as_ref().ok()
     }
 
