@@ -18,7 +18,7 @@ use crate::models::programs::Program;
 use crate::models::enrollments::Enrollment;
 use crate::models::notes::Note;
 use crate::models::user_programs::ProgramRow;
-use crate::models::user_events::SessionPeople;
+use crate::models::user_events::{SessionPeople,EventRow};
 use crate::models::objectives::Objective;
 use crate::models::tasks::Task;
 use crate::models::options::Constraint;
@@ -96,6 +96,16 @@ impl QueryResult<Vec<Task>> {
 #[juniper::object(name="NotesResult")]
 impl QueryResult<Vec<Note>> {
     pub fn notes(&self) -> Option<&Vec<Note>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name="EventsResult")]
+impl QueryResult<Vec<EventRow>> {
+    pub fn sessions(&self) -> Option<&Vec<EventRow>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {

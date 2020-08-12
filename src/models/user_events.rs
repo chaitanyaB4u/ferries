@@ -4,12 +4,17 @@ use crate::models::programs::Program;
 use crate::models::session_users::SessionUser;
 use crate::models::sessions::Session;
 use crate::models::users::User;
+use crate::models::enrollments::{PlanCriteria};
 
 use crate::schema::programs::dsl::*;
 use crate::schema::session_users;
 use crate::schema::session_users::dsl::*;
+use crate::schema::sessions;
 use crate::schema::sessions::dsl::*;
 use crate::schema::users::dsl::*;
+
+use crate::schema::enrollments;
+use crate::schema::enrollments::dsl::*;
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct EventCriteria {
@@ -37,20 +42,14 @@ impl EventRow {
     }
 }
 
-pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Vec<EventRow> {
-    use crate::schema::users::dsl::id;
-
-    let user: User = users
-        .filter(id.eq(criteria.user_id))
-        .first(connection)
-        .unwrap();
+pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Result<Vec<EventRow>,diesel::result::Error> {
 
     let rows: Vec<(Session, Program, SessionUser)> = sessions
         .inner_join(programs)
         .inner_join(session_users)
-        .filter(session_users::user_id.eq(user.id))
-        .load(connection)
-        .unwrap();
+        .filter(session_users::user_id.eq(criteria.user_id))
+        .load(connection)?;
+
     let mut event_rows: Vec<EventRow> = Vec::new();
 
     for row in rows {
@@ -61,7 +60,7 @@ pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Vec<
         });
     }
 
-    event_rows
+    Ok(event_rows)
 }
 
 #[derive(juniper::GraphQLInputObject)]
@@ -101,4 +100,34 @@ pub fn get_people(connection: &MysqlConnection, criteria: SessionCriteria) -> Pe
         .collect();
 
     Ok(session_people)
+}
+
+pub fn get_actor_sessions(connection: &MysqlConnection, criteria: PlanCriteria) -> Result<Vec<EventRow>,diesel::result::Error> {
+    
+    let actor_id: String = enrollments
+                    .filter(enrollments::id.eq(&criteria.enrollment_id))
+                    .select(member_id)
+                    .first(connection)?;
+                
+
+    let rows: Vec<(Session, Program, SessionUser)> = sessions
+        .inner_join(programs)
+        .inner_join(session_users)
+        .filter(sessions::enrollment_id.eq(&criteria.enrollment_id))
+        .filter(session_users::user_id.eq(actor_id))
+        .load(connection)?;
+        
+
+    let mut event_rows: Vec<EventRow> = Vec::new();
+
+    for row in rows {
+        event_rows.push(EventRow {
+            session: row.0,
+            program: row.1,
+            session_user: row.2,
+        });
+    }
+
+    Ok(event_rows)
+    
 }

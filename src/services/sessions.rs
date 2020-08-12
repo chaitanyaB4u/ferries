@@ -9,7 +9,7 @@ use crate::services::enrollments;
 use crate::models::session_users::{NewSessionUser,SessionUser};
 use crate::models::sessions::{NewSession, NewSessionRequest, Session, ChangeSessionStateRequest,TargetState};
 use crate::models::users::User;
-use crate::models::enrollments::Enrollment;
+use crate::models::enrollments::{Enrollment};
 
 use crate::schema::session_users::dsl::*;
 use crate::schema::sessions::dsl::*;
@@ -143,6 +143,3 @@ fn insert_session_users(connection: &MysqlConnection, coach: &NewSessionUser, me
 
     Ok(result.unwrap())
 }
-
-
-

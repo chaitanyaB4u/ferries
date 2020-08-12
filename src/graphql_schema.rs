@@ -8,7 +8,7 @@ use crate::models::sessions::{NewSessionRequest, ChangeSessionStateRequest, Sess
 use crate::models::notes::{NewNoteRequest, Note, NoteCriteria};
 use crate::models::programs::{NewProgramRequest, Program, ChangeProgramStateRequest};
 use crate::models::enrollments::{NewEnrollmentRequest, Enrollment,EnrollmentCriteria, PlanCriteria};
-use crate::models::user_events::{get_events,get_people,EventRow,EventCriteria,SessionCriteria,SessionPeople};
+use crate::models::user_events::{get_events,get_people,EventRow,EventCriteria,SessionCriteria,SessionPeople, get_actor_sessions};
 use crate::models::user_programs::{get_programs,ProgramCriteria,ProgramRow};
 use crate::models::objectives::{NewObjectiveRequest,Objective};
 use crate::models::tasks::{NewTaskRequest,Task};
@@ -103,6 +103,28 @@ impl QueryRoot {
         }
     }
 
+    #[graphql(description = "Get the list of sessions for an Enrollment")]
+    fn get_sessions(context:&DBContext, criteria:PlanCriteria) -> QueryResult<Vec<EventRow>> {
+         let connection = context.db.get().unwrap();
+         let result = get_actor_sessions(&connection,criteria);
+
+         match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
+    }
+
+    #[graphql(description = "Get the Events for a User, during a period")]
+    fn get_events(context:&DBContext, criteria:EventCriteria) -> QueryResult<Vec<EventRow>> { 
+        let connection = context.db.get().unwrap();
+        let result = get_events(&connection,criteria);
+
+        match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
+    }
+
     #[graphql(description = "Get the list of tasks for an Enrollment")]
     fn get_tasks(context:&DBContext, criteria:PlanCriteria) -> QueryResult<Vec<Task>> {
          let connection = context.db.get().unwrap();
@@ -123,12 +145,6 @@ impl QueryRoot {
             Ok(value) => QueryResult(Ok(value)),
             Err(e) => query_error(e),
         }
-    }
-
-    #[graphql(description = "Get the Events for a User")]
-    fn get_sessions(context:&DBContext, criteria:EventCriteria) -> Vec<EventRow> { 
-        let connection = context.db.get().unwrap();
-        get_events(&connection,criteria)
     }
 
     #[graphql(description = "Get the People participating in an Event")]
