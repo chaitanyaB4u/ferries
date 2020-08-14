@@ -30,9 +30,11 @@ pub enum EnrollmentStatus {
     NO
 }
 
+
 pub struct ProgramRow {
     pub program: Program,
     pub coach: Coach,
+    pub enrollment_id: String,
     pub enrollment_status: EnrollmentStatus,
 }
 
@@ -50,7 +52,12 @@ impl ProgramRow {
     pub fn enrollment_status(&self) -> &EnrollmentStatus {
         &self.enrollment_status
     }
+
+    pub fn enrollment_id(&self) -> &str {
+        &self.enrollment_id
+    }
 }
+
 
 type ProgramType = (Program, Coach);
 
@@ -65,7 +72,7 @@ pub fn get_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) ->
     }
 }
 
-fn is_enrolled(connection: &MysqlConnection, criteria: &ProgramCriteria) -> EnrollmentStatus {
+fn get_enrollment(connection: &MysqlConnection, criteria: &ProgramCriteria) -> (String,EnrollmentStatus) {
    
     use crate::schema::enrollments::dsl::id;
 
@@ -76,8 +83,8 @@ fn is_enrolled(connection: &MysqlConnection, criteria: &ProgramCriteria) -> Enro
         .first(connection);
 
     match enrollment_data {
-        Ok(_) => EnrollmentStatus::YES,
-        Err(_) => EnrollmentStatus::NO,
+        Ok(enrollment_id) => (enrollment_id,EnrollmentStatus::YES),
+        Err(_) => (String::from(""),EnrollmentStatus::NO),
     }
 
 }
@@ -90,9 +97,13 @@ fn find_program(connection: &MysqlConnection, criteria: &ProgramCriteria) -> Pro
         .filter(id.eq(&criteria.program_id))
         .first(connection)?;
 
-    let enrollment_status = is_enrolled(connection, criteria);
+    let enrollment = get_enrollment(connection, criteria);
 
-    let program_row = ProgramRow {program:result.0, coach:result.1, enrollment_status};
+    let program_row = ProgramRow {
+            program:result.0, 
+            coach:result.1, 
+            enrollment_id: enrollment.0, 
+            enrollment_status: enrollment.1};
 
     Ok(vec![program_row])
 }
@@ -109,11 +120,13 @@ fn get_enrolled_programs(connection: &MysqlConnection,criteria: &ProgramCriteria
     let mut rows: Vec<ProgramRow> = Vec::new();
 
     for item in data {
+        let enrollment = item.0;
         let pc = item.1;
         rows.push(ProgramRow {
             program: pc.0,
             coach: pc.1,
-            enrollment_status: EnrollmentStatus::YES,
+            enrollment_id: enrollment.id,
+            enrollment_status: EnrollmentStatus::YES
         });
     }
 
@@ -152,8 +165,9 @@ fn to_program_rows(data: Vec<ProgramType>) -> Vec<ProgramRow> {
         rows.push(ProgramRow {
             program: pc.0,
             coach: pc.1,
-            enrollment_status: EnrollmentStatus::UNKNOWN,
-        });
+            enrollment_id: String::from(""),
+            enrollment_status: EnrollmentStatus::UNKNOWN
+       });
     }
 
     rows
