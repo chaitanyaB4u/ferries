@@ -46,7 +46,7 @@ async fn offer_program_content(_request: HttpRequest) -> Result<NamedFile,Error>
 
 
 async fn graphiql() -> HttpResponse {
-    let html = graphiql_source("http://127.0.0.1:8088/graphql");
+    let html = graphiql_source("http://localhost:8088/graphql");
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
         .body(html)
@@ -83,19 +83,18 @@ async fn graphql(
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
-
-    std::fs::create_dir_all(SESSION_ASSET_DIR).unwrap();
-    std::fs::create_dir_all(PROGRAM_ASSET_DIR).unwrap();
-
     env_logger::init();
     dotenv::dotenv().ok();
 
+    std::fs::create_dir_all(SESSION_ASSET_DIR).unwrap();
+    std::fs::create_dir_all(PROGRAM_ASSET_DIR).unwrap();
+   
     let pool = establish_connection();
     let db_context = DBContext { db: pool.clone() };
 
     let gq_schema = std::sync::Arc::new(create_gq_schema());
-    let bind = "localhost:8088";
-    println!("Starting server at: {}", &bind);
+    let bind = dotenv::var("BIND").unwrap();
+    println!("Server is running at: {}", &bind);
 
     HttpServer::new(move || {
         App::new()
@@ -114,6 +113,8 @@ async fn main() -> std::io::Result<()> {
     .bind(&bind)?
     .run()
     .await
+
+    
 }
 
 #[cfg(test)]

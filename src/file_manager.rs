@@ -7,10 +7,8 @@ use std::io::Write;
 use actix_files::NamedFile;
 use std::path::PathBuf;
 
-
-pub const SESSION_ASSET_DIR: &'static str = "/Users/harinimaniam/assets/sessions";
-
-pub const PROGRAM_ASSET_DIR: &'static str = "/Users/harinimaniam/assets/programs";
+pub const SESSION_ASSET_DIR: &'static str = "/Users/pmpower/assets/sessions";
+pub const PROGRAM_ASSET_DIR: &'static str = "/Users/pmpower/assets/programs";
  
 pub async fn manage_notes_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let mut file_paths: Vec<String> = Vec::new();
