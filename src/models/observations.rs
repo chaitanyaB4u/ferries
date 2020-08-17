@@ -4,7 +4,7 @@ use crate::commons::util;
 
 use chrono::{NaiveDateTime};
 
-#[derive(Queryable,Debug)]
+#[derive(Queryable,Debug,Identifiable)]
 pub struct Observation {
     pub id:String,
     pub enrollment_id:String,
@@ -52,6 +52,25 @@ impl NewObservationRequest {
 
         if self.enrollment_id.trim().is_empty(){
             errors.push(ValidationError::new("enrollment_id","Enrollment Id is a must."));
+        }
+
+        errors
+    }
+}
+
+#[derive(juniper::GraphQLInputObject)]
+pub struct UpdateObservationRequest {
+    pub id: String,
+    pub description: String
+}
+
+impl UpdateObservationRequest {
+    pub fn validate(&self) -> Vec<ValidationError> {
+
+        let mut errors: Vec<ValidationError> = Vec::new();
+
+        if self.id.trim().is_empty(){
+            errors.push(ValidationError::new("id","Id is a must."));
         }
 
         errors
