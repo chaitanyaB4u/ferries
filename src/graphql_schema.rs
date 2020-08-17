@@ -12,7 +12,7 @@ use crate::models::user_events::{get_events,get_people,EventRow,EventCriteria,Se
 use crate::models::user_programs::{get_programs,ProgramCriteria,ProgramRow};
 use crate::models::objectives::{NewObjectiveRequest,Objective};
 use crate::models::tasks::{NewTaskRequest,Task};
-use crate::models::options::{NewOptionRequest,Constraint};
+use crate::models::options::{NewOptionRequest,Constraint,UpdateOptionRequest};
 use crate::models::observations::{NewObservationRequest,Observation,UpdateObservationRequest};
 
 use crate::services::users::{get_users, register, authenticate};
@@ -22,7 +22,7 @@ use crate::services::programs::{create_new_program, change_program_state};
 use crate::services::enrollments::{create_new_enrollment,get_active_enrollments};
 use crate::services::objectives::{create_objective, get_objectives};
 use crate::services::tasks::{create_task,get_tasks};
-use crate::services::options::{create_option, get_options};
+use crate::services::options::{create_option, get_options, update_option};
 use crate::services::observations::{create_observation, get_observations, update_observation};
 
 use crate::commons::chassis::{QueryResult,query_error,MutationResult,service_error,mutation_error};
@@ -273,6 +273,22 @@ impl MutationRoot {
 
         match result {
             Ok(obs) => MutationResult(Ok(obs)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn update_option(context: &DBContext, update_option_request: UpdateOptionRequest) -> MutationResult<Constraint> {
+
+        let errors = update_option_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = update_option(&connection, &update_option_request);
+
+        match result {
+            Ok(option) => MutationResult(Ok(option)),
             Err(e) => mutation_error(e),
         }
     }

@@ -58,6 +58,25 @@ impl NewOptionRequest {
     }
 }
 
+#[derive(juniper::GraphQLInputObject)]
+pub struct UpdateOptionRequest {
+    pub id: String,
+    pub description: String
+}
+
+impl UpdateOptionRequest {
+    pub fn validate(&self) -> Vec<ValidationError> {
+
+        let mut errors: Vec<ValidationError> = Vec::new();
+
+        if self.id.trim().is_empty(){
+            errors.push(ValidationError::new("id","Id is a must."));
+        }
+
+        errors
+    }
+}
+
 #[derive(Insertable)]
 #[table_name = "options"]
 pub struct NewOption {
