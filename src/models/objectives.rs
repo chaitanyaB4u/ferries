@@ -90,6 +90,38 @@ impl Objective {
 }
 
 #[derive(juniper::GraphQLInputObject)]
+pub struct UpdateObjectiveRequest {
+    pub id: String,
+    pub start_time: String,
+    pub end_time: String,
+    pub description: String
+}
+
+impl UpdateObjectiveRequest {
+
+    pub fn validate(&self) -> Vec<ValidationError> {
+        let mut errors: Vec<ValidationError> = Vec::new();
+        
+        let given_time = self.start_time.as_str();
+
+        if !util::is_valid_date(given_time) {
+            errors.push(ValidationError::new("start_time","unparsable date."));
+        }
+
+        let date = util::as_date(given_time);
+        if util::is_past_date(date) {
+            errors.push(ValidationError::new("start_time","should be a future date."));
+        }
+        
+        if self.id.trim().is_empty(){
+            errors.push(ValidationError::new("id","Id is a must."));
+        }
+
+        errors
+    }
+}
+
+#[derive(juniper::GraphQLInputObject)]
 pub struct NewObjectiveRequest {
     pub enrollment_id: String,
     pub start_time: String,
@@ -156,4 +188,12 @@ impl NewObjective  {
 
         new_objective
     }
+}
+
+#[derive(AsChangeset)]
+#[table_name = "objectives"]
+pub struct UpdateObjective {
+    pub description: String,
+    pub original_start_date: NaiveDateTime,
+    pub original_end_date: NaiveDateTime,
 }

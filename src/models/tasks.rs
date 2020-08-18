@@ -156,6 +156,47 @@ impl NewTaskRequest {
     }
 }
 
+#[derive(juniper::GraphQLInputObject)]
+pub struct UpdateTaskRequest {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub start_time: String,
+    pub duration: i32,
+}
+
+impl UpdateTaskRequest {
+    pub fn validate(&self) -> Vec<ValidationError> {
+        let mut errors: Vec<ValidationError> = Vec::new();
+        let given_time = self.start_time.as_str();
+
+        if self.id.trim().is_empty(){
+            errors.push(ValidationError::new("id","Id is a must."));
+        }
+
+        if !util::is_valid_date(given_time) {
+            errors.push(ValidationError::new("start_time", "unparsable date."));
+        }
+
+        let date = util::as_date(given_time);
+        if util::is_past_date(date) {
+            errors.push(ValidationError::new(
+                "start_time",
+                "should be a future date.",
+            ));
+        }
+
+        if self.duration <= 0 {
+            errors.push(ValidationError::new(
+                "duration",
+                "should be a minimum of 1 hour.",
+            ));
+        }
+
+        errors
+    }
+}
+
 #[derive(Insertable)]
 #[table_name = "tasks"]
 pub struct NewTask {
@@ -190,4 +231,14 @@ impl NewTask {
 
         new_task
     }
+}
+
+#[derive(AsChangeset)]
+#[table_name = "tasks"]
+pub struct UpdateTask {
+    pub description: String,
+    pub name: String,
+    pub duration: i32,
+    pub original_start_date: NaiveDateTime,
+    pub original_end_date: NaiveDateTime,
 }

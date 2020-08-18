@@ -29,5 +29,6 @@ pub fn get_options(connection: &MysqlConnection, criteria: PlanCriteria) -> Resu
 
     options
         .filter(enrollment_id.eq(criteria.enrollment_id))
+        .order_by(created_at.asc())
         .load(connection)
 }
