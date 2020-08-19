@@ -65,6 +65,16 @@ pub fn find(connection: &MysqlConnection,program: &Program, user: &User) -> Resu
     Ok(result.unwrap())
 }
 
+pub fn find_by_id(connection: &MysqlConnection, enrollment_id: &str) -> Result<Enrollment, &'static str>  {
+    let result = enrollments.filter(id.eq(enrollment_id)).first(connection);
+ 
+    if result.is_err() {
+        return Err(ERROR_003);
+    }
+    
+    Ok(result.unwrap())
+}
+
 pub fn get_active_enrollments(connection: &MysqlConnection, criteria: EnrollmentCriteria) -> Result<Vec<User>,&'static str> {
 
     use crate::schema::users::dsl::*;

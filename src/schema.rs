@@ -33,6 +33,7 @@ table! {
         created_at -> Datetime,
         updated_at -> Datetime,
         description -> Nullable<Text>,
+        closing_notes -> Nullable<Text>,
     }
 }
 
@@ -126,6 +127,7 @@ table! {
         cancelled_at -> Nullable<Datetime>,
         created_at -> Datetime,
         updated_at -> Datetime,
+        closing_notes -> Nullable<Text>,
     }
 }
 
@@ -163,6 +165,7 @@ table! {
         created_at -> Datetime,
         updated_at -> Datetime,
         description -> Nullable<Text>,
+        closing_notes -> Nullable<Text>,
     }
 }
 

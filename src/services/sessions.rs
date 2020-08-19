@@ -60,7 +60,31 @@ pub fn change_session_state(connection: &MysqlConnection, request: &ChangeSessio
     
     do_alter_session_state(connection,request)?;
 
-    find(connection,&request.id.as_str())
+    let session = find(connection,&request.id.as_str())?;
+
+    if request.start_time.is_some() {
+        return create_next_session(connection, request, &session);
+    }
+
+    Ok(session)
+}
+
+fn create_next_session( connection: &MysqlConnection, change_request: &ChangeSessionStateRequest, session: &Session) -> Result<Session, &'static str> {
+
+    let enrollment = enrollments::find_by_id(connection, session.enrollment_id.as_str())?;
+
+    let session_name = util::concat(session.name.as_str(),"-(Contd...)");
+  
+    let request = NewSessionRequest{
+        program_id: session.program_id.to_owned(),
+        member_id: enrollment.member_id.to_owned(),
+        name: session_name.to_owned(),
+        description: session_name.to_owned(),
+        duration: change_request.duration.unwrap_or(1),
+        start_time: change_request.start_time.as_ref().unwrap().to_owned()
+    };
+
+    create_session(connection, &request)
 }
 
 fn can_change_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<usize, &'static str> {
@@ -93,10 +117,21 @@ fn do_alter_session_state(connection: &MysqlConnection, request: &ChangeSessionS
             diesel::update(target_session).set(actual_start_date.eq(now)).execute(connection)
         }
         TargetState::DONE => {
-            diesel::update(target_session).set(actual_end_date.eq(now)).execute(connection)
+            diesel::update(target_session).set(
+                (
+                    actual_end_date.eq(now),
+                    closing_notes.eq(&request.closing_notes)
+                )
+            ).execute(connection)
         }
         TargetState::CANCEL => {
-            diesel::update(target_session).set(cancelled_at.eq(now)).execute(connection)
+            diesel::update(target_session).set(
+                (
+                    cancelled_at.eq(now),
+                    closing_notes.eq(&request.closing_notes)
+                )
+
+            ).execute(connection)
         }
     };
 

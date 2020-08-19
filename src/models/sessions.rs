@@ -28,6 +28,7 @@ pub struct Session {
     pub cancelled_at: Option<NaiveDateTime>,
     pub created_at : NaiveDateTime,
     pub updated_at : NaiveDateTime,
+    pub closing_notes : Option<String>,
 }
 
 #[derive(juniper::GraphQLEnum)]
@@ -232,5 +233,8 @@ pub enum TargetState {
 #[derive(juniper::GraphQLInputObject)]
 pub struct ChangeSessionStateRequest {
     pub id: String,
-    pub target_state: TargetState
+    pub target_state: TargetState,
+    pub closing_notes : Option<String>,
+    pub duration: Option<i32>,
+    pub start_time: Option<String>,
 }
