@@ -127,6 +127,11 @@ impl Session {
 
         Status::PLANNED
     }
+
+    pub fn closing_notes(&self) -> Option<String> {
+       self.closing_notes.clone()
+    }
+
 }
 
 #[derive(juniper::GraphQLInputObject)]
@@ -234,7 +239,5 @@ pub enum TargetState {
 pub struct ChangeSessionStateRequest {
     pub id: String,
     pub target_state: TargetState,
-    pub closing_notes : Option<String>,
-    pub duration: Option<i32>,
-    pub start_time: Option<String>,
+    pub closing_notes : Option<String>
 }
