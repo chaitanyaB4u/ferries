@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use crate::models::users::User;
 use crate::models::programs::Program;
 
-use crate::models::enrollments::{NewEnrollmentRequest,NewEnrollment, Enrollment,EnrollmentCriteria};
+use crate::models::enrollments::{NewEnrollmentRequest,NewEnrollment, Enrollment,EnrollmentCriteria,EnrollmentFilter};
 
 use crate::services::users;
 use crate::services::programs;
@@ -14,6 +14,7 @@ use crate::schema::enrollments::dsl::*;
 const WARNING: &'static str = "It seems you have already enrolled in this program";
 const ERROR_002: &'static str = "Error in creating enrollment. Error-002.";
 const ERROR_003: &'static str = "Error in finding enrollment for the program and member. Error-003.";
+const ERROR_004: &'static str = "Error in marking the enrollment as Old";
 const QUERY_ERROR: &'static str = "Error in fetching enrolled members";
 
 pub fn create_new_enrollment(connection: &MysqlConnection, request: &NewEnrollmentRequest) -> Result<Enrollment,&'static str> {
@@ -65,11 +66,13 @@ pub fn find(connection: &MysqlConnection,program: &Program, user: &User) -> Resu
     Ok(result.unwrap())
 }
 
-pub fn find_by_id(connection: &MysqlConnection, enrollment_id: &str) -> Result<Enrollment, &'static str>  {
-    let result = enrollments.filter(id.eq(enrollment_id)).first(connection);
- 
+pub fn mark_as_old(connection: &MysqlConnection, enrollment_id: &str) -> Result<usize, &'static str>  {
+    let query = enrollments.filter(id.eq(enrollment_id));
+
+    let result = diesel::update(query).set(is_new.eq(false)).execute(connection);
+
     if result.is_err() {
-        return Err(ERROR_003);
+        return Err(ERROR_004);
     }
     
     Ok(result.unwrap())
@@ -79,16 +82,23 @@ pub fn get_active_enrollments(connection: &MysqlConnection, criteria: Enrollment
 
     use crate::schema::users::dsl::*;
 
-    let result: QueryResult<Vec<User>>  = enrollments
+    let mut query = enrollments
         .inner_join(users)
         .filter(program_id.eq(criteria.program_id))
         .select(users::all_columns())
         .order_by(full_name.asc())
-        .load(connection);
-        
+        .into_boxed();
+
+    if let EnrollmentFilter::NEW = criteria.desire {
+        query = query.filter(is_new.eq(true));
+    }
+    
+    let result:QueryResult<Vec<User>> = query.load(connection);
+    
     if result.is_err() {
         return Err(QUERY_ERROR);
     }
 
     Ok(result.unwrap())
-} 
+}
+

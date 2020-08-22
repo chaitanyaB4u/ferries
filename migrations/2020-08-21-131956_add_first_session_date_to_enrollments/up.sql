@@ -1,0 +1,1 @@
+alter table enrollments add column is_new tinyint(1) NOT NULL DEFAULT '1'

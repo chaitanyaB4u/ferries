@@ -16,6 +16,7 @@ table! {
         member_id -> Varchar,
         created_at -> Datetime,
         updated_at -> Datetime,
+        is_new -> Bool,
     }
 }
 

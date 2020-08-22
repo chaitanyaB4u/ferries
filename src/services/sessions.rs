@@ -38,13 +38,15 @@ pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest)
     let people_involved: String = util::concat(coach.full_name.as_str(), member.full_name.as_str());
 
     // Inserting the Session
-    let new_session = NewSession::from(request, _enrollment.id, people_involved);
+    let new_session = NewSession::from(request, _enrollment.id.to_owned(), people_involved);
     let session = insert_session(connection,&new_session)?;
 
     // Inserting a pair of entries into the Session Users (For Coach & Member)
     let new_session_coach = NewSessionUser::from(&session, &coach, util::COACH);
     let new_session_member = NewSessionUser::from(&session, &member,util::MEMBER);
     insert_session_users(connection, &new_session_coach, &new_session_member)?;
+
+    enrollments::mark_as_old(connection,_enrollment.id())?;
 
     Ok(session)
 }

@@ -14,7 +14,8 @@ pub struct Enrollment {
     pub program_id: String,
     pub member_id: String,
     pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime
+    pub updated_at: NaiveDateTime,
+    pub is_new: bool,
 }
 
 #[juniper::object(description = "The fields we offer to the Web-UI ")]
@@ -27,6 +28,10 @@ impl Enrollment {
     }
     pub fn member_id(&self) -> &str {
         self.member_id.as_str()
+    }
+
+    pub fn is_new(&self) -> bool {
+        self.is_new
     }
 }
 
@@ -58,9 +63,16 @@ impl NewEnrollmentRequest {
     }
 }
 
+#[derive(juniper::GraphQLEnum)]
+pub enum EnrollmentFilter {
+    ALL,
+    NEW
+}
+
 #[derive(juniper::GraphQLInputObject)]
 pub struct EnrollmentCriteria {
     pub program_id: String,
+    pub desire: EnrollmentFilter, 
 }
 
 #[derive(juniper::GraphQLInputObject)]
