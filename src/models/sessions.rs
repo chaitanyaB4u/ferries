@@ -162,8 +162,8 @@ impl NewSessionRequest {
             errors.push(ValidationError::new("start_time","should be a future date."));
         }
         
-        if self.duration <= 0 {
-            errors.push(ValidationError::new("duration","should be a minimum of 1 hour."));
+        if self.duration < 15 {
+            errors.push(ValidationError::new("duration","should be a minimum of 15 minutes"));
         }
 
         if self.program_id.trim().is_empty(){
@@ -206,7 +206,7 @@ impl NewSession  {
     pub fn from(request: &NewSessionRequest, enrollment_id: String, people: String) -> NewSession {
  
         let start_date = util::as_date(request.start_time.as_str());
-        let duration = Duration::hours(request.duration as i64);
+        let duration = Duration::minutes(request.duration as i64);
         let end_date = start_date.checked_add_signed(duration);
 
         let fuzzy_id = util::fuzzy_id();
