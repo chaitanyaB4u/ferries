@@ -128,15 +128,12 @@ impl NewTaskRequest {
         let given_time = self.start_time.as_str();
 
         if !util::is_valid_date(given_time) {
-            errors.push(ValidationError::new("start_time", "unparsable date."));
+            errors.push(ValidationError::new("start_time","unparsable date."));
         }
 
         let date = util::as_date(given_time);
-        if util::is_past_date(date) {
-            errors.push(ValidationError::new(
-                "start_time",
-                "should be a future date.",
-            ));
+        if util::is_in_past(date) {
+            errors.push(ValidationError::new("start_time","should be a future date."));
         }
 
         if self.duration <= 0 {
@@ -175,16 +172,13 @@ impl UpdateTaskRequest {
             errors.push(ValidationError::new("id","Id is a must."));
         }
 
-        if !util::is_valid_date(given_time) {
-            errors.push(ValidationError::new("start_time", "unparsable date."));
+       if !util::is_valid_date(given_time) {
+            errors.push(ValidationError::new("start_time","unparsable date."));
         }
 
         let date = util::as_date(given_time);
-        if util::is_past_date(date) {
-            errors.push(ValidationError::new(
-                "start_time",
-                "should be a future date.",
-            ));
+        if util::is_in_past(date) {
+            errors.push(ValidationError::new("start_time","should be a future date."));
         }
 
         if self.duration <= 0 {
