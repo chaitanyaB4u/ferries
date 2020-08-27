@@ -103,17 +103,27 @@ impl UpdateObjectiveRequest {
     pub fn validate(&self) -> Vec<ValidationError> {
         let mut errors: Vec<ValidationError> = Vec::new();
         
-        let given_time = self.start_time.as_str();
+        let given_start_time = self.start_time.as_str();
+        let given_end_time = self.end_time.as_str();
 
-        if !util::is_valid_date(given_time) {
+        if !util::is_valid_date(given_start_time) {
             errors.push(ValidationError::new("start_time","unparsable date."));
         }
 
-        let date = util::as_date(given_time);
-        if util::is_past_date(date) {
+        let date = util::as_date(given_start_time);
+        if util::is_in_past(date) {
             errors.push(ValidationError::new("start_time","should be a future date."));
         }
         
+        if !util::is_valid_date(given_end_time) {
+            errors.push(ValidationError::new("end_time","unparsable date."));
+        }
+
+        let date = util::as_date(given_end_time);
+        if util::is_in_past(date) {
+            errors.push(ValidationError::new("end_time","should be a future date."));
+        }
+
         if self.id.trim().is_empty(){
             errors.push(ValidationError::new("id","Id is a must."));
         }
@@ -137,17 +147,26 @@ impl NewObjectiveRequest {
 
         let mut errors: Vec<ValidationError> = Vec::new();
         
-        let given_time = self.start_time.as_str();
+        let given_start_time = self.start_time.as_str();
+        let given_end_time = self.end_time.as_str();
 
-        if !util::is_valid_date(given_time) {
+        if !util::is_valid_date(given_start_time) {
             errors.push(ValidationError::new("start_time","unparsable date."));
         }
 
-        let date = util::as_date(given_time);
-        if util::is_past_date(date) {
+        let date = util::as_date(given_start_time);
+        if util::is_in_past(date) {
             errors.push(ValidationError::new("start_time","should be a future date."));
         }
         
+        if !util::is_valid_date(given_end_time) {
+            errors.push(ValidationError::new("end_time","unparsable date."));
+        }
+
+        let date = util::as_date(given_end_time);
+        if util::is_in_past(date) {
+            errors.push(ValidationError::new("end_time","should be a future date."));
+        }      
         
         if self.enrollment_id.trim().is_empty(){
             errors.push(ValidationError::new("enrollment_id","Enrollment Id is a must."));

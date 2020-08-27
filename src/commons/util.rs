@@ -36,6 +36,13 @@ pub fn is_past_date(date: NaiveDateTime) -> bool {
     strip_seconds(date) < strip_seconds(now()) 
 }
 
+pub fn is_in_past(given_date: NaiveDateTime) -> bool {
+    
+    let date = given_date.date();
+    let now_date = now().date();
+
+    date < now_date
+}
 
 pub fn fuzzy_id() -> String {
 
@@ -47,4 +54,17 @@ pub fn fuzzy_id() -> String {
 
 pub fn concat(str1: &str, str2: &str) -> String {
     format!("{} and {}",str1,str2)
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn is_in_past_test() {
+
+        let start_time = "2020-08-27T06:53:09Z";
+        println!("The check {}",is_in_past(as_date(start_time)));
+    }
 }
