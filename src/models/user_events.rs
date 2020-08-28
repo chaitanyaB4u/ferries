@@ -1,15 +1,21 @@
 use diesel::prelude::*;
 
+use crate::models::enrollments::Enrollment;
+use crate::models::objectives::Objective;
 use crate::models::programs::Program;
 use crate::models::session_users::SessionUser;
 use crate::models::sessions::Session;
+use crate::models::tasks::Task;
 use crate::models::users::User;
 
+use crate::schema::enrollments::dsl::*;
+use crate::schema::objectives::dsl::*;
 use crate::schema::programs::dsl::*;
 use crate::schema::session_users;
 use crate::schema::session_users::dsl::*;
 use crate::schema::sessions;
 use crate::schema::sessions::dsl::*;
+use crate::schema::tasks::dsl::*;
 use crate::schema::users::dsl::*;
 
 #[derive(juniper::GraphQLInputObject)]
@@ -39,9 +45,9 @@ impl EventRow {
     }
 }
 
-pub type SessionProgram = (Session,Program,SessionUser);
+type SessionProgram = (Session, Program, SessionUser);
 
-pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Result<Vec<EventRow>,diesel::result::Error> {
+pub fn get_events(connection: &MysqlConnection,criteria: EventCriteria) -> Result<Vec<EventRow>, diesel::result::Error> {
 
     let mut query = sessions
         .inner_join(programs)
@@ -54,15 +60,13 @@ pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Resu
         let prog_id = criteria.program_id.unwrap();
         query = query.filter(sessions::program_id.eq(prog_id));
     }
-   
+    
     let rows: Vec<SessionProgram> = query.load(connection)?;
 
     Ok(to_event_rows(rows))
 }
 
-
 fn to_event_rows(rows: Vec<SessionProgram>) -> Vec<EventRow> {
-
     let mut event_rows: Vec<EventRow> = Vec::new();
 
     for row in rows {
@@ -71,9 +75,60 @@ fn to_event_rows(rows: Vec<SessionProgram>) -> Vec<EventRow> {
             program: row.1,
             session_user: row.2,
         });
-    };
+    }
 
     event_rows
+}
+
+pub struct PlanRow {
+    pub objective: Option<Objective>,
+    pub task: Option<Task>,
+    pub enrollment: Enrollment,
+    pub program: Program,
+}
+
+#[juniper::object]
+impl PlanRow {
+    pub fn objective(&self) -> &Option<Objective> {
+        &self.objective
+    }
+    pub fn task(&self) -> &Option<Task> {
+        &self.task
+    }
+    pub fn enrollment(&self) -> &Enrollment {
+        &self.enrollment
+    }
+    pub fn program(&self) -> &Program {
+        &self.program
+    }
+}
+
+type ObjectiveRowType = (Objective, (Enrollment, Program));
+type TaskRowType = (Task, (Enrollment, Program));
+
+pub fn get_plan_events(connection: &MysqlConnection,criteria: EventCriteria) -> Result<Vec<PlanRow>, diesel::result::Error> {
+
+    let mut plan_rows: Vec<PlanRow> = Vec::new();
+
+    let objective_rows: Vec<ObjectiveRowType> = objectives
+        .inner_join(enrollments.inner_join(programs))
+        .filter(member_id.eq(&criteria.user_id))
+        .load(connection)?;
+
+    let task_rows: Vec<TaskRowType> = tasks
+        .inner_join(enrollments.inner_join(programs))
+        .filter(member_id.eq(&criteria.user_id))
+        .load(connection)?;
+
+    for row in objective_rows {
+        plan_rows.push(PlanRow {objective: Some(row.0),task: None,enrollment: (row.1).0, program: (row.1).1});
+    }
+
+    for row in task_rows {
+        plan_rows.push(PlanRow {task: Some(row.0), objective: None, enrollment: (row.1).0, program: (row.1).1});
+    }
+
+   Ok(plan_rows)
 }
 
 #[derive(juniper::GraphQLInputObject)]
@@ -97,11 +152,9 @@ impl SessionPeople {
     }
 }
 
-
 pub type PeopleResult = Result<Vec<SessionPeople>, diesel::result::Error>;
 
 pub fn get_people(connection: &MysqlConnection, criteria: SessionCriteria) -> PeopleResult {
-    
     let result: Vec<(SessionUser, User)> = session_users
         .inner_join(users)
         .filter(session_id.eq(criteria.id))
@@ -109,9 +162,11 @@ pub fn get_people(connection: &MysqlConnection, criteria: SessionCriteria) -> Pe
 
     let session_people: Vec<SessionPeople> = result
         .iter()
-        .map(|tuple| SessionPeople{session_user:tuple.0.clone(), user:tuple.1.clone()})
+        .map(|tuple| SessionPeople {
+            session_user: tuple.0.clone(),
+            user: tuple.1.clone(),
+        })
         .collect();
 
     Ok(session_people)
 }
-
