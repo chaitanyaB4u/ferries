@@ -1,4 +1,11 @@
 table! {
+    abstract_tasks (id) {
+        id -> Varchar,
+        name -> Varchar,
+    }
+}
+
+table! {
     coaches (id) {
         id -> Varchar,
         user_id -> Varchar,
@@ -17,6 +24,41 @@ table! {
         created_at -> Datetime,
         updated_at -> Datetime,
         is_new -> Bool,
+    }
+}
+
+table! {
+    master_plans (id) {
+        id -> Varchar,
+        name -> Varchar,
+        description -> Text,
+    }
+}
+
+table! {
+    master_task_links (id) {
+        id -> Varchar,
+        source_task_id -> Varchar,
+        target_task_id -> Varchar,
+        lead_time -> Integer,
+        buffer_time -> Integer,
+        coordinates -> Text,
+        priority -> Integer,
+        is_forward -> Bool,
+    }
+}
+
+table! {
+    master_tasks (id) {
+        id -> Varchar,
+        master_plan_id -> Varchar,
+        abstract_task_id -> Varchar,
+        duration -> Integer,
+        min -> Integer,
+        max -> Integer,
+        task_type -> Varchar,
+        created_at -> Datetime,
+        updated_at -> Datetime,
     }
 }
 
@@ -55,6 +97,16 @@ table! {
         description -> Nullable<Text>,
         created_at -> Datetime,
         updated_at -> Datetime,
+    }
+}
+
+table! {
+    program_plans (id) {
+        id -> Varchar,
+        name -> Varchar,
+        description -> Text,
+        master_plan_id -> Varchar,
+        program_id -> Varchar,
     }
 }
 
@@ -185,9 +237,13 @@ table! {
 joinable!(coaches -> users (user_id));
 joinable!(enrollments -> programs (program_id));
 joinable!(enrollments -> users (member_id));
+joinable!(master_tasks -> abstract_tasks (abstract_task_id));
+joinable!(master_tasks -> master_plans (master_plan_id));
 joinable!(objectives -> enrollments (enrollment_id));
 joinable!(observations -> enrollments (enrollment_id));
 joinable!(options -> enrollments (enrollment_id));
+joinable!(program_plans -> master_plans (master_plan_id));
+joinable!(program_plans -> programs (program_id));
 joinable!(programs -> coaches (coach_id));
 joinable!(session_files -> session_notes (session_note_id));
 joinable!(session_notes -> session_users (session_user_id));
@@ -201,11 +257,16 @@ joinable!(tasks -> enrollments (enrollment_id));
 joinable!(tasks -> users (actor_id));
 
 allow_tables_to_appear_in_same_query!(
+    abstract_tasks,
     coaches,
     enrollments,
+    master_plans,
+    master_task_links,
+    master_tasks,
     objectives,
     observations,
     options,
+    program_plans,
     programs,
     session_files,
     session_notes,
