@@ -120,4 +120,10 @@ mod tests {
         assert_eq!(true, is_equal(hashed.as_str(), "abcdefghijklmnopqrstuvwxyz"));
         assert_eq!(false,is_equal(hashed.as_str(), "abcdefghij lmnopqrstuvwxyz"));
     }
+
+    #[test]
+    fn gen_password() {
+        println!("{}",hash("harini"));
+        println!("{}",hash("harini"));
+    }
 }

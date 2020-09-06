@@ -1,7 +1,8 @@
 use diesel::prelude::*;
 
-use crate::models::users::{NewUser, Registration, User,LoginRequest};
+use crate::models::users::{NewUser, Registration, User,LoginRequest,ResetPasswordRequest};
 use crate::schema::users::dsl::*;
+use crate::commons::util;
 
 
 const REGISTERED_ALREADY: &'static str = "It seems you have already registered with us.";
@@ -9,6 +10,8 @@ const BLANK_EMAIL: &'static str = "The email id is required.";
 const BLANK_FULL_NAME: &'static str = "Your full name is required.";
 const INVALID_USER_ID: &'static str = "Invalid User Id";
 const CREATION_ERROR: &'static str = "Unable to create a new user";
+const INVALID_CREDENTIAL: &'static str = "Invalid Credential";
+const PASSWORD_RESET_FAILED: &'static str = "Failed to reset the password.";
 
 pub fn register(connection: &MysqlConnection,registration: &Registration) -> Result<User, &'static str> {
    
@@ -25,8 +28,43 @@ pub fn register(connection: &MysqlConnection,registration: &Registration) -> Res
     create_user(connection, registration)
 }
 
-pub fn authenticate(connection: &MysqlConnection, request:LoginRequest) -> QueryResult<User> {
-    users.filter(email.eq(request.email)).first(connection)
+pub fn authenticate(connection: &MysqlConnection, request:LoginRequest) -> Result<User, &'static str> {
+
+    let result: QueryResult<String> = users.filter(email.eq(request.email.as_str())).select(password).first(connection);
+    if result.is_err() {
+        return Err(INVALID_CREDENTIAL);
+    }
+    
+    let flag = util::is_equal(result.unwrap().as_str(), request.password.as_str());
+    if !flag {
+        return Err(INVALID_CREDENTIAL);
+    }
+
+    let result: QueryResult<User> = users.filter(email.eq(request.email.as_str())).first(connection);
+    if result.is_err() {
+        return Err(INVALID_CREDENTIAL);
+    }
+
+    Ok(result.unwrap())
+}
+
+pub fn reset_password(connection: &MysqlConnection, request: &ResetPasswordRequest) -> Result<User, &'static str> {
+    
+    let login_request = LoginRequest{email:request.email.to_owned(),password:request.old_password.to_owned()};
+    let user = authenticate(connection,login_request)?;
+
+    let hashed_password = util::hash(request.new_password.as_str());
+
+    let result = diesel::update(users)
+    .filter(email.eq(user.email.as_str()))
+    .set(password.eq(hashed_password))
+    .execute(connection);
+
+    if result.is_err() {
+        return Err(PASSWORD_RESET_FAILED);
+    }
+
+    Ok(user)
 }
 
 pub fn find(connection: &MysqlConnection, the_id: &str) -> Result<User,&'static str> {

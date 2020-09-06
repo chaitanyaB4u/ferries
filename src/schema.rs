@@ -231,6 +231,7 @@ table! {
         user_type -> Varchar,
         created_at -> Datetime,
         updated_at -> Datetime,
+        password -> Varchar,
     }
 }
 

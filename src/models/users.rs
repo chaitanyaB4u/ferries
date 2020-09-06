@@ -6,7 +6,7 @@ use chrono::NaiveDateTime;
 
 use crate::schema::users;
 use crate::commons::util;
-
+use crate::commons::chassis::{ValidationError};
 
 // The Order of the fiels are very important
 // The User struct is purely for internal consumption. 
@@ -21,6 +21,7 @@ pub struct User {
     pub user_type: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+    pub password: String,
 }
 
 // Fields that we can safely expose to APIs
@@ -49,6 +50,28 @@ impl User {
 pub struct Registration {
     pub full_name: String,
     pub email: String,
+    pub password: String
+}
+
+impl Registration {
+    pub fn validate(&self) ->Vec<ValidationError> {
+
+        let mut errors: Vec<ValidationError> = Vec::new();
+
+        if self.email.trim().is_empty() {
+            errors.push(ValidationError::new("email", "email is a must for registration"));
+        }
+
+        if self.password.trim().is_empty() {
+            errors.push(ValidationError::new("password", "password is a must for registration"));
+        }
+
+        if self.full_name.trim().is_empty() {
+            errors.push(ValidationError::new("full_name", "Full name of the user is a must for registration"));
+        }
+
+        errors
+    }
 }
 
 // Fields we require to persist into the users table
@@ -59,6 +82,7 @@ pub struct NewUser {
     pub full_name: String,
     pub email: String,
     pub user_type: String,
+    pub password: String,
 }
 
 // A way to transform the inbound registration request into the persistable
@@ -74,7 +98,8 @@ impl NewUser {
             id: fuzzy_id,
             full_name: registration.full_name.to_owned(),
             email: registration.email.to_owned(),
-            user_type: String::from(util::MEMBER)
+            user_type: String::from(util::MEMBER),
+            password: util::hash(registration.password.as_str())
         }
     }
 }
@@ -84,4 +109,32 @@ impl NewUser {
 pub struct LoginRequest {
     pub email: String,
     pub password: String,
+}
+
+#[derive(juniper::GraphQLInputObject)]
+pub struct ResetPasswordRequest {
+    pub email: String,
+    pub old_password: String,
+    pub new_password: String,
+}
+
+impl ResetPasswordRequest {
+    pub fn validate(&self) ->Vec<ValidationError> {
+
+        let mut errors: Vec<ValidationError> = Vec::new();
+
+        if self.email.trim().is_empty() {
+            errors.push(ValidationError::new("email", "email is a must for password reset."));
+        }
+
+        if self.old_password.trim().is_empty() {
+            errors.push(ValidationError::new("old_password", "old_password cannot be blank."));
+        }
+
+        if self.new_password.trim().is_empty() {
+            errors.push(ValidationError::new("new_password", "new_password cannot be blank."));
+        }
+
+        errors
+    }
 }
