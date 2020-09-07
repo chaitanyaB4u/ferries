@@ -50,7 +50,7 @@ pub fn authenticate(connection: &MysqlConnection, request:LoginRequest) -> Resul
 
 pub fn reset_password(connection: &MysqlConnection, request: &ResetPasswordRequest) -> Result<User, &'static str> {
     
-    let login_request = LoginRequest{email:request.email.to_owned(),password:request.old_password.to_owned()};
+    let login_request = LoginRequest{email:request.email.to_owned(),password:request.password.to_owned()};
     let user = authenticate(connection,login_request)?;
 
     let hashed_password = util::hash(request.new_password.as_str());

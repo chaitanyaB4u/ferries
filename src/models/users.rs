@@ -114,7 +114,7 @@ pub struct LoginRequest {
 #[derive(juniper::GraphQLInputObject)]
 pub struct ResetPasswordRequest {
     pub email: String,
-    pub old_password: String,
+    pub password: String,
     pub new_password: String,
 }
 
@@ -127,12 +127,12 @@ impl ResetPasswordRequest {
             errors.push(ValidationError::new("email", "email is a must for password reset."));
         }
 
-        if self.old_password.trim().is_empty() {
-            errors.push(ValidationError::new("old_password", "old_password cannot be blank."));
+        if self.password.trim().is_empty() {
+            errors.push(ValidationError::new("password", "Current Password cannot be blank."));
         }
 
         if self.new_password.trim().is_empty() {
-            errors.push(ValidationError::new("new_password", "new_password cannot be blank."));
+            errors.push(ValidationError::new("new_password", "New password cannot be blank."));
         }
 
         errors
