@@ -2,6 +2,7 @@ table! {
     abstract_tasks (id) {
         id -> Varchar,
         name -> Varchar,
+        coach_id -> Varchar,
     }
 }
 
@@ -32,6 +33,7 @@ table! {
         id -> Varchar,
         name -> Varchar,
         description -> Text,
+        coach_id -> Varchar,
     }
 }
 
@@ -59,6 +61,8 @@ table! {
         task_type -> Varchar,
         created_at -> Datetime,
         updated_at -> Datetime,
+        coach_id -> Varchar,
+        role_id -> Varchar,
     }
 }
 
@@ -97,6 +101,12 @@ table! {
         description -> Nullable<Text>,
         created_at -> Datetime,
         updated_at -> Datetime,
+    }
+}
+
+table! {
+    platform_roles (id) {
+        id -> Varchar,
     }
 }
 
@@ -235,11 +245,15 @@ table! {
     }
 }
 
+joinable!(abstract_tasks -> coaches (coach_id));
 joinable!(coaches -> users (user_id));
 joinable!(enrollments -> programs (program_id));
 joinable!(enrollments -> users (member_id));
+joinable!(master_plans -> coaches (coach_id));
 joinable!(master_tasks -> abstract_tasks (abstract_task_id));
+joinable!(master_tasks -> coaches (coach_id));
 joinable!(master_tasks -> master_plans (master_plan_id));
+joinable!(master_tasks -> platform_roles (role_id));
 joinable!(objectives -> enrollments (enrollment_id));
 joinable!(observations -> enrollments (enrollment_id));
 joinable!(options -> enrollments (enrollment_id));
@@ -267,6 +281,7 @@ allow_tables_to_appear_in_same_query!(
     objectives,
     observations,
     options,
+    platform_roles,
     program_plans,
     programs,
     session_files,

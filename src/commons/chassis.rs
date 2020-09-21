@@ -24,6 +24,9 @@ use crate::models::objectives::Objective;
 use crate::models::tasks::Task;
 use crate::models::options::Constraint;
 use crate::models::observations::Observation;
+use crate::models::abstract_tasks::AbstractTask;
+use crate::models::master_plans::MasterPlan;
+
 
 #[derive(juniper::GraphQLObject)]
 pub struct QueryError {
@@ -47,6 +50,26 @@ pub struct QueryResult<T>(pub Result<T,QueryError>);
 #[juniper::object(name="ProgramsResult")]
 impl QueryResult<Vec<ProgramRow>> {
     pub fn programs(&self) -> Option<&Vec<ProgramRow>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name="AbstractTasksResult")]
+impl QueryResult<Vec<AbstractTask>> {
+    pub fn abstract_tasks(&self) -> Option<&Vec<AbstractTask>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name="MasterPlansResult")]
+impl QueryResult<Vec<MasterPlan>> {
+    pub fn master_plans(&self) -> Option<&Vec<MasterPlan>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {
@@ -167,6 +190,28 @@ impl MutationResult<User> {
         self.0.as_ref().err()
     }
 
+}
+
+#[juniper::object(name = "AbstractTaskResult")]
+impl MutationResult<AbstractTask> {
+    pub fn abstract_task(&self) -> Option<&AbstractTask> {
+        self.0.as_ref().ok()
+    }
+
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "MasterPlanResut")]
+impl MutationResult<MasterPlan> {
+    pub fn master_plan(&self) -> Option<&MasterPlan> {
+        self.0.as_ref().ok()
+    }
+
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
+        self.0.as_ref().err()
+    }
 }
 
 #[juniper::object(name = "ProgramResult")]

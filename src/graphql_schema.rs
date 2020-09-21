@@ -2,9 +2,18 @@ use juniper::{FieldResult, RootNode};
 
 use crate::db_manager::MySqlConnectionPool;
 
+use crate::models::abstract_tasks::{
+    AbstractTask, AbstractTaskCriteria,  NewAbstractTaskRequest,
+};
+
+use crate::models::master_plans::{MasterPlan, MasterPlanCriteria, NewMasterPlanRequest};
+
 use crate::models::enrollments::{
     Enrollment, EnrollmentCriteria, NewEnrollmentRequest, PlanCriteria,
 };
+
+
+
 use crate::models::notes::{NewNoteRequest, Note, NoteCriteria};
 use crate::models::objectives::{NewObjectiveRequest, Objective, UpdateObjectiveRequest};
 use crate::models::observations::{NewObservationRequest, Observation, UpdateObservationRequest};
@@ -28,6 +37,8 @@ use crate::services::programs::{change_program_state, create_new_program};
 use crate::services::sessions::{change_session_state, create_session};
 use crate::services::tasks::{create_task, get_tasks, update_task};
 use crate::services::users::{authenticate, get_users, register, reset_password};
+use crate::services::abstract_tasks::{create_abstract_task,get_abstract_tasks};
+use crate::services::master_plans::{create_master_plan,get_master_plans};
 
 use crate::commons::chassis::{
     mutation_error, query_error, service_error, MutationResult, QueryResult,
@@ -58,10 +69,7 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get Programs of a Coach Or Member Or Latest 10.")]
-    fn get_programs(
-        context: &DBContext,
-        criteria: ProgramCriteria,
-    ) -> QueryResult<Vec<ProgramRow>> {
+    fn get_programs(context: &DBContext,criteria: ProgramCriteria) -> QueryResult<Vec<ProgramRow>> {
         let connection = context.db.get().unwrap();
         let result = get_programs(&connection, &criteria);
 
@@ -70,6 +78,30 @@ impl QueryRoot {
             Err(e) => query_error(e),
         }
     }
+
+    #[graphql(description = "Get The List of Abstract Tasks of a Coach")]
+    fn get_abstract_tasks(context: &DBContext,criteria: AbstractTaskCriteria) -> QueryResult<Vec<AbstractTask>> {
+        let connection = context.db.get().unwrap();
+        let result = get_abstract_tasks(&connection, &criteria);
+
+        match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
+    }
+
+    #[graphql(description = "Get The List of Master Plans of a Coach")]
+    fn get_master_plans(context: &DBContext,criteria: MasterPlanCriteria) -> QueryResult<Vec<MasterPlan>> {
+        let connection = context.db.get().unwrap();
+        let result = get_master_plans(&connection, &criteria);
+
+        match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
+    }
+
+
 
     #[graphql(description = "Get the list of members enrolled into a Program")]
     fn get_enrollments(context: &DBContext, criteria: EnrollmentCriteria) -> Vec<User> {
@@ -177,7 +209,6 @@ pub struct MutationRoot;
 #[juniper::object(Context = DBContext)]
 impl MutationRoot {
     fn create_user(context: &DBContext, registration: Registration) -> MutationResult<User> {
-        
         let errors = registration.validate();
         if !errors.is_empty() {
             return MutationResult(Err(errors));
@@ -193,7 +224,6 @@ impl MutationRoot {
     }
 
     fn reset_password(context: &DBContext, request: ResetPasswordRequest) -> MutationResult<User> {
-
         let errors = request.validate();
         if !errors.is_empty() {
             return MutationResult(Err(errors));
@@ -208,7 +238,42 @@ impl MutationRoot {
         }
     }
 
-    fn create_program(context: &DBContext,new_program_request: NewProgramRequest) -> MutationResult<Program> {
+    fn create_abstract_task(context: &DBContext,request: NewAbstractTaskRequest) -> MutationResult<AbstractTask> {
+
+        let errors = request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_abstract_task(&connection, &request);
+
+        match result {
+            Ok(abstract_task) => MutationResult(Ok(abstract_task)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn create_master_plan(context: &DBContext,request: NewMasterPlanRequest) -> MutationResult<MasterPlan> {
+
+        let errors = request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_master_plan(&connection, &request);
+
+        match result {
+            Ok(master_plan) => MutationResult(Ok(master_plan)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn create_program(
+        context: &DBContext,
+        new_program_request: NewProgramRequest,
+    ) -> MutationResult<Program> {
         let errors = new_program_request.validate();
         if !errors.is_empty() {
             return MutationResult(Err(errors));
