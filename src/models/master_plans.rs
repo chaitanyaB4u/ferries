@@ -83,5 +83,5 @@ impl NewMasterPlan {
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct MasterPlanCriteria {
-    pub coach_id: String
+    pub coach_id: String,
 }

@@ -26,6 +26,7 @@ use crate::models::options::Constraint;
 use crate::models::observations::Observation;
 use crate::models::abstract_tasks::AbstractTask;
 use crate::models::master_plans::MasterPlan;
+use crate::models::master_tasks::MasterTask;
 
 
 #[derive(juniper::GraphQLObject)]
@@ -70,6 +71,16 @@ impl QueryResult<Vec<AbstractTask>> {
 #[juniper::object(name="MasterPlansResult")]
 impl QueryResult<Vec<MasterPlan>> {
     pub fn master_plans(&self) -> Option<&Vec<MasterPlan>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name="MasterTasksResult")]
+impl QueryResult<Vec<MasterTask>> {
+    pub fn master_tasks(&self) -> Option<&Vec<MasterTask>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {
@@ -283,6 +294,17 @@ impl MutationResult<Observation> {
 #[juniper::object(name = "TaskResult")]
 impl MutationResult<Task> {
     pub fn task(&self) -> Option<&Task> {
+        self.0.as_ref().ok()
+    }
+
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "MasterTaskResult")]
+impl MutationResult<MasterTask> {
+    pub fn master_task(&self) -> Option<&MasterTask> {
         self.0.as_ref().ok()
     }
 

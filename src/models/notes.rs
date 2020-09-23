@@ -27,6 +27,9 @@ impl Note {
     pub fn id(&self) -> &str {
         self.id.as_str()
     }
+    pub fn session_id(&self) -> &str {
+        self.session_id.as_str()
+    }
     pub fn description(&self) -> &str {
        self.description.as_str()
     }

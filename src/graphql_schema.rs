@@ -21,6 +21,7 @@ use crate::models::options::{Constraint, NewOptionRequest, UpdateOptionRequest};
 use crate::models::programs::{ChangeProgramStateRequest, NewProgramRequest, Program};
 use crate::models::sessions::{ChangeSessionStateRequest, NewSessionRequest, Session};
 use crate::models::tasks::{NewTaskRequest, Task, UpdateTaskRequest};
+use crate::models::master_tasks::{MasterTask, NewMasterTaskRequest, UpdateMasterTaskRequest,MasterTaskCriteria};
 use crate::models::user_events::{
     get_events, get_people, get_plan_events, EventCriteria, EventRow, PlanRow, SessionCriteria,
     SessionPeople,
@@ -39,6 +40,7 @@ use crate::services::tasks::{create_task, get_tasks, update_task};
 use crate::services::users::{authenticate, get_users, register, reset_password};
 use crate::services::abstract_tasks::{create_abstract_task,get_abstract_tasks};
 use crate::services::master_plans::{create_master_plan,get_master_plans};
+use crate::services::master_tasks::{create_master_task, update_master_task,get_master_tasks};
 
 use crate::commons::chassis::{
     mutation_error, query_error, service_error, MutationResult, QueryResult,
@@ -101,6 +103,16 @@ impl QueryRoot {
         }
     }
 
+    #[graphql(description = "Get the list of tasks for an Enrollment")]
+    fn get_master_tasks(context: &DBContext, criteria: MasterTaskCriteria) -> QueryResult<Vec<MasterTask>> {
+        let connection = context.db.get().unwrap();
+        let result = get_master_tasks(&connection, criteria);
+
+        match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
+    }
 
 
     #[graphql(description = "Get the list of members enrolled into a Program")]
@@ -432,6 +444,24 @@ impl MutationRoot {
         }
     }
 
+    fn update_master_task(
+        context: &DBContext,
+        update_master_task_request: UpdateMasterTaskRequest,
+    ) -> MutationResult<MasterTask> {
+        let errors = update_master_task_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = update_master_task(&connection, &update_master_task_request);
+
+        match result {
+            Ok(task) => MutationResult(Ok(task)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
     fn update_objective(
         context: &DBContext,
         update_objective_request: UpdateObjectiveRequest,
@@ -461,6 +491,21 @@ impl MutationRoot {
 
         match result {
             Ok(task) => MutationResult(Ok(task)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn create_master_task(context: &DBContext, new_master_task_request: NewMasterTaskRequest) -> MutationResult<MasterTask> {
+        let errors = new_master_task_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_master_task(&connection, &new_master_task_request);
+
+        match result {
+            Ok(master_task) => MutationResult(Ok(master_task)),
             Err(e) => mutation_error(e),
         }
     }

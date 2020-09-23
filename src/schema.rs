@@ -63,6 +63,7 @@ table! {
         updated_at -> Datetime,
         coach_id -> Varchar,
         role_id -> Varchar,
+        coordinates -> Text,
     }
 }
 

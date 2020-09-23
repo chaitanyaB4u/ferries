@@ -9,3 +9,4 @@ pub mod observations;
 pub mod tasks;
 pub mod abstract_tasks;
 pub mod master_plans;
+pub mod master_tasks;

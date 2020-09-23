@@ -7,6 +7,7 @@ use crate::models::session_users::SessionUser;
 use crate::models::sessions::Session;
 use crate::models::tasks::Task;
 use crate::models::users::User;
+use crate::models::notes::Note;
 
 use crate::schema::enrollments::dsl::*;
 use crate::schema::objectives::dsl::*;
@@ -17,6 +18,7 @@ use crate::schema::sessions;
 use crate::schema::sessions::dsl::*;
 use crate::schema::tasks::dsl::*;
 use crate::schema::users::dsl::*;
+use crate::schema::session_notes::dsl::*;
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct EventCriteria {
@@ -83,7 +85,7 @@ fn to_event_rows(rows: Vec<SessionProgram>) -> Vec<EventRow> {
 pub struct PlanRow {
     pub objective: Option<Objective>,
     pub task: Option<Task>,
-    pub enrollment: Enrollment,
+    pub note: Option<Note>,
     pub program: Program,
 }
 
@@ -95,16 +97,19 @@ impl PlanRow {
     pub fn task(&self) -> &Option<Task> {
         &self.task
     }
-    pub fn enrollment(&self) -> &Enrollment {
-        &self.enrollment
+
+    pub fn note(&self) -> &Option<Note>{
+        &self.note
     }
+
     pub fn program(&self) -> &Program {
         &self.program
     }
 }
 
 type ObjectiveRowType = (Objective, (Enrollment, Program));
-type TaskRowType = (Task, (Enrollment, Program));
+type TaskRowType = (Task, (Enrollment, Program)); 
+type NoteRowType = (Note, (Session,Program));
 
 pub fn get_plan_events(connection: &MysqlConnection,criteria: EventCriteria) -> Result<Vec<PlanRow>, diesel::result::Error> {
 
@@ -120,13 +125,39 @@ pub fn get_plan_events(connection: &MysqlConnection,criteria: EventCriteria) -> 
         .filter(member_id.eq(&criteria.user_id))
         .load(connection)?;
 
+    let note_rows: Vec<NoteRowType> = session_notes
+        .inner_join(sessions.inner_join(programs))
+        .filter(created_by_id.eq(&criteria.user_id))
+        .filter(remind_at.is_not_null())
+        .load(connection)?;
+
     for row in objective_rows {
-        plan_rows.push(PlanRow {objective: Some(row.0),task: None,enrollment: (row.1).0, program: (row.1).1});
+        plan_rows.push(PlanRow {
+            objective: Some(row.0),
+            task: None,
+            note: None,
+            program: (row.1).1
+        });
     }
 
     for row in task_rows {
-        plan_rows.push(PlanRow {task: Some(row.0), objective: None, enrollment: (row.1).0, program: (row.1).1});
+        plan_rows.push(PlanRow {
+            task: Some(row.0), 
+            objective: None, 
+            note: None, 
+            program: (row.1).1
+        });
     }
+
+    for row in note_rows {
+        plan_rows.push(PlanRow {
+            note: Some(row.0),
+            objective: None,
+            task: None,
+            program: (row.1).1
+        });
+    }
+
 
    Ok(plan_rows)
 }
@@ -155,6 +186,9 @@ impl SessionPeople {
 pub type PeopleResult = Result<Vec<SessionPeople>, diesel::result::Error>;
 
 pub fn get_people(connection: &MysqlConnection, criteria: SessionCriteria) -> PeopleResult {
+    
+    use crate::schema::session_users::session_id;
+
     let result: Vec<(SessionUser, User)> = session_users
         .inner_join(users)
         .filter(session_id.eq(criteria.id))
