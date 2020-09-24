@@ -43,10 +43,10 @@ table! {
         source_task_id -> Varchar,
         target_task_id -> Varchar,
         lead_time -> Integer,
-        buffer_time -> Integer,
         coordinates -> Text,
         priority -> Integer,
         is_forward -> Bool,
+        master_plan_id -> Varchar,
     }
 }
 
@@ -201,10 +201,10 @@ table! {
         source_task_id -> Varchar,
         target_task_id -> Varchar,
         lead_time -> Integer,
-        buffer_time -> Integer,
         coordinates -> Text,
         priority -> Integer,
         is_forward -> Bool,
+        enrollment_id -> Varchar,
     }
 }
 
@@ -251,6 +251,7 @@ joinable!(coaches -> users (user_id));
 joinable!(enrollments -> programs (program_id));
 joinable!(enrollments -> users (member_id));
 joinable!(master_plans -> coaches (coach_id));
+joinable!(master_task_links -> master_plans (master_plan_id));
 joinable!(master_tasks -> abstract_tasks (abstract_task_id));
 joinable!(master_tasks -> coaches (coach_id));
 joinable!(master_tasks -> master_plans (master_plan_id));
@@ -269,6 +270,7 @@ joinable!(session_users -> sessions (session_id));
 joinable!(session_users -> users (user_id));
 joinable!(sessions -> enrollments (enrollment_id));
 joinable!(sessions -> programs (program_id));
+joinable!(task_links -> enrollments (enrollment_id));
 joinable!(tasks -> enrollments (enrollment_id));
 joinable!(tasks -> users (actor_id));
 

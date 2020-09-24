@@ -1,20 +1,18 @@
 /**
  * A coach can offer mutilple Programs. We define the structure of
- * the program. 
+ * the program.
  */
+use chrono::NaiveDateTime;
 
-use chrono::{NaiveDateTime};
-
+use crate::commons::chassis::ValidationError;
+use crate::commons::util;
 use crate::models::coaches::Coach;
 use crate::schema::programs;
-use crate::commons::chassis::{ValidationError};
-use crate::commons::util;
-
 
 /**
  * The structure represents One row of the programs table.
  */
-#[derive(Queryable,Debug,Identifiable,Associations)]
+#[derive(Queryable, Debug, Identifiable, Associations)]
 pub struct Program {
     pub id: String,
     pub name: String,
@@ -23,20 +21,19 @@ pub struct Program {
     pub coach_name: String,
     pub coach_id: String,
     pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime
+    pub updated_at: NaiveDateTime,
 }
 
 /**
  * Let us expose certain limited elements of the structure to the outside world
  *
  */
-#[juniper::object(description="The fields we offer to the Web-UI ")]
+#[juniper::object(description = "The fields we offer to the Web-UI ")]
 impl Program {
-
     pub fn id(&self) -> &str {
         self.id.as_str()
     }
-    
+
     pub fn active(&self) -> bool {
         self.active
     }
@@ -47,8 +44,8 @@ impl Program {
 
     pub fn description(&self) -> &str {
         match &self.description {
-            None=>"_",
-            Some(value)=>value.as_str()
+            None => "_",
+            Some(value) => value.as_str(),
         }
     }
 
@@ -68,7 +65,7 @@ impl Program {
 pub struct NewProgramRequest {
     pub name: String,
     pub coach_id: String,
-    pub description: String
+    pub description: String,
 }
 
 /**
@@ -76,9 +73,7 @@ pub struct NewProgramRequest {
  * fields before creating the Program.
  */
 impl NewProgramRequest {
-
-    pub fn validate(&self) ->Vec<ValidationError> {
-
+    pub fn validate(&self) -> Vec<ValidationError> {
         let mut errors: Vec<ValidationError> = Vec::new();
 
         if self.name.trim().is_empty() {
@@ -94,9 +89,7 @@ impl NewProgramRequest {
         }
 
         errors
-
     }
-
 }
 
 // The Persistable entity with the Fuzzy_id injected by us.
@@ -108,7 +101,7 @@ pub struct NewProgram {
     pub description: String,
     pub active: bool,
     pub coach_name: String,
-    pub coach_id: String
+    pub coach_id: String,
 }
 
 /**
@@ -116,33 +109,28 @@ pub struct NewProgram {
  * fuyzz_id.
  */
 impl NewProgram {
-
-    pub fn from(request: &NewProgramRequest,coach: &Coach) -> NewProgram {
-
+    pub fn from(request: &NewProgramRequest, coach: &Coach) -> NewProgram {
         let fuzzy_id = util::fuzzy_id();
 
         NewProgram {
-            id:fuzzy_id,
-            name:request.name.to_owned(),
-            description:request.description.to_owned(),
-            active:false,
-            coach_name:coach.full_name.to_owned(),
-            coach_id:coach.id.to_owned()
+            id: fuzzy_id,
+            name: request.name.to_owned(),
+            description: request.description.to_owned(),
+            active: false,
+            coach_name: coach.full_name.to_owned(),
+            coach_id: coach.id.to_owned(),
         }
-        
     }
 }
 
-#[derive(juniper::GraphQLEnum)]
-#[derive(PartialEq)]
+#[derive(juniper::GraphQLEnum, PartialEq)]
 pub enum ProgramTargetState {
     ACTIVATE,
-    DEACTIVATE
+    DEACTIVATE,
 }
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct ChangeProgramStateRequest {
     pub id: String,
-    pub target_state: ProgramTargetState
+    pub target_state: ProgramTargetState,
 }
-

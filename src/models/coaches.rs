@@ -1,7 +1,6 @@
 use chrono::NaiveDateTime;
 
-
-#[derive(Queryable,Debug)]
+#[derive(Queryable, Debug)]
 pub struct Coach {
     pub id: String,
     pub user_id: String,

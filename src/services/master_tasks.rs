@@ -1,11 +1,10 @@
 use diesel::prelude::*;
 
+use crate::models::master_tasks::MasterTaskCriteria;
+use crate::models::master_tasks::{MasterTask, NewMasterTask, NewMasterTaskRequest, UpdateMasterTask, UpdateMasterTaskRequest};
 use crate::schema::master_tasks::dsl::*;
-use crate::models::master_tasks::{NewMasterTaskRequest, MasterTask, NewMasterTask, UpdateMasterTaskRequest, UpdateMasterTask};
-use crate::models::master_tasks::{MasterTaskCriteria};
 
 pub fn create_master_task(connection: &MysqlConnection, request: &NewMasterTaskRequest) -> Result<MasterTask, diesel::result::Error> {
-
     let new_master_task = NewMasterTask::from(request);
 
     diesel::insert_into(master_tasks).values(&new_master_task).execute(connection)?;
@@ -16,24 +15,20 @@ pub fn create_master_task(connection: &MysqlConnection, request: &NewMasterTaskR
 pub fn update_master_task(connection: &MysqlConnection, request: &UpdateMasterTaskRequest) -> Result<MasterTask, diesel::result::Error> {
     let the_id = &request.id.as_str();
 
-
     diesel::update(master_tasks.filter(id.eq(the_id)))
-    .set(&UpdateMasterTask{
-        duration : request.duration,
-        min : request.min,
-        max : request.max,
-        task_type : request.task_type.to_owned(),
-        role_id : request.role_id.to_owned(),
-        coordinates : request.coordinates.to_owned()
-    })
-    .execute(connection)?;
+        .set(&UpdateMasterTask {
+            duration: request.duration,
+            min: request.min,
+            max: request.max,
+            task_type: request.task_type.to_owned(),
+            role_id: request.role_id.to_owned(),
+            coordinates: request.coordinates.to_owned(),
+        })
+        .execute(connection)?;
 
     master_tasks.filter(id.eq(the_id)).first(connection)
 }
 
-pub fn get_master_tasks(connection: &MysqlConnection, criteria: MasterTaskCriteria) -> Result<Vec<MasterTask>,diesel::result::Error> {
-
-    master_tasks
-        .filter(master_plan_id.eq(criteria.master_plan_id))
-        .load(connection)
+pub fn get_master_tasks(connection: &MysqlConnection, criteria: MasterTaskCriteria) -> Result<Vec<MasterTask>, diesel::result::Error> {
+    master_tasks.filter(master_plan_id.eq(criteria.master_plan_id)).load(connection)
 }

@@ -1,15 +1,15 @@
 use crate::commons::util::fuzzy_id;
+use actix_files::NamedFile;
 use actix_multipart::Multipart;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use futures::{StreamExt, TryStreamExt};
 use std::fs;
 use std::io::Write;
-use actix_files::NamedFile;
 use std::path::PathBuf;
 
 pub const SESSION_ASSET_DIR: &'static str = "/Users/pmpower/assets/sessions";
 pub const PROGRAM_ASSET_DIR: &'static str = "/Users/pmpower/assets/programs";
- 
+
 pub async fn manage_notes_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let mut file_paths: Vec<String> = Vec::new();
 
@@ -24,19 +24,11 @@ pub async fn manage_notes_file(mut payload: Multipart) -> Result<HttpResponse, E
         std::fs::create_dir_all(dir_path).unwrap();
 
         // Now we
-        let filepath = format!(
-            "{}/{}/notes/{}/{}",
-            SESSION_ASSET_DIR,
-            session_user_fuzzy_id,
-            file_key,
-            sanitize_filename::sanitize(&filename)
-        );
+        let filepath = format!("{}/{}/notes/{}/{}", SESSION_ASSET_DIR, session_user_fuzzy_id, file_key, sanitize_filename::sanitize(&filename));
         file_paths.push(filepath.to_owned());
 
         // File::create is blocking operation, use threadpool
-        let mut f = web::block(|| std::fs::File::create(filepath))
-            .await
-            .unwrap();
+        let mut f = web::block(|| std::fs::File::create(filepath)).await.unwrap();
         // Field in turn is stream of *Bytes* object
         while let Some(chunk) = field.next().await {
             let data = chunk.unwrap();
@@ -48,9 +40,7 @@ pub async fn manage_notes_file(mut payload: Multipart) -> Result<HttpResponse, E
 
     let json_response = serde_json::to_string(&file_paths)?;
 
-    Ok(HttpResponse::Ok()
-        .content_type("application/json")
-        .body(json_response))
+    Ok(HttpResponse::Ok().content_type("application/json").body(json_response))
 }
 
 pub async fn manage_program_content(_request: HttpRequest, mut payload: Multipart) -> Result<HttpResponse, Error> {
@@ -59,15 +49,15 @@ pub async fn manage_program_content(_request: HttpRequest, mut payload: Multipar
 
     while let Ok(Some(mut field)) = payload.try_next().await {
         let content_type = field.content_disposition().unwrap();
-        
+
         let filename = content_type.get_name().unwrap();
 
         // Ensure to create a directory for the program content.
         let dir_path = format!("{}/{}/{}", PROGRAM_ASSET_DIR, program_fuzzy_id, purpose);
         std::fs::create_dir_all(dir_path).unwrap();
 
-        let file_path = format!("{}/{}/{}/{}", PROGRAM_ASSET_DIR, program_fuzzy_id, purpose,filename);
-       
+        let file_path = format!("{}/{}/{}/{}", PROGRAM_ASSET_DIR, program_fuzzy_id, purpose, filename);
+
         // File::create is blocking operation, use threadpool
         let mut f = web::block(|| std::fs::File::create(file_path)).await.unwrap();
 
@@ -84,29 +74,24 @@ pub async fn manage_program_content(_request: HttpRequest, mut payload: Multipar
 }
 
 pub async fn fetch_list_of_boards(_request: HttpRequest) -> Result<HttpResponse, Error> {
-
     let session_user_fuzzy_id: PathBuf = _request.match_info().query("session_user_fuzzy_id").parse().unwrap();
 
     let mut dir_name: PathBuf = PathBuf::from(SESSION_ASSET_DIR);
     dir_name.push(session_user_fuzzy_id);
     dir_name.push("boards");
-    
-    let mut entries =   fs::read_dir(dir_name)?
-                    .map(|res| res.map(|e| e.file_name().into_string()))
-                    .collect::<Result<Vec<_>, std::io::Error>>()?;
+
+    let mut entries = fs::read_dir(dir_name)?
+        .map(|res| res.map(|e| e.file_name().into_string()))
+        .collect::<Result<Vec<_>, std::io::Error>>()?;
 
     entries.sort();
-    
+
     let json_response = serde_json::to_string(&entries)?;
 
-    Ok(HttpResponse::Ok()
-        .content_type("application/json")
-        .body(json_response))
+    Ok(HttpResponse::Ok().content_type("application/json").body(json_response))
 }
 
-
-pub async fn fetch_board_file(_request: HttpRequest) -> Result<NamedFile,Error> {
-
+pub async fn fetch_board_file(_request: HttpRequest) -> Result<NamedFile, Error> {
     let session_user_fuzzy_id: PathBuf = _request.match_info().query("session_user_fuzzy_id").parse().unwrap();
     let asset_name: PathBuf = _request.match_info().query("filename").parse().unwrap();
 
@@ -118,8 +103,7 @@ pub async fn fetch_board_file(_request: HttpRequest) -> Result<NamedFile,Error> 
     Ok(NamedFile::open(file_name)?)
 }
 
-pub async fn fetch_program_content(_request: HttpRequest) -> Result<NamedFile,Error> {
-
+pub async fn fetch_program_content(_request: HttpRequest) -> Result<NamedFile, Error> {
     let program_fuzzy_id: PathBuf = _request.match_info().query("program_fuzzy_id").parse().unwrap();
     let purpose: PathBuf = _request.match_info().query("purpose").parse().unwrap();
     let asset_name: PathBuf = _request.match_info().query("filename").parse().unwrap();

@@ -46,17 +46,11 @@ impl NewEnrollmentRequest {
         let mut errors: Vec<ValidationError> = Vec::new();
 
         if self.program_id.trim().is_empty() {
-            errors.push(ValidationError::new(
-                "program_id",
-                "The Program id is invalid.",
-            ));
+            errors.push(ValidationError::new("program_id", "The Program id is invalid."));
         }
 
         if self.user_id.trim().is_empty() {
-            errors.push(ValidationError::new(
-                "user_id",
-                "The User id is invalid.",
-            ));
+            errors.push(ValidationError::new("user_id", "The User id is invalid."));
         }
 
         errors
@@ -66,13 +60,13 @@ impl NewEnrollmentRequest {
 #[derive(juniper::GraphQLEnum)]
 pub enum EnrollmentFilter {
     ALL,
-    NEW
+    NEW,
 }
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct EnrollmentCriteria {
     pub program_id: String,
-    pub desire: EnrollmentFilter, 
+    pub desire: EnrollmentFilter,
 }
 
 #[derive(juniper::GraphQLInputObject)]
@@ -83,7 +77,7 @@ pub struct PlanCriteria {
 #[derive(Insertable)]
 #[table_name = "enrollments"]
 pub struct NewEnrollment {
-    pub id:String,
+    pub id: String,
     pub program_id: String,
     pub member_id: String,
 }
@@ -92,7 +86,7 @@ impl NewEnrollment {
     pub fn from(program: &Program, user: &User) -> NewEnrollment {
         let fuzzy_id = util::fuzzy_id();
         NewEnrollment {
-            id:fuzzy_id,
+            id: fuzzy_id,
             program_id: program.id.to_owned(),
             member_id: user.id.to_owned(),
         }

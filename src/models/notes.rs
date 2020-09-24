@@ -1,29 +1,27 @@
-
 use crate::models::session_users::SessionUser;
 
-use crate::schema::session_notes;
 use crate::schema::session_files;
+use crate::schema::session_notes;
 
-use crate::commons::chassis::{ValidationError};
-use chrono::{NaiveDateTime};
+use crate::commons::chassis::ValidationError;
 use crate::commons::util;
+use chrono::NaiveDateTime;
 
-#[derive(Queryable,Debug)]
+#[derive(Queryable, Debug)]
 pub struct Note {
     pub id: String,
-    pub session_id:  String,
+    pub session_id: String,
     pub created_by_id: String,
     pub session_user_id: String,
     pub description: String,
     pub remind_at: Option<NaiveDateTime>,
     pub is_private: bool,
     pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime
+    pub updated_at: NaiveDateTime,
 }
 
-#[juniper::object(description="The fields we offer to the Web-UI ")]
+#[juniper::object(description = "The fields we offer to the Web-UI ")]
 impl Note {
-
     pub fn id(&self) -> &str {
         self.id.as_str()
     }
@@ -31,7 +29,7 @@ impl Note {
         self.session_id.as_str()
     }
     pub fn description(&self) -> &str {
-       self.description.as_str()
+        self.description.as_str()
     }
     pub fn is_private(&self) -> bool {
         self.is_private
@@ -45,8 +43,8 @@ impl Note {
 }
 
 #[derive(juniper::GraphQLInputObject)]
-pub struct NewNoteRequest{
-    pub session_user_id:  String,
+pub struct NewNoteRequest {
+    pub session_user_id: String,
     pub description: String,
     pub files: Option<Vec<FileRequest>>,
     pub remind_at: Option<String>,
@@ -60,11 +58,8 @@ pub struct FileRequest {
     pub size: i32,
 }
 
-
 impl NewNoteRequest {
-
-    pub fn validate(&self) ->Vec<ValidationError> {
-
+    pub fn validate(&self) -> Vec<ValidationError> {
         let mut errors: Vec<ValidationError> = Vec::new();
 
         if self.session_user_id.trim().is_empty() {
@@ -83,39 +78,35 @@ impl NewNoteRequest {
 #[table_name = "session_notes"]
 pub struct NewNote {
     pub id: String,
-    pub session_id:  String,
+    pub session_id: String,
     pub created_by_id: String,
     pub session_user_id: String,
     pub description: String,
-    pub remind_at: Option<NaiveDateTime>
+    pub remind_at: Option<NaiveDateTime>,
 }
 
 impl NewNote {
-
-    pub fn from(request: &NewNoteRequest,session_user: SessionUser) -> NewNote {
-
+    pub fn from(request: &NewNoteRequest, session_user: SessionUser) -> NewNote {
         let remind_at = match &request.remind_at {
             Some(value) => {
                 let date = util::as_date(value.as_str());
                 Some(date)
-            },
+            }
             None => None,
         };
-
 
         let fuzzy_id = util::fuzzy_id();
 
         NewNote {
-            id:fuzzy_id,
-            session_id:session_user.session_id,
-            created_by_id:session_user.user_id,
-            description:request.description.to_owned(),
-            session_user_id:session_user.id,
+            id: fuzzy_id,
+            session_id: session_user.session_id,
+            created_by_id: session_user.user_id,
+            description: request.description.to_owned(),
+            session_user_id: session_user.id,
             remind_at: remind_at,
         }
     }
 }
-
 
 #[derive(Insertable)]
 #[table_name = "session_files"]
@@ -128,22 +119,18 @@ pub struct NewNoteFile {
     pub file_size: Option<i32>,
 }
 
-
 impl NewNoteFile {
-
     pub fn from(request: &FileRequest, session_note_id: String) -> NewNoteFile {
-
         let fuzzy_id = util::fuzzy_id();
 
         NewNoteFile {
-            id:fuzzy_id,
-            session_note_id:session_note_id.to_owned(),
-            file_path:request.path.to_owned(),
-            file_name:request.name.to_owned(),
-            file_type:Some(request.r#type.to_owned()),
-            file_size:Some(request.size),
+            id: fuzzy_id,
+            session_note_id: session_note_id.to_owned(),
+            file_path: request.path.to_owned(),
+            file_name: request.name.to_owned(),
+            file_type: Some(request.r#type.to_owned()),
+            file_size: Some(request.size),
         }
-
     }
 }
 

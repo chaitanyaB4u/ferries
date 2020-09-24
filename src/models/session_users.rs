@@ -2,10 +2,9 @@ use crate::commons::util;
 use crate::schema::session_users;
 
 use crate::models::sessions::Session;
-use crate::models::users::{User};
+use crate::models::users::User;
 
-#[derive(Clone)]
-#[derive(Queryable, Debug, Identifiable)]
+#[derive(Clone, Queryable, Debug, Identifiable)]
 pub struct SessionUser {
     pub id: String,
     pub session_id: String,
@@ -16,7 +15,6 @@ pub struct SessionUser {
 // Fields that we can safely expose to APIs
 #[juniper::object]
 impl SessionUser {
-
     pub fn id(&self) -> &str {
         self.id.as_str()
     }
@@ -34,7 +32,6 @@ impl SessionUser {
     }
 }
 
-
 #[derive(Insertable)]
 #[table_name = "session_users"]
 pub struct NewSessionUser {
@@ -45,16 +42,14 @@ pub struct NewSessionUser {
 }
 
 impl NewSessionUser {
-
     pub fn from(session: &Session, user: &User, session_user_type: &str) -> NewSessionUser {
-        
         let fuzzy_id = util::fuzzy_id();
-        
+
         NewSessionUser {
-            id:fuzzy_id,
+            id: fuzzy_id,
             session_id: session.id.to_owned(),
             user_id: user.id.to_owned(),
-            user_type: String::from(session_user_type)
+            user_type: String::from(session_user_type),
         }
     }
 }

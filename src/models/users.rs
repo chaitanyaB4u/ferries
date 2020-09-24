@@ -4,15 +4,14 @@
 
 use chrono::NaiveDateTime;
 
-use crate::schema::users;
+use crate::commons::chassis::ValidationError;
 use crate::commons::util;
-use crate::commons::chassis::{ValidationError};
+use crate::schema::users;
 
 // The Order of the fiels are very important
-// The User struct is purely for internal consumption. 
-// See the Juniper:object for the fields we exposed to outside 
-#[derive(Clone)]
-#[derive(Queryable,Debug,Identifiable)]
+// The User struct is purely for internal consumption.
+// See the Juniper:object for the fields we exposed to outside
+#[derive(Clone, Queryable, Debug, Identifiable)]
 pub struct User {
     pub id: String,
     pub full_name: String,
@@ -44,18 +43,17 @@ impl User {
     }
 }
 
-// Registration represents the fields we obtain from user 
+// Registration represents the fields we obtain from user
 // while Creating a new User in the system
 #[derive(juniper::GraphQLInputObject)]
 pub struct Registration {
     pub full_name: String,
     pub email: String,
-    pub password: String
+    pub password: String,
 }
 
 impl Registration {
-    pub fn validate(&self) ->Vec<ValidationError> {
-
+    pub fn validate(&self) -> Vec<ValidationError> {
         let mut errors: Vec<ValidationError> = Vec::new();
 
         if self.email.trim().is_empty() {
@@ -88,7 +86,7 @@ pub struct NewUser {
 // A way to transform the inbound registration request into the persistable
 // NewUser structure.
 
-// Let us generate the fuzzy_id, so that we can use it to find and return 
+// Let us generate the fuzzy_id, so that we can use it to find and return
 // the NewUser structure to the requester, post-creation.
 impl NewUser {
     pub fn from(registration: &Registration) -> NewUser {
@@ -99,7 +97,7 @@ impl NewUser {
             full_name: registration.full_name.to_owned(),
             email: registration.email.to_owned(),
             user_type: String::from(util::MEMBER),
-            password: util::hash(registration.password.as_str())
+            password: util::hash(registration.password.as_str()),
         }
     }
 }
@@ -119,8 +117,7 @@ pub struct ResetPasswordRequest {
 }
 
 impl ResetPasswordRequest {
-    pub fn validate(&self) ->Vec<ValidationError> {
-
+    pub fn validate(&self) -> Vec<ValidationError> {
         let mut errors: Vec<ValidationError> = Vec::new();
 
         if self.email.trim().is_empty() {

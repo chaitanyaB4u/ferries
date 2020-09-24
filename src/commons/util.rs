@@ -55,12 +55,7 @@ pub fn concat(str1: &str, str2: &str) -> String {
 pub fn hash(password: &str) -> String {
     sodiumoxide::init().unwrap();
 
-    let hashed_password = argon2id13::pwhash(
-        password.as_bytes(),
-        argon2id13::OPSLIMIT_INTERACTIVE,
-        argon2id13::MEMLIMIT_INTERACTIVE,
-    )
-    .unwrap();
+    let hashed_password = argon2id13::pwhash(password.as_bytes(), argon2id13::OPSLIMIT_INTERACTIVE, argon2id13::MEMLIMIT_INTERACTIVE).unwrap();
 
     let text_hash = std::str::from_utf8(&hashed_password.0).unwrap().to_string();
 
@@ -68,14 +63,13 @@ pub fn hash(password: &str) -> String {
 }
 
 /**
- * 
+ *
  * 1. Create an array of length 128 and stuff that with 0 (unsigned byte)
  * 2. iterate the given slice and replace the array with the respective value.
  *
  */
-fn as_byte_array(slice: &str) ->[u8;128] {
-
-    let mut arr  = [0u8;128];
+fn as_byte_array(slice: &str) -> [u8; 128] {
+    let mut arr = [0u8; 128];
 
     slice.as_bytes().iter().enumerate().for_each(|(i, val)| {
         arr[i] = val.clone();
@@ -85,7 +79,6 @@ fn as_byte_array(slice: &str) ->[u8;128] {
 }
 
 pub fn is_equal(hashed_password: &str, given_password: &str) -> bool {
-   
     sodiumoxide::init().unwrap();
 
     let hashed_bytes = as_byte_array(hashed_password);
@@ -93,13 +86,26 @@ pub fn is_equal(hashed_password: &str, given_password: &str) -> bool {
     let mut status = false;
 
     if let Some(hash) = argon2id13::HashedPassword::from_slice(&hashed_bytes) {
-        status = argon2id13::pwhash_verify(&hash,given_password.as_bytes());
+        status = argon2id13::pwhash_verify(&hash, given_password.as_bytes());
     }
 
     status
 }
 
+pub fn find_diff(current: Vec<String>, given: Vec<String>) -> Vec<String> {
+    let mut diff: Vec<String> = Vec::new();
 
+    current
+        .iter()
+        .map(|current_id| {
+            if given.binary_search(&current_id).is_err() {
+                diff.push(current_id.clone())
+            }
+        })
+        .count();
+
+    diff
+}
 
 #[cfg(test)]
 mod tests {
@@ -109,21 +115,29 @@ mod tests {
     #[test]
     fn should_be_in_past() {
         let start_time = "2020-08-27T06:53:09Z";
-        assert_eq!(true,is_in_past(as_date(start_time)));
+        assert_eq!(true, is_in_past(as_date(start_time)));
     }
 
     #[test]
     fn should_hash_and_verify_hashed_password() {
         let hashed = hash("abcdefghijklmnopqrstuvwxyz");
 
-        assert_eq!(false,is_equal(hashed.as_str(),"harini"));
+        assert_eq!(false, is_equal(hashed.as_str(), "harini"));
         assert_eq!(true, is_equal(hashed.as_str(), "abcdefghijklmnopqrstuvwxyz"));
-        assert_eq!(false,is_equal(hashed.as_str(), "abcdefghij lmnopqrstuvwxyz"));
+        assert_eq!(false, is_equal(hashed.as_str(), "abcdefghij lmnopqrstuvwxyz"));
     }
 
     #[test]
     fn gen_password() {
-        println!("{}",hash("harini"));
-        println!("{}",hash("harini"));
+        println!("{}", hash("harini"));
+        println!("{}", hash("harini"));
+    }
+
+    #[test]
+    fn find_diff_between_old_and_new() {
+        let old = vec![String::from("1"), String::from("2"), String::from("3"), String::from("4")];
+        let new = vec![String::from("1"), String::from("4")];
+        let diff = find_diff(old, new);
+        assert_eq!(vec![String::from("2"), String::from("3")], diff);
     }
 }

@@ -27,9 +27,8 @@ pub struct ProgramCriteria {
 pub enum EnrollmentStatus {
     UNKNOWN,
     YES,
-    NO
+    NO,
 }
-
 
 pub struct ProgramRow {
     pub program: Program,
@@ -37,7 +36,6 @@ pub struct ProgramRow {
     pub enrollment_id: String,
     pub enrollment_status: EnrollmentStatus,
 }
-
 
 #[juniper::object]
 impl ProgramRow {
@@ -58,7 +56,6 @@ impl ProgramRow {
     }
 }
 
-
 type ProgramType = (Program, Coach);
 
 pub type ProgramResult = Result<Vec<ProgramRow>, diesel::result::Error>;
@@ -72,8 +69,7 @@ pub fn get_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) ->
     }
 }
 
-fn get_enrollment(connection: &MysqlConnection, criteria: &ProgramCriteria) -> (String,EnrollmentStatus) {
-   
+fn get_enrollment(connection: &MysqlConnection, criteria: &ProgramCriteria) -> (String, EnrollmentStatus) {
     use crate::schema::enrollments::dsl::id;
 
     let enrollment_data: QueryResult<String> = enrollments
@@ -83,39 +79,32 @@ fn get_enrollment(connection: &MysqlConnection, criteria: &ProgramCriteria) -> (
         .first(connection);
 
     match enrollment_data {
-        Ok(enrollment_id) => (enrollment_id,EnrollmentStatus::YES),
-        Err(_) => (String::from(""),EnrollmentStatus::NO),
+        Ok(enrollment_id) => (enrollment_id, EnrollmentStatus::YES),
+        Err(_) => (String::from(""), EnrollmentStatus::NO),
     }
-
 }
 
 fn find_program(connection: &MysqlConnection, criteria: &ProgramCriteria) -> ProgramResult {
     use crate::schema::programs::dsl::id;
 
-    let result: (Program,Coach) = programs
-        .inner_join(coaches)
-        .filter(id.eq(&criteria.program_id))
-        .first(connection)?;
+    let result: (Program, Coach) = programs.inner_join(coaches).filter(id.eq(&criteria.program_id)).first(connection)?;
 
     let enrollment = get_enrollment(connection, criteria);
 
     let program_row = ProgramRow {
-            program:result.0, 
-            coach:result.1, 
-            enrollment_id: enrollment.0, 
-            enrollment_status: enrollment.1};
+        program: result.0,
+        coach: result.1,
+        enrollment_id: enrollment.0,
+        enrollment_status: enrollment.1,
+    };
 
     Ok(vec![program_row])
 }
 
-fn get_enrolled_programs(connection: &MysqlConnection,criteria: &ProgramCriteria) -> ProgramResult {
-    
+fn get_enrolled_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) -> ProgramResult {
     type Row = (Enrollment, ProgramType);
 
-    let data: Vec<Row> = enrollments
-        .inner_join(programs.inner_join(coaches))
-        .filter(member_id.eq(&criteria.user_id))
-        .load(connection)?;
+    let data: Vec<Row> = enrollments.inner_join(programs.inner_join(coaches)).filter(member_id.eq(&criteria.user_id)).load(connection)?;
 
     let mut rows: Vec<ProgramRow> = Vec::new();
 
@@ -126,7 +115,7 @@ fn get_enrolled_programs(connection: &MysqlConnection,criteria: &ProgramCriteria
             program: pc.0,
             coach: pc.1,
             enrollment_id: enrollment.id,
-            enrollment_status: EnrollmentStatus::YES
+            enrollment_status: EnrollmentStatus::YES,
         });
     }
 
@@ -136,11 +125,7 @@ fn get_enrolled_programs(connection: &MysqlConnection,criteria: &ProgramCriteria
 fn get_coach_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) -> ProgramResult {
     use crate::schema::coaches::dsl::id;
 
-    let data: Vec<ProgramType> = programs
-        .inner_join(coaches)
-        .filter(id.eq(&criteria.user_id))
-        .order_by(name.asc())
-        .load(connection)?;
+    let data: Vec<ProgramType> = programs.inner_join(coaches).filter(id.eq(&criteria.user_id)).order_by(name.asc()).load(connection)?;
 
     Ok(to_program_rows(data))
 }
@@ -148,12 +133,7 @@ fn get_coach_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) 
 fn get_latest_programs(connection: &MysqlConnection) -> ProgramResult {
     use crate::schema::programs::dsl::created_at;
 
-    let data: Vec<ProgramType> = programs
-        .inner_join(coaches)
-        .order_by(created_at.asc())
-        .filter(active.eq(true))
-        .limit(10)
-        .load(connection)?;
+    let data: Vec<ProgramType> = programs.inner_join(coaches).order_by(created_at.asc()).filter(active.eq(true)).limit(10).load(connection)?;
 
     Ok(to_program_rows(data))
 }
@@ -166,8 +146,8 @@ fn to_program_rows(data: Vec<ProgramType>) -> Vec<ProgramRow> {
             program: pc.0,
             coach: pc.1,
             enrollment_id: String::from(""),
-            enrollment_status: EnrollmentStatus::UNKNOWN
-       });
+            enrollment_status: EnrollmentStatus::UNKNOWN,
+        });
     }
 
     rows

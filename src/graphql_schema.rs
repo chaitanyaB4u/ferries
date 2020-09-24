@@ -2,18 +2,10 @@ use juniper::{FieldResult, RootNode};
 
 use crate::db_manager::MySqlConnectionPool;
 
-use crate::models::abstract_tasks::{
-    AbstractTask, AbstractTaskCriteria,  NewAbstractTaskRequest,
-};
-
-use crate::models::master_plans::{MasterPlan, MasterPlanCriteria, NewMasterPlanRequest};
-
-use crate::models::enrollments::{
-    Enrollment, EnrollmentCriteria, NewEnrollmentRequest, PlanCriteria,
-};
-
-
-
+use crate::models::abstract_tasks::{AbstractTask, AbstractTaskCriteria, NewAbstractTaskRequest};
+use crate::models::enrollments::{Enrollment, EnrollmentCriteria, NewEnrollmentRequest, PlanCriteria};
+use crate::models::master_plans::{MasterPlan, MasterPlanCriteria, NewMasterPlanRequest, UpdateMasterPlanRequest};
+use crate::models::master_tasks::{MasterTask, MasterTaskCriteria, NewMasterTaskRequest, UpdateMasterTaskRequest};
 use crate::models::notes::{NewNoteRequest, Note, NoteCriteria};
 use crate::models::objectives::{NewObjectiveRequest, Objective, UpdateObjectiveRequest};
 use crate::models::observations::{NewObservationRequest, Observation, UpdateObservationRequest};
@@ -21,15 +13,14 @@ use crate::models::options::{Constraint, NewOptionRequest, UpdateOptionRequest};
 use crate::models::programs::{ChangeProgramStateRequest, NewProgramRequest, Program};
 use crate::models::sessions::{ChangeSessionStateRequest, NewSessionRequest, Session};
 use crate::models::tasks::{NewTaskRequest, Task, UpdateTaskRequest};
-use crate::models::master_tasks::{MasterTask, NewMasterTaskRequest, UpdateMasterTaskRequest,MasterTaskCriteria};
-use crate::models::user_events::{
-    get_events, get_people, get_plan_events, EventCriteria, EventRow, PlanRow, SessionCriteria,
-    SessionPeople,
-};
+use crate::models::user_events::{get_events, get_people, get_plan_events, EventCriteria, EventRow, PlanRow, SessionCriteria, SessionPeople};
 use crate::models::user_programs::{get_programs, ProgramCriteria, ProgramRow};
 use crate::models::users::{LoginRequest, Registration, ResetPasswordRequest, User};
 
+use crate::services::abstract_tasks::{create_abstract_task, get_abstract_tasks};
 use crate::services::enrollments::{create_new_enrollment, get_active_enrollments};
+use crate::services::master_plans::{create_master_plan, get_master_plans, update_master_plan};
+use crate::services::master_tasks::{create_master_task, get_master_tasks, update_master_task};
 use crate::services::notes::{create_new_note, get_notes};
 use crate::services::objectives::{create_objective, get_objectives, update_objective};
 use crate::services::observations::{create_observation, get_observations, update_observation};
@@ -38,13 +29,8 @@ use crate::services::programs::{change_program_state, create_new_program};
 use crate::services::sessions::{change_session_state, create_session};
 use crate::services::tasks::{create_task, get_tasks, update_task};
 use crate::services::users::{authenticate, get_users, register, reset_password};
-use crate::services::abstract_tasks::{create_abstract_task,get_abstract_tasks};
-use crate::services::master_plans::{create_master_plan,get_master_plans};
-use crate::services::master_tasks::{create_master_task, update_master_task,get_master_tasks};
 
-use crate::commons::chassis::{
-    mutation_error, query_error, service_error, MutationResult, QueryResult,
-};
+use crate::commons::chassis::{mutation_error, query_error, service_error, MutationResult, QueryResult};
 
 #[derive(Clone)]
 pub struct DBContext {
@@ -71,7 +57,7 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get Programs of a Coach Or Member Or Latest 10.")]
-    fn get_programs(context: &DBContext,criteria: ProgramCriteria) -> QueryResult<Vec<ProgramRow>> {
+    fn get_programs(context: &DBContext, criteria: ProgramCriteria) -> QueryResult<Vec<ProgramRow>> {
         let connection = context.db.get().unwrap();
         let result = get_programs(&connection, &criteria);
 
@@ -82,7 +68,7 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get The List of Abstract Tasks of a Coach")]
-    fn get_abstract_tasks(context: &DBContext,criteria: AbstractTaskCriteria) -> QueryResult<Vec<AbstractTask>> {
+    fn get_abstract_tasks(context: &DBContext, criteria: AbstractTaskCriteria) -> QueryResult<Vec<AbstractTask>> {
         let connection = context.db.get().unwrap();
         let result = get_abstract_tasks(&connection, &criteria);
 
@@ -93,7 +79,7 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get The List of Master Plans of a Coach")]
-    fn get_master_plans(context: &DBContext,criteria: MasterPlanCriteria) -> QueryResult<Vec<MasterPlan>> {
+    fn get_master_plans(context: &DBContext, criteria: MasterPlanCriteria) -> QueryResult<Vec<MasterPlan>> {
         let connection = context.db.get().unwrap();
         let result = get_master_plans(&connection, &criteria);
 
@@ -113,7 +99,6 @@ impl QueryRoot {
             Err(e) => query_error(e),
         }
     }
-
 
     #[graphql(description = "Get the list of members enrolled into a Program")]
     fn get_enrollments(context: &DBContext, criteria: EnrollmentCriteria) -> Vec<User> {
@@ -166,10 +151,7 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get the list of observations for an Enrollment")]
-    fn get_observations(
-        context: &DBContext,
-        criteria: PlanCriteria,
-    ) -> QueryResult<Vec<Observation>> {
+    fn get_observations(context: &DBContext, criteria: PlanCriteria) -> QueryResult<Vec<Observation>> {
         let connection = context.db.get().unwrap();
         let result = get_observations(&connection, criteria);
 
@@ -202,10 +184,7 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get the People participating in an Event")]
-    fn get_session_users(
-        context: &DBContext,
-        criteria: SessionCriteria,
-    ) -> QueryResult<Vec<SessionPeople>> {
+    fn get_session_users(context: &DBContext, criteria: SessionCriteria) -> QueryResult<Vec<SessionPeople>> {
         let connection = context.db.get().unwrap();
         let result = get_people(&connection, criteria);
 
@@ -250,8 +229,7 @@ impl MutationRoot {
         }
     }
 
-    fn create_abstract_task(context: &DBContext,request: NewAbstractTaskRequest) -> MutationResult<AbstractTask> {
-
+    fn create_abstract_task(context: &DBContext, request: NewAbstractTaskRequest) -> MutationResult<AbstractTask> {
         let errors = request.validate();
         if !errors.is_empty() {
             return MutationResult(Err(errors));
@@ -266,8 +244,7 @@ impl MutationRoot {
         }
     }
 
-    fn create_master_plan(context: &DBContext,request: NewMasterPlanRequest) -> MutationResult<MasterPlan> {
-
+    fn create_master_plan(context: &DBContext, request: NewMasterPlanRequest) -> MutationResult<MasterPlan> {
         let errors = request.validate();
         if !errors.is_empty() {
             return MutationResult(Err(errors));
@@ -282,172 +259,22 @@ impl MutationRoot {
         }
     }
 
-    fn create_program(
-        context: &DBContext,
-        new_program_request: NewProgramRequest,
-    ) -> MutationResult<Program> {
-        let errors = new_program_request.validate();
+    fn create_master_task(context: &DBContext, new_master_task_request: NewMasterTaskRequest) -> MutationResult<MasterTask> {
+        let errors = new_master_task_request.validate();
         if !errors.is_empty() {
             return MutationResult(Err(errors));
         }
 
         let connection = context.db.get().unwrap();
-        let result = create_new_program(&connection, &new_program_request);
+        let result = create_master_task(&connection, &new_master_task_request);
 
         match result {
-            Ok(program) => MutationResult(Ok(program)),
-            Err(e) => service_error(e),
-        }
-    }
-
-    fn create_enrollment(
-        context: &DBContext,
-        new_enrollment_request: NewEnrollmentRequest,
-    ) -> MutationResult<Enrollment> {
-        let errors = new_enrollment_request.validate();
-        if !errors.is_empty() {
-            return MutationResult(Err(errors));
-        }
-
-        let connection = context.db.get().unwrap();
-        let result = create_new_enrollment(&connection, &new_enrollment_request);
-
-        match result {
-            Ok(enrollment) => MutationResult(Ok(enrollment)),
-            Err(e) => service_error(e),
-        }
-    }
-
-    fn create_session(
-        context: &DBContext,
-        new_session_request: NewSessionRequest,
-    ) -> MutationResult<Session> {
-        let errors = new_session_request.validate();
-        if !errors.is_empty() {
-            return MutationResult(Err(errors));
-        }
-
-        let connection = context.db.get().unwrap();
-        let result = create_session(&connection, &new_session_request);
-
-        match result {
-            Ok(session) => MutationResult(Ok(session)),
-            Err(e) => service_error(e),
-        }
-    }
-
-    fn create_objective(
-        context: &DBContext,
-        new_objective_request: NewObjectiveRequest,
-    ) -> MutationResult<Objective> {
-        let errors = new_objective_request.validate();
-        if !errors.is_empty() {
-            return MutationResult(Err(errors));
-        }
-
-        let connection = context.db.get().unwrap();
-        let result = create_objective(&connection, &new_objective_request);
-
-        match result {
-            Ok(objective) => MutationResult(Ok(objective)),
+            Ok(master_task) => MutationResult(Ok(master_task)),
             Err(e) => mutation_error(e),
         }
     }
 
-    fn create_option(
-        context: &DBContext,
-        new_option_request: NewOptionRequest,
-    ) -> MutationResult<Constraint> {
-        let errors = new_option_request.validate();
-        if !errors.is_empty() {
-            return MutationResult(Err(errors));
-        }
-
-        let connection = context.db.get().unwrap();
-        let result = create_option(&connection, &new_option_request);
-
-        match result {
-            Ok(option) => MutationResult(Ok(option)),
-            Err(e) => mutation_error(e),
-        }
-    }
-
-    fn create_observation(
-        context: &DBContext,
-        new_observation_request: NewObservationRequest,
-    ) -> MutationResult<Observation> {
-        let errors = new_observation_request.validate();
-        if !errors.is_empty() {
-            return MutationResult(Err(errors));
-        }
-
-        let connection = context.db.get().unwrap();
-        let result = create_observation(&connection, &new_observation_request);
-
-        match result {
-            Ok(option) => MutationResult(Ok(option)),
-            Err(e) => mutation_error(e),
-        }
-    }
-
-    fn update_observation(
-        context: &DBContext,
-        update_observation_request: UpdateObservationRequest,
-    ) -> MutationResult<Observation> {
-        let errors = update_observation_request.validate();
-        if !errors.is_empty() {
-            return MutationResult(Err(errors));
-        }
-
-        let connection = context.db.get().unwrap();
-        let result = update_observation(&connection, &update_observation_request);
-
-        match result {
-            Ok(obs) => MutationResult(Ok(obs)),
-            Err(e) => mutation_error(e),
-        }
-    }
-
-    fn update_option(
-        context: &DBContext,
-        update_option_request: UpdateOptionRequest,
-    ) -> MutationResult<Constraint> {
-        let errors = update_option_request.validate();
-        if !errors.is_empty() {
-            return MutationResult(Err(errors));
-        }
-
-        let connection = context.db.get().unwrap();
-        let result = update_option(&connection, &update_option_request);
-
-        match result {
-            Ok(option) => MutationResult(Ok(option)),
-            Err(e) => mutation_error(e),
-        }
-    }
-
-    fn update_task(
-        context: &DBContext,
-        update_task_request: UpdateTaskRequest,
-    ) -> MutationResult<Task> {
-        let errors = update_task_request.validate();
-        if !errors.is_empty() {
-            return MutationResult(Err(errors));
-        }
-
-        let connection = context.db.get().unwrap();
-        let result = update_task(&connection, &update_task_request);
-
-        match result {
-            Ok(task) => MutationResult(Ok(task)),
-            Err(e) => mutation_error(e),
-        }
-    }
-
-    fn update_master_task(
-        context: &DBContext,
-        update_master_task_request: UpdateMasterTaskRequest,
-    ) -> MutationResult<MasterTask> {
+    fn update_master_task(context: &DBContext, update_master_task_request: UpdateMasterTaskRequest) -> MutationResult<MasterTask> {
         let errors = update_master_task_request.validate();
         if !errors.is_empty() {
             return MutationResult(Err(errors));
@@ -462,10 +289,152 @@ impl MutationRoot {
         }
     }
 
-    fn update_objective(
-        context: &DBContext,
-        update_objective_request: UpdateObjectiveRequest,
-    ) -> MutationResult<Objective> {
+    fn save_master_plan(context: &DBContext, request: UpdateMasterPlanRequest) -> MutationResult<String> {
+        let connection = context.db.get().unwrap();
+        let result = update_master_plan(&connection, &request);
+
+        match result {
+            Ok(value) => MutationResult(Ok(value)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn create_program(context: &DBContext, new_program_request: NewProgramRequest) -> MutationResult<Program> {
+        let errors = new_program_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_new_program(&connection, &new_program_request);
+
+        match result {
+            Ok(program) => MutationResult(Ok(program)),
+            Err(e) => service_error(e),
+        }
+    }
+
+    fn create_enrollment(context: &DBContext, new_enrollment_request: NewEnrollmentRequest) -> MutationResult<Enrollment> {
+        let errors = new_enrollment_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_new_enrollment(&connection, &new_enrollment_request);
+
+        match result {
+            Ok(enrollment) => MutationResult(Ok(enrollment)),
+            Err(e) => service_error(e),
+        }
+    }
+
+    fn create_session(context: &DBContext, new_session_request: NewSessionRequest) -> MutationResult<Session> {
+        let errors = new_session_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_session(&connection, &new_session_request);
+
+        match result {
+            Ok(session) => MutationResult(Ok(session)),
+            Err(e) => service_error(e),
+        }
+    }
+
+    fn create_objective(context: &DBContext, new_objective_request: NewObjectiveRequest) -> MutationResult<Objective> {
+        let errors = new_objective_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_objective(&connection, &new_objective_request);
+
+        match result {
+            Ok(objective) => MutationResult(Ok(objective)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn create_option(context: &DBContext, new_option_request: NewOptionRequest) -> MutationResult<Constraint> {
+        let errors = new_option_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_option(&connection, &new_option_request);
+
+        match result {
+            Ok(option) => MutationResult(Ok(option)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn create_observation(context: &DBContext, new_observation_request: NewObservationRequest) -> MutationResult<Observation> {
+        let errors = new_observation_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_observation(&connection, &new_observation_request);
+
+        match result {
+            Ok(option) => MutationResult(Ok(option)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn update_observation(context: &DBContext, update_observation_request: UpdateObservationRequest) -> MutationResult<Observation> {
+        let errors = update_observation_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = update_observation(&connection, &update_observation_request);
+
+        match result {
+            Ok(obs) => MutationResult(Ok(obs)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn update_option(context: &DBContext, update_option_request: UpdateOptionRequest) -> MutationResult<Constraint> {
+        let errors = update_option_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = update_option(&connection, &update_option_request);
+
+        match result {
+            Ok(option) => MutationResult(Ok(option)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn update_task(context: &DBContext, update_task_request: UpdateTaskRequest) -> MutationResult<Task> {
+        let errors = update_task_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = update_task(&connection, &update_task_request);
+
+        match result {
+            Ok(task) => MutationResult(Ok(task)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn update_objective(context: &DBContext, update_objective_request: UpdateObjectiveRequest) -> MutationResult<Objective> {
         let errors = update_objective_request.validate();
         if !errors.is_empty() {
             return MutationResult(Err(errors));
@@ -495,25 +464,7 @@ impl MutationRoot {
         }
     }
 
-    fn create_master_task(context: &DBContext, new_master_task_request: NewMasterTaskRequest) -> MutationResult<MasterTask> {
-        let errors = new_master_task_request.validate();
-        if !errors.is_empty() {
-            return MutationResult(Err(errors));
-        }
-
-        let connection = context.db.get().unwrap();
-        let result = create_master_task(&connection, &new_master_task_request);
-
-        match result {
-            Ok(master_task) => MutationResult(Ok(master_task)),
-            Err(e) => mutation_error(e),
-        }
-    }
-
-    fn alter_session_state(
-        context: &DBContext,
-        request: ChangeSessionStateRequest,
-    ) -> MutationResult<Session> {
+    fn alter_session_state(context: &DBContext, request: ChangeSessionStateRequest) -> MutationResult<Session> {
         let connection = context.db.get().unwrap();
         let result = change_session_state(&connection, &request);
         match result {
@@ -522,10 +473,7 @@ impl MutationRoot {
         }
     }
 
-    fn alter_program_state(
-        context: &DBContext,
-        request: ChangeProgramStateRequest,
-    ) -> MutationResult<String> {
+    fn alter_program_state(context: &DBContext, request: ChangeProgramStateRequest) -> MutationResult<String> {
         let connection = context.db.get().unwrap();
         let result = change_program_state(&connection, &request);
 

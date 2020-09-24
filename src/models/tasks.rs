@@ -25,7 +25,7 @@ pub struct Task {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub description: Option<String>,
-    pub closing_notes : Option<String>,
+    pub closing_notes: Option<String>,
 }
 
 #[derive(juniper::GraphQLEnum)]
@@ -104,8 +104,8 @@ impl Task {
 
     pub fn description(&self) -> &str {
         let value: &str = match &self.description {
-            None=>"_",
-            Some(value)=>value.as_str()
+            None => "_",
+            Some(value) => value.as_str(),
         };
         value
     }
@@ -128,26 +128,20 @@ impl NewTaskRequest {
         let given_time = self.start_time.as_str();
 
         if !util::is_valid_date(given_time) {
-            errors.push(ValidationError::new("start_time","unparsable date."));
+            errors.push(ValidationError::new("start_time", "unparsable date."));
         }
 
         let date = util::as_date(given_time);
         if util::is_in_past(date) {
-            errors.push(ValidationError::new("start_time","should be a future date."));
+            errors.push(ValidationError::new("start_time", "should be a future date."));
         }
 
         if self.duration <= 0 {
-            errors.push(ValidationError::new(
-                "duration",
-                "should be a minimum of 1 hour.",
-            ));
+            errors.push(ValidationError::new("duration", "should be a minimum of 1 hour."));
         }
 
         if self.enrollment_id.trim().is_empty() {
-            errors.push(ValidationError::new(
-                "enrollment_id",
-                "Enrollment Id is a must.",
-            ));
+            errors.push(ValidationError::new("enrollment_id", "Enrollment Id is a must."));
         }
 
         errors
@@ -168,24 +162,21 @@ impl UpdateTaskRequest {
         let mut errors: Vec<ValidationError> = Vec::new();
         let given_time = self.start_time.as_str();
 
-        if self.id.trim().is_empty(){
-            errors.push(ValidationError::new("id","Id is a must."));
+        if self.id.trim().is_empty() {
+            errors.push(ValidationError::new("id", "Id is a must."));
         }
 
-       if !util::is_valid_date(given_time) {
-            errors.push(ValidationError::new("start_time","unparsable date."));
+        if !util::is_valid_date(given_time) {
+            errors.push(ValidationError::new("start_time", "unparsable date."));
         }
 
         let date = util::as_date(given_time);
         if util::is_in_past(date) {
-            errors.push(ValidationError::new("start_time","should be a future date."));
+            errors.push(ValidationError::new("start_time", "should be a future date."));
         }
 
         if self.duration <= 0 {
-            errors.push(ValidationError::new(
-                "duration",
-                "should be a minimum of 1 hour.",
-            ));
+            errors.push(ValidationError::new("duration", "should be a minimum of 1 hour."));
         }
 
         errors
@@ -221,7 +212,7 @@ impl NewTask {
             original_start_date: start_date,
             original_end_date: end_date.unwrap_or(start_date),
             description: request.description.to_owned(),
-            name:request.name.to_owned(),
+            name: request.name.to_owned(),
         };
 
         new_task

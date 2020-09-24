@@ -2,7 +2,6 @@ use crate::commons::chassis::ValidationError;
 use crate::commons::util;
 use crate::schema::abstract_tasks;
 
-
 #[derive(Queryable, Debug, Identifiable)]
 pub struct AbstractTask {
     pub id: String,
@@ -61,7 +60,7 @@ impl NewAbstractTask {
 
         let new_abstract_task = NewAbstractTask {
             id: fuzzy_id,
-            name:request.name.to_owned(),
+            name: request.name.to_owned(),
             coach_id: request.coach_id.to_owned(),
         };
 
@@ -71,5 +70,5 @@ impl NewAbstractTask {
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct AbstractTaskCriteria {
-    pub coach_id: String
+    pub coach_id: String,
 }
