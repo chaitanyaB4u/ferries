@@ -22,3 +22,4 @@ chrono = "0.4.11"
 uuid = { version = "0.8.1", features = ["serde", "v4"] }
 sanitize-filename = "0.2.1"
 sodiumoxide = "0.2.6"
+sendgrid-api = "^0.1.0"

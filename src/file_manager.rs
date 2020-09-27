@@ -7,8 +7,8 @@ use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
 
-pub const SESSION_ASSET_DIR: &'static str = "/Users/pmpower/assets/sessions";
-pub const PROGRAM_ASSET_DIR: &'static str = "/Users/pmpower/assets/programs";
+pub const SESSION_ASSET_DIR: &'static str = "/home/adhiyogi/assets/sessions";
+pub const PROGRAM_ASSET_DIR: &'static str = "/home/adhiyogi/assets/programs";
 
 pub async fn manage_notes_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let mut file_paths: Vec<String> = Vec::new();

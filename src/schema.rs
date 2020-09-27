@@ -18,6 +18,27 @@ table! {
 }
 
 table! {
+    correspondences (id) {
+        id -> Varchar,
+        from_user_id -> Varchar,
+        program_id -> Varchar,
+        enrollment_id -> Varchar,
+        from_email -> Varchar,
+        subject -> Varchar,
+        content -> Nullable<Text>,
+        in_out -> Varchar,
+        status -> Varchar,
+        sent_at -> Nullable<Datetime>,
+        reply_to -> Nullable<Varchar>,
+        error -> Varchar,
+        error_reason -> Nullable<Varchar>,
+        to_send_on -> Datetime,
+        created_at -> Datetime,
+        updated_at -> Datetime,
+    }
+}
+
+table! {
     enrollments (id) {
         id -> Varchar,
         program_id -> Varchar,
@@ -25,6 +46,16 @@ table! {
         created_at -> Datetime,
         updated_at -> Datetime,
         is_new -> Bool,
+    }
+}
+
+table! {
+    mail_recipients (id) {
+        id -> Varchar,
+        correspondence_id -> Varchar,
+        to_user_id -> Nullable<Varchar>,
+        to_email -> Varchar,
+        to_type -> Varchar,
     }
 }
 
@@ -248,8 +279,13 @@ table! {
 
 joinable!(abstract_tasks -> coaches (coach_id));
 joinable!(coaches -> users (user_id));
+joinable!(correspondences -> enrollments (enrollment_id));
+joinable!(correspondences -> programs (program_id));
+joinable!(correspondences -> users (from_user_id));
 joinable!(enrollments -> programs (program_id));
 joinable!(enrollments -> users (member_id));
+joinable!(mail_recipients -> correspondences (correspondence_id));
+joinable!(mail_recipients -> users (to_user_id));
 joinable!(master_plans -> coaches (coach_id));
 joinable!(master_task_links -> master_plans (master_plan_id));
 joinable!(master_tasks -> abstract_tasks (abstract_task_id));
@@ -277,7 +313,9 @@ joinable!(tasks -> users (actor_id));
 allow_tables_to_appear_in_same_query!(
     abstract_tasks,
     coaches,
+    correspondences,
     enrollments,
+    mail_recipients,
     master_plans,
     master_task_links,
     master_tasks,
