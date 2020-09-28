@@ -1,5 +1,4 @@
 use sendgrid_api::SendGrid;
-//pub const SENDGRID_API_KEY: &'static str ="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";
 use std::env;
 
 pub async fn send_email() {
