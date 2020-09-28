@@ -29,7 +29,7 @@ table! {
         in_out -> Varchar,
         status -> Varchar,
         sent_at -> Nullable<Datetime>,
-        reply_to -> Nullable<Varchar>,
+        reply_to -> Varchar,
         error -> Varchar,
         error_reason -> Nullable<Varchar>,
         to_send_on -> Datetime,

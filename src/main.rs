@@ -18,14 +18,12 @@ mod graphql_schema;
 mod models;
 mod schema;
 mod services;
-mod emails;
 
 use actix_files::NamedFile;
 use db_manager::establish_connection;
 use file_manager::{fetch_board_file, fetch_list_of_boards, fetch_program_content, manage_notes_file, manage_program_content, PROGRAM_ASSET_DIR, SESSION_ASSET_DIR};
 use graphql_schema::{create_gq_schema, DBContext, GQSchema};
 
-use emails::send_email;
 
 async fn upload_notes_file(payload: Multipart) -> Result<HttpResponse, Error> {
     manage_notes_file(payload).await
@@ -78,8 +76,7 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
     dotenv::dotenv().ok();
-    println!("Main function Sending Email!");
-    send_email().await;
+
     std::fs::create_dir_all(SESSION_ASSET_DIR).unwrap();
     std::fs::create_dir_all(PROGRAM_ASSET_DIR).unwrap();
 
