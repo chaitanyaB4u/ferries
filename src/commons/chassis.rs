@@ -11,6 +11,8 @@ use crate::models::sessions::Session;
 use crate::models::tasks::Task;
 use crate::models::user_events::{EventRow, PlanRow, SessionPeople};
 use crate::models::user_programs::ProgramRow;
+use crate::models::coach_members::MemberRow;
+
 /**
  * Important: The Mutation Result might seem like a Code Duplication,
  * but is unavoidable.
@@ -162,6 +164,16 @@ impl QueryResult<Vec<PlanRow>> {
 #[juniper::object(name = "SessionUsers")]
 impl QueryResult<Vec<SessionPeople>> {
     pub fn users(&self) -> Option<&Vec<SessionPeople>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "CoachMembers")]
+impl QueryResult<Vec<MemberRow>> {
+    pub fn members(&self) -> Option<&Vec<MemberRow>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {

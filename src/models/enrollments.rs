@@ -29,9 +29,11 @@ impl Enrollment {
     pub fn member_id(&self) -> &str {
         self.member_id.as_str()
     }
-
     pub fn is_new(&self) -> bool {
         self.is_new
+    }
+    pub fn created_at(&self) -> &NaiveDateTime {
+        &self.created_at
     }
 }
 

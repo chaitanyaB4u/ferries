@@ -16,6 +16,7 @@ use crate::models::tasks::{NewTaskRequest, Task, UpdateTaskRequest};
 use crate::models::user_events::{get_events, get_people, get_plan_events, EventCriteria, EventRow, PlanRow, SessionCriteria, SessionPeople};
 use crate::models::user_programs::{get_programs, ProgramCriteria, ProgramRow};
 use crate::models::users::{LoginRequest, Registration, ResetPasswordRequest, User};
+use crate::models::coach_members::{get_coach_members,CoachCriteria,MemberRow};
 
 use crate::services::abstract_tasks::{create_abstract_task, get_abstract_tasks};
 use crate::services::enrollments::{create_new_enrollment, get_active_enrollments};
@@ -104,6 +105,17 @@ impl QueryRoot {
     fn get_enrollments(context: &DBContext, criteria: EnrollmentCriteria) -> Vec<User> {
         let connection = context.db.get().unwrap();
         get_active_enrollments(&connection, criteria).unwrap()
+    }
+
+    #[graphql(description = "Get the list of members enrolled into Programs offered by a Coach")]
+    fn get_coach_members(context: &DBContext, criteria: CoachCriteria) -> QueryResult<Vec<MemberRow>> {
+        let connection = context.db.get().unwrap();
+        let result = get_coach_members(&connection, criteria);
+
+        match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
     }
 
     #[graphql(description = "Get the Session Events for a User, during a period")]

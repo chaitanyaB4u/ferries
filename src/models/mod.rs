@@ -14,3 +14,4 @@ pub mod tasks;
 pub mod user_events;
 pub mod user_programs;
 pub mod users;
+pub mod coach_members;
