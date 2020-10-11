@@ -3,6 +3,7 @@ use juniper::{FieldResult, RootNode};
 use crate::db_manager::MySqlConnectionPool;
 
 use crate::models::abstract_tasks::{AbstractTask, AbstractTaskCriteria, NewAbstractTaskRequest};
+use crate::models::coach_members::{get_coach_members, CoachCriteria, MemberRow};
 use crate::models::enrollments::{Enrollment, EnrollmentCriteria, NewEnrollmentRequest, PlanCriteria};
 use crate::models::master_plans::{MasterPlan, MasterPlanCriteria, NewMasterPlanRequest, UpdateMasterPlanRequest};
 use crate::models::master_tasks::{MasterTask, MasterTaskCriteria, NewMasterTaskRequest, UpdateMasterTaskRequest};
@@ -16,7 +17,6 @@ use crate::models::tasks::{NewTaskRequest, Task, UpdateTaskRequest};
 use crate::models::user_events::{get_events, get_people, get_plan_events, EventCriteria, EventRow, PlanRow, SessionCriteria, SessionPeople};
 use crate::models::user_programs::{get_programs, ProgramCriteria, ProgramRow};
 use crate::models::users::{LoginRequest, Registration, ResetPasswordRequest, User};
-use crate::models::coach_members::{get_coach_members,CoachCriteria,MemberRow};
 
 use crate::services::abstract_tasks::{create_abstract_task, get_abstract_tasks};
 use crate::services::enrollments::{create_new_enrollment, get_active_enrollments};
@@ -31,7 +31,7 @@ use crate::services::sessions::{change_session_state, create_session};
 use crate::services::tasks::{create_task, get_tasks, update_task};
 use crate::services::users::{authenticate, get_users, register, reset_password};
 
-use crate::commons::chassis::{mutation_error, query_error, service_error, MutationResult, QueryResult};
+use crate::commons::chassis::{mutation_error, query_error,service_error, MutationResult, QueryResult, QueryError};
 
 #[derive(Clone)]
 pub struct DBContext {
@@ -125,7 +125,7 @@ impl QueryRoot {
 
         match result {
             Ok(value) => QueryResult(Ok(value)),
-            Err(e) => query_error(e),
+            Err(e) => QueryResult(Err(QueryError { message: e }))
         }
     }
 

@@ -27,6 +27,7 @@ pub struct Session {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub closing_notes: Option<String>,
+    pub is_request: bool,
 }
 
 #[derive(juniper::GraphQLEnum)]

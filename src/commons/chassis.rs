@@ -189,6 +189,8 @@ pub fn query_error<T>(error: diesel::result::Error) -> QueryResult<T> {
     QueryResult(Err(e))
 }
 
+
+
 pub struct MutationResult<T>(pub Result<T, Vec<ValidationError>>);
 
 #[juniper::object(name = "SessionResult")]

@@ -1,5 +1,7 @@
 use diesel::prelude::*;
 
+use crate::commons::util;
+
 use crate::models::enrollments::Enrollment;
 use crate::models::notes::Note;
 use crate::models::objectives::Objective;
@@ -20,10 +22,14 @@ use crate::schema::sessions::dsl::*;
 use crate::schema::tasks::dsl::*;
 use crate::schema::users::dsl::*;
 
+pub const BAD_QUERY: &'static str = "Error in executing the query";
+
 #[derive(juniper::GraphQLInputObject)]
 pub struct EventCriteria {
     user_id: String,
     program_id: Option<String>,
+    start_date: String,
+    end_date: String,
 }
 
 pub struct EventRow {
@@ -49,11 +55,17 @@ impl EventRow {
 
 type SessionProgram = (Session, Program, SessionUser);
 
-pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Result<Vec<EventRow>, diesel::result::Error> {
+pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Result<Vec<EventRow>, String> {
+    
+    let start_date = util::as_start_date(criteria.start_date.as_str())?;
+    let end_date = util::as_end_date(criteria.end_date.as_str())?;
+
     let mut query = sessions
         .inner_join(programs)
         .inner_join(session_users)
         .filter(session_users::user_id.eq(criteria.user_id))
+        .filter(sessions::original_start_date.ge(start_date))
+        .filter(sessions::original_start_date.le(end_date))
         .order_by(sessions::original_start_date.asc())
         .into_boxed();
 
@@ -62,8 +74,13 @@ pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Resu
         query = query.filter(sessions::program_id.eq(prog_id));
     }
 
-    let rows: Vec<SessionProgram> = query.load(connection)?;
+    let result: Result<Vec<SessionProgram>, diesel::result::Error> = query.load(connection);
 
+    if result.is_err() {
+        return Err(BAD_QUERY.to_owned());
+    }
+
+    let rows: Vec<SessionProgram> = result.unwrap();
     Ok(to_event_rows(rows))
 }
 

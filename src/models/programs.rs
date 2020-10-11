@@ -22,6 +22,7 @@ pub struct Program {
     pub coach_id: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+    pub is_private: bool,
 }
 
 /**
@@ -56,6 +57,10 @@ impl Program {
     pub fn coach_id(&self) -> &str {
         self.coach_id.as_str()
     }
+
+    pub fn is_private(&self) -> bool {
+        self.is_private
+    }
 }
 
 /**
@@ -66,6 +71,7 @@ pub struct NewProgramRequest {
     pub name: String,
     pub coach_id: String,
     pub description: String,
+    pub is_private: bool,
 }
 
 /**
@@ -100,6 +106,7 @@ pub struct NewProgram {
     pub name: String,
     pub description: String,
     pub active: bool,
+    pub is_private: bool,
     pub coach_name: String,
     pub coach_id: String,
 }
@@ -116,6 +123,7 @@ impl NewProgram {
             id: fuzzy_id,
             name: request.name.to_owned(),
             description: request.description.to_owned(),
+            is_private: request.is_private,
             active: false,
             coach_name: coach.full_name.to_owned(),
             coach_id: coach.id.to_owned(),

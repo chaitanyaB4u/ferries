@@ -1,17 +1,43 @@
-use chrono::{Duration, NaiveDateTime, Timelike, Utc};
+use chrono::{Duration, NaiveDate, NaiveDateTime, Timelike, Utc};
 use sodiumoxide::crypto::pwhash::argon2id13;
 use std::ops::Sub;
 use uuid::Uuid;
 
 const DATE_TIME_PATTERN: &'static str = "%Y-%m-%dT%H:%M:%SZ";
+const DATE_PATTERN: &'static str = "%Y-%m-%d";
+
+pub const BAD_DATE: &'static str = "Date format error";
 
 pub const MEMBER: &'static str = "member";
 pub const COACH: &'static str = "coach";
 
 pub fn as_date(date_str: &str) -> NaiveDateTime {
-    let parse_from_str = NaiveDateTime::parse_from_str;
-    let given_date = parse_from_str(date_str, DATE_TIME_PATTERN).unwrap_or(Utc::now().naive_utc());
+    let given_date = NaiveDateTime::parse_from_str(date_str, DATE_TIME_PATTERN).unwrap_or(Utc::now().naive_utc());
     strip_seconds(given_date)
+}
+
+pub fn as_start_date(date_str: &str) -> Result<NaiveDateTime, String> {
+    let date = NaiveDate::parse_from_str(date_str, DATE_PATTERN);
+
+    if date.is_err() {
+        return Err(BAD_DATE.to_owned());
+    }
+
+    let result = date.unwrap().and_hms(0, 0, 0);
+
+    Ok(result)
+}
+
+pub fn as_end_date(date_str: &str) -> Result<NaiveDateTime, String> {
+    let date = NaiveDate::parse_from_str(date_str, DATE_PATTERN);
+
+    if date.is_err() {
+        return Err(BAD_DATE.to_owned());
+    }
+
+    let result = date.unwrap().and_hms(23,59,0);
+
+    Ok(result)
 }
 
 pub fn strip_seconds(given_date: NaiveDateTime) -> NaiveDateTime {
@@ -116,6 +142,12 @@ mod tests {
     fn should_be_in_past() {
         let start_time = "2020-08-27T06:53:09Z";
         assert_eq!(true, is_in_past(as_date(start_time)));
+    }
+
+    #[test]
+    fn should_handle_pure_date() {
+        let start_date = "2020-08-25T10:45:07Z";
+        println!("{:?}", as_end_date(start_date));
     }
 
     #[test]

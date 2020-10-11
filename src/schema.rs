@@ -162,6 +162,7 @@ table! {
         coach_id -> Varchar,
         created_at -> Datetime,
         updated_at -> Datetime,
+        is_private -> Bool,
     }
 }
 
@@ -223,6 +224,7 @@ table! {
         created_at -> Datetime,
         updated_at -> Datetime,
         closing_notes -> Nullable<Text>,
+        is_request -> Bool,
     }
 }
 
