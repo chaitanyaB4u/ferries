@@ -94,3 +94,13 @@ impl NewEnrollment {
         }
     }
 }
+
+#[derive(juniper::GraphQLInputObject)]
+pub struct ManagedEnrollmentRequest {
+    pub program_id: String,
+    pub coach_id: String,
+    pub member_mail: String,
+    pub subject: String,
+    pub message: String
+}
+

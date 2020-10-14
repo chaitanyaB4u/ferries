@@ -3,12 +3,16 @@ use diesel::prelude::*;
 use crate::models::programs::Program;
 use crate::models::users::User;
 
-use crate::models::enrollments::{Enrollment, EnrollmentCriteria, EnrollmentFilter, NewEnrollment, NewEnrollmentRequest};
+use crate::models::correspondences::{MailOut, MailRecipient};
+use crate::models::enrollments::{Enrollment, EnrollmentCriteria, EnrollmentFilter, ManagedEnrollmentRequest, NewEnrollment, NewEnrollmentRequest};
 
 use crate::services::programs;
 use crate::services::users;
 
 use crate::schema::enrollments::dsl::*;
+use crate::schema::programs::dsl::*;
+use crate::schema::users::dsl::*;
+
 
 const WARNING: &'static str = "It seems you have already enrolled in this program";
 const ERROR_002: &'static str = "Error in creating enrollment. Error-002.";
@@ -58,7 +62,7 @@ pub fn find(connection: &MysqlConnection, program: &Program, user: &User) -> Res
 }
 
 pub fn mark_as_old(connection: &MysqlConnection, enrollment_id: &str) -> Result<usize, &'static str> {
-    let query = enrollments.filter(id.eq(enrollment_id));
+    let query = enrollments.filter(crate::schema::enrollments::id.eq(enrollment_id));
 
     let result = diesel::update(query).set(is_new.eq(false)).execute(connection);
 
@@ -87,6 +91,61 @@ pub fn get_active_enrollments(connection: &MysqlConnection, criteria: Enrollment
 
     if result.is_err() {
         return Err(QUERY_ERROR);
+    }
+
+    Ok(result.unwrap())
+}
+
+const INVALID_MEMBER_MAIL: &'static str = "Invalid Member Mail Id";
+const CONFLICT_PROGRAM_OWNER_MAIL: &'static str = "The coach does not have rights to enroll this member.";
+const MAIL_CREATION_ERROR: &'static str = "Error in creating the invitation mail. But enrollment is done.";
+
+pub fn create_managed_enrollment(connection: &MysqlConnection, request: &ManagedEnrollmentRequest) -> Result<Enrollment, &'static str> {
+    let user_result: QueryResult<User> = users.filter(email.eq(request.member_mail.as_str())).first(connection);
+
+    if user_result.is_err() {
+        return Err(INVALID_MEMBER_MAIL);
+    }
+
+    let program_result: QueryResult<Program> = programs
+        .filter(crate::schema::programs::id.eq(request.program_id.as_str()))
+        .filter(coach_id.eq(request.coach_id.as_str()))
+        .first(connection);
+
+    if program_result.is_err() {
+        return Err(CONFLICT_PROGRAM_OWNER_MAIL);
+    }
+
+    let member = user_result.unwrap();
+    let program = program_result.unwrap();
+    let coach = users::find(connection, request.coach_id.as_str())?;
+
+    gate_prior_enrollment(connection, &program, &member)?;
+    insert_enrollment(connection, &program, &member)?;
+
+    let enrollment = find(connection, &program, &member)?;
+
+    send_enrollment_mail(connection, request, &enrollment, &member, &coach)?;
+
+    Ok(enrollment)
+}
+
+fn send_enrollment_mail(connection: &MysqlConnection, request: &ManagedEnrollmentRequest, enrollment: &Enrollment, member: &User, coach: &User) ->Result<usize,&'static str> {
+    
+    use crate::schema::correspondences::dsl::*;
+    use crate::schema::mail_recipients::dsl::*;
+
+    let mail_out = MailOut::for_enrollment(request, enrollment.id.as_str()); 
+    let people = MailRecipient::for_enrollment(member, coach, mail_out.id.as_str()); 
+
+    let result = diesel::insert_into(correspondences).values(mail_out).execute(connection);
+    if result.is_err() {
+        return Err(MAIL_CREATION_ERROR);
+    }
+
+    let result = diesel::insert_into(mail_recipients).values(people).execute(connection);
+    if result.is_err() {
+        return Err(MAIL_CREATION_ERROR);
     }
 
     Ok(result.unwrap())

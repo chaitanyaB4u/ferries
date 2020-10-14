@@ -4,7 +4,7 @@ use crate::db_manager::MySqlConnectionPool;
 
 use crate::models::abstract_tasks::{AbstractTask, AbstractTaskCriteria, NewAbstractTaskRequest};
 use crate::models::coach_members::{get_coach_members, CoachCriteria, MemberRow};
-use crate::models::enrollments::{Enrollment, EnrollmentCriteria, NewEnrollmentRequest, PlanCriteria};
+use crate::models::enrollments::{Enrollment, EnrollmentCriteria, NewEnrollmentRequest, PlanCriteria, ManagedEnrollmentRequest};
 use crate::models::master_plans::{MasterPlan, MasterPlanCriteria, NewMasterPlanRequest, UpdateMasterPlanRequest};
 use crate::models::master_tasks::{MasterTask, MasterTaskCriteria, NewMasterTaskRequest, UpdateMasterTaskRequest};
 use crate::models::notes::{NewNoteRequest, Note, NoteCriteria};
@@ -19,7 +19,7 @@ use crate::models::user_programs::{get_programs, ProgramCriteria, ProgramRow};
 use crate::models::users::{LoginRequest, Registration, ResetPasswordRequest, User};
 
 use crate::services::abstract_tasks::{create_abstract_task, get_abstract_tasks};
-use crate::services::enrollments::{create_new_enrollment, get_active_enrollments};
+use crate::services::enrollments::{create_new_enrollment, get_active_enrollments,create_managed_enrollment};
 use crate::services::master_plans::{create_master_plan, get_master_plans, update_master_plan};
 use crate::services::master_tasks::{create_master_task, get_master_tasks, update_master_task};
 use crate::services::notes::{create_new_note, get_notes};
@@ -334,6 +334,17 @@ impl MutationRoot {
 
         let connection = context.db.get().unwrap();
         let result = create_new_enrollment(&connection, &new_enrollment_request);
+
+        match result {
+            Ok(enrollment) => MutationResult(Ok(enrollment)),
+            Err(e) => service_error(e),
+        }
+    }
+
+    fn managed_enrollment(context: &DBContext, managed_enrollment_request: ManagedEnrollmentRequest) -> MutationResult<Enrollment> {
+        
+        let connection = context.db.get().unwrap();
+        let result = create_managed_enrollment(&connection, &managed_enrollment_request);
 
         match result {
             Ok(enrollment) => MutationResult(Ok(enrollment)),
