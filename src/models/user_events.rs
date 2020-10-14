@@ -28,8 +28,8 @@ pub const BAD_QUERY: &'static str = "Error in executing the query";
 pub struct EventCriteria {
     user_id: String,
     program_id: Option<String>,
-    start_date: String,
-    end_date: String,
+    start_date: Option<String>,
+    end_date: Option<String>,
 }
 
 pub struct EventRow {
@@ -56,18 +56,23 @@ impl EventRow {
 type SessionProgram = (Session, Program, SessionUser);
 
 pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Result<Vec<EventRow>, String> {
-    
-    let start_date = util::as_start_date(criteria.start_date.as_str())?;
-    let end_date = util::as_end_date(criteria.end_date.as_str())?;
-
+  
     let mut query = sessions
         .inner_join(programs)
         .inner_join(session_users)
         .filter(session_users::user_id.eq(criteria.user_id))
-        .filter(sessions::original_start_date.ge(start_date))
-        .filter(sessions::original_start_date.le(end_date))
         .order_by(sessions::original_start_date.asc())
         .into_boxed();
+
+    if criteria.start_date.is_some() {
+        let start_date = util::as_start_date(criteria.start_date.unwrap().as_str())?; 
+        query = query.filter(sessions::original_start_date.ge(start_date))
+    }
+    
+    if criteria.end_date.is_some() {
+        let end_date = util::as_end_date(criteria.end_date.unwrap().as_str())?;
+        query = query.filter(sessions::original_start_date.le(end_date))
+    }
 
     if criteria.program_id.is_some() {
         let prog_id = criteria.program_id.unwrap();
