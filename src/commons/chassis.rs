@@ -12,6 +12,7 @@ use crate::models::tasks::Task;
 use crate::models::user_events::{EventRow, PlanRow, SessionPeople};
 use crate::models::user_programs::ProgramRow;
 use crate::models::coach_members::MemberRow;
+use crate::models::user_artifacts::NoteRow;
 
 /**
  * Important: The Mutation Result might seem like a Code Duplication,
@@ -60,6 +61,7 @@ impl QueryResult<Vec<ProgramRow>> {
         self.0.as_ref().err()
     }
 }
+
 
 #[juniper::object(name = "AbstractTasksResult")]
 impl QueryResult<Vec<AbstractTask>> {
@@ -134,6 +136,16 @@ impl QueryResult<Vec<Task>> {
 #[juniper::object(name = "NotesResult")]
 impl QueryResult<Vec<Note>> {
     pub fn notes(&self) -> Option<&Vec<Note>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "ProgramNotes")]
+impl QueryResult<Vec<NoteRow>> {
+    pub fn notes(&self) -> Option<&Vec<NoteRow>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {

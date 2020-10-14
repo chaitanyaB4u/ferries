@@ -16,3 +16,4 @@ pub mod user_programs;
 pub mod users;
 pub mod coach_members;
 pub mod correspondences;
+pub mod user_artifacts;
