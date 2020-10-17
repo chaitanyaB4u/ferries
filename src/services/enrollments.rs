@@ -125,12 +125,12 @@ pub fn create_managed_enrollment(connection: &MysqlConnection, request: &Managed
 
     let enrollment = find(connection, &program, &member)?;
 
-    send_enrollment_mail(connection, request, &enrollment, &member, &coach)?;
+    create_enrollment_mail(connection, request, &enrollment, &member, &coach)?;
 
     Ok(enrollment)
 }
 
-fn send_enrollment_mail(connection: &MysqlConnection, request: &ManagedEnrollmentRequest, enrollment: &Enrollment, member: &User, coach: &User) ->Result<usize,&'static str> {
+fn create_enrollment_mail(connection: &MysqlConnection, request: &ManagedEnrollmentRequest, enrollment: &Enrollment, member: &User, coach: &User) ->Result<usize,&'static str> {
     
     use crate::schema::correspondences::dsl::*;
     use crate::schema::mail_recipients::dsl::*;

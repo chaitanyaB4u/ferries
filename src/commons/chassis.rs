@@ -13,6 +13,7 @@ use crate::models::user_events::{EventRow, PlanRow, SessionPeople};
 use crate::models::user_programs::ProgramRow;
 use crate::models::coach_members::MemberRow;
 use crate::models::user_artifacts::NoteRow;
+use crate::models::correspondences::Mailable;
 
 /**
  * Important: The Mutation Result might seem like a Code Duplication,
@@ -186,6 +187,16 @@ impl QueryResult<Vec<SessionPeople>> {
 #[juniper::object(name = "CoachMembers")]
 impl QueryResult<Vec<MemberRow>> {
     pub fn members(&self) -> Option<&Vec<MemberRow>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "Mailables")]
+impl QueryResult<Vec<Mailable>> {
+    pub fn mails(&self) -> Option<&Vec<Mailable>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {

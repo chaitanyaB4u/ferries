@@ -72,7 +72,8 @@ impl MailOut {
     }
 }
 
-#[derive(Queryable, Debug, Identifiable, Insertable)]
+#[derive(Queryable, Debug, Associations, Identifiable, Insertable)]
+#[belongs_to(Correspondence)]
 #[table_name = "mail_recipients"]
 pub struct MailRecipient {
     pub id: String,
@@ -101,5 +102,60 @@ impl MailRecipient {
         };
 
         vec![to_record, cc_record]
+    }
+}
+
+#[derive(juniper::GraphQLInputObject)]
+pub struct MailCriteria {
+    pub status: String,
+    pub in_out: String,
+}
+
+#[juniper::object]
+impl Correspondence {
+    pub fn id(&self) -> &str {
+        self.id.as_str()
+    }
+
+    pub fn from_email(&self) -> &str {
+        self.from_email.as_str()
+    }
+
+    pub fn subject(&self) -> &str {
+        self.subject.as_str()
+    }
+
+    pub fn content(&self) -> &str {
+        match &self.content {
+            Some(c) => c.as_str(),
+            None => " ",
+        }
+    }
+}
+
+#[juniper::object]
+impl MailRecipient {
+    pub fn to_type(&self) -> &str {
+        self.to_type.as_str()
+    }
+
+    pub fn to_email(&self) -> &str {
+        self.to_email.as_str()
+    }
+}
+
+pub struct Mailable {
+    pub correspondence: Correspondence,
+    pub receipients: Vec<MailRecipient>,
+}
+
+#[juniper::object]
+impl Mailable {
+    pub fn correspondence(&self) -> &Correspondence {
+        &self.correspondence
+    }
+
+    pub fn receipients(&self) -> &Vec<MailRecipient> {
+        &self.receipients
     }
 }

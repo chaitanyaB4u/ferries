@@ -18,6 +18,7 @@ use crate::models::tasks::{NewTaskRequest, Task, UpdateTaskRequest};
 use crate::models::user_events::{get_events, get_people, get_plan_events, EventCriteria, EventRow, PlanRow, SessionCriteria, SessionPeople};
 use crate::models::user_programs::{get_programs, ProgramCriteria, ProgramRow};
 use crate::models::users::{LoginRequest, Registration, ResetPasswordRequest, User};
+use crate::models::correspondences::{Mailable};
 
 use crate::services::abstract_tasks::{create_abstract_task, get_abstract_tasks};
 use crate::services::enrollments::{create_new_enrollment, get_active_enrollments,create_managed_enrollment};
@@ -31,6 +32,7 @@ use crate::services::programs::{change_program_state, create_new_program};
 use crate::services::sessions::{change_session_state, create_session};
 use crate::services::tasks::{create_task, get_tasks, update_task};
 use crate::services::users::{authenticate, get_users, register, reset_password};
+use crate::services::correspondences::{sendable_mails};
 
 use crate::commons::chassis::{mutation_error, query_error,service_error, MutationResult, QueryResult, QueryError};
 
@@ -211,6 +213,18 @@ impl QueryRoot {
     fn get_session_users(context: &DBContext, criteria: SessionCriteria) -> QueryResult<Vec<SessionPeople>> {
         let connection = context.db.get().unwrap();
         let result = get_people(&connection, criteria);
+
+        match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
+    }
+
+    #[graphql(description = "Top 3 mails marked as Pending")]
+    fn get_sendable_mails(context: &DBContext) -> QueryResult<Vec<Mailable>> {
+
+        let connection = context.db.get().unwrap();
+        let result = sendable_mails(&connection);
 
         match result {
             Ok(value) => QueryResult(Ok(value)),
