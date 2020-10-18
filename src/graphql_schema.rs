@@ -8,7 +8,7 @@ use crate::models::enrollments::{Enrollment, EnrollmentCriteria, NewEnrollmentRe
 use crate::models::master_plans::{MasterPlan, MasterPlanCriteria, NewMasterPlanRequest, UpdateMasterPlanRequest};
 use crate::models::master_tasks::{MasterTask, MasterTaskCriteria, NewMasterTaskRequest, UpdateMasterTaskRequest};
 use crate::models::notes::{NewNoteRequest, Note, NoteCriteria};
-use crate::models::user_artifacts::{ArtifactCriteria,get_program_notes,NoteRow};
+use crate::models::user_artifacts::{get_enrollment_notes,NoteRow};
 use crate::models::objectives::{NewObjectiveRequest, Objective, UpdateObjectiveRequest};
 use crate::models::observations::{NewObservationRequest, Observation, UpdateObservationRequest};
 use crate::models::options::{Constraint, NewOptionRequest, UpdateOptionRequest};
@@ -198,10 +198,10 @@ impl QueryRoot {
         }
     }
 
-    #[graphql(description = "Get the list of notes of the member and his coach for a program")]
-    fn get_program_notes(context: &DBContext, criteria: ArtifactCriteria) -> QueryResult<Vec<NoteRow>> {
+    #[graphql(description = "Get the list of notes of an enrollment. Hence both the member and the coach notes directly to the member.")]
+    fn get_enrollment_notes(context: &DBContext, criteria: PlanCriteria) -> QueryResult<Vec<NoteRow>> {
         let connection = context.db.get().unwrap();
-        let result = get_program_notes(&connection, criteria);
+        let result = get_enrollment_notes(&connection, criteria);
 
         match result {
             Ok(value) => QueryResult(Ok(value)),
