@@ -1,4 +1,5 @@
 use chrono::{Duration, NaiveDate, NaiveDateTime, Timelike, Utc};
+use chrono::format::strftime::StrftimeItems;
 use sodiumoxide::crypto::pwhash::argon2id13;
 use std::ops::Sub;
 use uuid::Uuid;
@@ -10,7 +11,6 @@ pub const BAD_DATE: &'static str = "Date format error";
 
 pub const MEMBER: &'static str = "member";
 pub const COACH: &'static str = "coach";
-
 
 pub fn as_date(date_str: &str) -> NaiveDateTime {
     let given_date = NaiveDateTime::parse_from_str(date_str, DATE_TIME_PATTERN).unwrap_or(Utc::now().naive_utc());
@@ -36,9 +36,14 @@ pub fn as_end_date(date_str: &str) -> Result<NaiveDateTime, String> {
         return Err(BAD_DATE.to_owned());
     }
 
-    let result = date.unwrap().and_hms(23,59,0);
+    let result = date.unwrap().and_hms(23, 59, 0);
 
     Ok(result)
+}
+
+pub fn format_time(given_time: &NaiveDateTime) -> String {
+    let fmt = StrftimeItems::new("%Y%m%dT%H%M%SZ");
+    given_time.format_with_items(fmt.clone()).to_string()
 }
 
 pub fn strip_seconds(given_date: NaiveDateTime) -> NaiveDateTime {

@@ -1,8 +1,11 @@
 use diesel::prelude::*;
 
 use crate::schema::correspondences::dsl::*;
+use crate::schema::mail_recipients::dsl::*;
 
-use crate::models::correspondences::{Correspondence, MailCriteria, MailRecipient, Mailable};
+use crate::models::correspondences::{Correspondence, MailCriteria, MailOut, MailRecipient, Mailable};
+
+const MAIL_CREATION_ERROR: &'static str = "Error in creating the invitation mail. But enrollment is done.";
 
 pub type MailType = (Correspondence, Vec<MailRecipient>);
 pub type MailResult = Result<Vec<MailType>, diesel::result::Error>;
@@ -47,4 +50,19 @@ pub fn get_mails(connection: &MysqlConnection, criteria: &MailCriteria) -> MailR
     let mails = corres.into_iter().zip(people).collect::<Vec<_>>();
 
     Ok(mails)
+}
+
+pub fn create_mail(connection: &MysqlConnection, mail_out: MailOut, recipients: Vec<MailRecipient>) ->Result<usize,&'static str> {
+
+    let result = diesel::insert_into(correspondences).values(mail_out).execute(connection);
+    if result.is_err() {
+        return Err(MAIL_CREATION_ERROR);
+    }
+
+    let result = diesel::insert_into(mail_recipients).values(recipients).execute(connection);
+    if result.is_err() {
+        return Err(MAIL_CREATION_ERROR);
+    }
+
+    Ok(result.unwrap())
 }

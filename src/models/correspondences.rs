@@ -1,6 +1,9 @@
+use serde::{Deserialize, Serialize};
+
 use chrono::NaiveDateTime;
 
 use crate::models::enrollments::ManagedEnrollmentRequest;
+use crate::models::sessions::Session;
 use crate::models::users::User;
 
 use crate::schema::correspondences;
@@ -29,11 +32,16 @@ pub struct Correspondence {
     pub mail_type: String,
 }
 
-const ENROLLMENT_SENDER_ID: &'static str = "enrollment@krscode.com";
+const SCHEDULE_SENDER_ID: &'static str = "schedule@krscode.com";
+
 const OUT: &'static str = "out";
 const TO: &'static str = "to";
 const CC: &'static str = "cc";
+
 const PENDING: &'static str = "pending";
+
+const NORMAL: &'static str = "normal";
+const EVENT: &'static str = "event";
 
 #[derive(Insertable)]
 #[table_name = "correspondences"]
@@ -50,26 +58,52 @@ pub struct MailOut {
     pub reply_to: String,
     pub error: String,
     pub to_send_on: NaiveDateTime,
+    pub mail_type: String,
 }
 
 impl MailOut {
-    pub fn for_enrollment(request: &ManagedEnrollmentRequest, enrollment_id: &str) -> MailOut {
+    fn new(from_user_id: String, program_id: String, enrollment_id: String, subject: String, content: String, mail_type: &str) -> MailOut {
         let fuzzy_id = util::fuzzy_id();
 
         MailOut {
             id: fuzzy_id,
-            from_user_id: request.coach_id.to_owned(),
-            program_id: request.program_id.to_owned(),
-            enrollment_id: enrollment_id.to_owned(),
-            from_email: ENROLLMENT_SENDER_ID.to_owned(),
-            subject: request.subject.to_owned(),
-            content: Some(request.message.to_owned()),
+            from_email: SCHEDULE_SENDER_ID.to_owned(),
+            from_user_id: from_user_id,
+            program_id: program_id,
+            enrollment_id: enrollment_id,
+            subject: subject,
+            content: Some(content),
             in_out: OUT.to_owned(),
             status: PENDING.to_owned(),
             reply_to: " ".to_owned(),
             error: " ".to_owned(),
             to_send_on: util::now(),
+            mail_type: mail_type.to_owned(),
         }
+    }
+
+    pub fn for_enrollment(request: &ManagedEnrollmentRequest, enrollment_id: &str) -> MailOut {
+        MailOut::new(
+            request.coach_id.to_owned(),
+            request.program_id.to_owned(),
+            enrollment_id.to_owned(),
+            request.subject.to_owned(),
+            request.message.to_owned(),
+            NORMAL
+        )
+    }
+
+    pub fn for_new_session(session: &Session, coach_id: &str) -> MailOut {
+        let content = FerrisEvent::new_session_event(session);
+
+        MailOut::new(
+            coach_id.to_owned(),
+            session.program_id.to_owned(),
+            session.enrollment_id.to_owned(),
+            session.name.to_owned(),
+            content.to_owned(),
+            EVENT
+        )
     }
 }
 
@@ -85,7 +119,7 @@ pub struct MailRecipient {
 }
 
 impl MailRecipient {
-    pub fn for_enrollment(member: &User, coach: &User, correspondence_id: &str) -> Vec<MailRecipient> {
+    pub fn as_recipients(member: &User, coach: &User, correspondence_id: &str) -> Vec<MailRecipient> {
         let to_record = MailRecipient {
             id: util::fuzzy_id(),
             correspondence_id: correspondence_id.to_owned(),
@@ -162,5 +196,36 @@ impl Mailable {
 
     pub fn receipients(&self) -> &Vec<MailRecipient> {
         &self.receipients
+    }
+}
+
+#[allow(non_snake_case)]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct FerrisEvent {
+    pub id: String,
+    pub description: Option<String>,
+    pub startDate: String,
+    pub endDate: String,
+    pub status: String,
+    pub method: String,
+}
+
+impl FerrisEvent {
+    fn new_session_event(session: &Session) -> String {
+        let start_date = session.original_start_date;
+        let end_date = session.original_end_date;
+
+        let event = FerrisEvent {
+            id: session.id.to_owned(),
+            description: session.description.clone(),
+            startDate: util::format_time(&start_date),
+            endDate: util::format_time(&end_date),
+            status: "CONFIRMED".to_owned(),
+            method: "CONFIRMED".to_owned(),
+        };
+
+        let content = serde_json::to_string(&event).unwrap_or(String::from(""));
+
+        content
     }
 }

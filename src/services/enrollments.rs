@@ -8,6 +8,7 @@ use crate::models::enrollments::{Enrollment, EnrollmentCriteria, EnrollmentFilte
 
 use crate::services::programs;
 use crate::services::users;
+use crate::services::correspondences::create_mail;
 
 use crate::schema::enrollments::dsl::*;
 use crate::schema::programs::dsl::*;
@@ -98,7 +99,7 @@ pub fn get_active_enrollments(connection: &MysqlConnection, criteria: Enrollment
 
 const INVALID_MEMBER_MAIL: &'static str = "Invalid Member Mail Id";
 const CONFLICT_PROGRAM_OWNER_MAIL: &'static str = "The coach does not have rights to enroll this member.";
-const MAIL_CREATION_ERROR: &'static str = "Error in creating the invitation mail. But enrollment is done.";
+
 
 pub fn create_managed_enrollment(connection: &MysqlConnection, request: &ManagedEnrollmentRequest) -> Result<Enrollment, &'static str> {
     let user_result: QueryResult<User> = users.filter(email.eq(request.member_mail.as_str())).first(connection);
@@ -125,28 +126,15 @@ pub fn create_managed_enrollment(connection: &MysqlConnection, request: &Managed
 
     let enrollment = find(connection, &program, &member)?;
 
-    create_enrollment_mail(connection, request, &enrollment, &member, &coach)?;
+    create_enrollment_mail(connection, request, enrollment.id.as_str(), &member, &coach)?;
 
     Ok(enrollment)
 }
 
-fn create_enrollment_mail(connection: &MysqlConnection, request: &ManagedEnrollmentRequest, enrollment: &Enrollment, member: &User, coach: &User) ->Result<usize,&'static str> {
+fn create_enrollment_mail(connection: &MysqlConnection, request: &ManagedEnrollmentRequest, new_enroll_id: &str, member: &User, coach: &User) ->Result<usize,&'static str> {
     
-    use crate::schema::correspondences::dsl::*;
-    use crate::schema::mail_recipients::dsl::*;
+    let mail_out = MailOut::for_enrollment(request, new_enroll_id); 
+    let recipients = MailRecipient::as_recipients(member, coach, mail_out.id.as_str()); 
 
-    let mail_out = MailOut::for_enrollment(request, enrollment.id.as_str()); 
-    let people = MailRecipient::for_enrollment(member, coach, mail_out.id.as_str()); 
-
-    let result = diesel::insert_into(correspondences).values(mail_out).execute(connection);
-    if result.is_err() {
-        return Err(MAIL_CREATION_ERROR);
-    }
-
-    let result = diesel::insert_into(mail_recipients).values(people).execute(connection);
-    if result.is_err() {
-        return Err(MAIL_CREATION_ERROR);
-    }
-
-    Ok(result.unwrap())
+    create_mail(connection, mail_out, recipients)    
 }

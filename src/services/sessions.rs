@@ -2,10 +2,12 @@ use diesel::prelude::*;
 
 use crate::commons::util;
 
+use crate::services::correspondences::create_mail;
 use crate::services::enrollments;
 use crate::services::programs;
 use crate::services::users;
 
+use crate::models::correspondences::{MailOut, MailRecipient};
 use crate::models::enrollments::Enrollment;
 use crate::models::session_users::{NewSessionUser, SessionUser};
 use crate::models::sessions::{ChangeSessionStateRequest, NewSession, NewSessionRequest, Session, TargetState};
@@ -31,12 +33,12 @@ pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest)
 
     let member: User = users::find(connection, request.member_id.as_str())?;
 
-    let _enrollment: Enrollment = enrollments::find(connection, &program, &member)?;
+    let enrollment: Enrollment = enrollments::find(connection, &program, &member)?;
 
     let people_involved: String = util::concat(coach.full_name.as_str(), member.full_name.as_str());
 
     // Inserting the Session
-    let new_session = NewSession::from(request, _enrollment.id.to_owned(), people_involved);
+    let new_session = NewSession::from(request, enrollment.id.to_owned(), people_involved);
     let session = insert_session(connection, &new_session)?;
 
     // Inserting a pair of entries into the Session Users (For Coach & Member)
@@ -44,7 +46,9 @@ pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest)
     let new_session_member = NewSessionUser::from(&session, &member, util::MEMBER);
     insert_session_users(connection, &new_session_coach, &new_session_member)?;
 
-    enrollments::mark_as_old(connection, _enrollment.id())?;
+    enrollments::mark_as_old(connection, enrollment.id())?;
+
+    create_session_mail(connection, &session, &member, &coach)?;
 
     Ok(session)
 }
@@ -130,4 +134,13 @@ fn insert_session_users(connection: &MysqlConnection, coach: &NewSessionUser, me
     }
 
     Ok(result.unwrap())
+}
+
+fn create_session_mail(connection: &MysqlConnection, session: &Session, member: &User, coach: &User) -> Result<usize, &'static str> {
+    
+    let mail_out = MailOut::for_new_session(session, coach.id.as_str());
+    
+    let recipients = MailRecipient::as_recipients(member, coach, mail_out.id.as_str());
+
+    create_mail(connection, mail_out, recipients)
 }
