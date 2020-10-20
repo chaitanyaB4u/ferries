@@ -35,6 +35,7 @@ table! {
         to_send_on -> Datetime,
         created_at -> Datetime,
         updated_at -> Datetime,
+        mail_type -> Varchar,
     }
 }
 

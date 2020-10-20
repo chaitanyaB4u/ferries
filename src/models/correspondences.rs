@@ -26,6 +26,7 @@ pub struct Correspondence {
     pub to_send_on: NaiveDateTime,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+    pub mail_type: String,
 }
 
 const ENROLLMENT_SENDER_ID: &'static str = "enrollment@krscode.com";
@@ -130,6 +131,10 @@ impl Correspondence {
             Some(c) => c.as_str(),
             None => " ",
         }
+    }
+
+    pub fn mail_type(&self) -> &str {
+        self.mail_type.as_str()
     }
 }
 
