@@ -1,5 +1,7 @@
 use diesel::prelude::*;
 
+use std::collections::HashMap;
+
 use crate::commons::util;
 
 use crate::services::correspondences::create_mail;
@@ -15,6 +17,8 @@ use crate::models::users::User;
 
 use crate::schema::session_users::dsl::*;
 use crate::schema::sessions::dsl::*;
+use crate::schema::enrollments::dsl::*;
+use crate::schema::users::dsl::*;
 
 const SESSION_CREATION_ERROR: &'static str = "Unable to Create Session. Error:002";
 const SESSION_NOT_FOUND: &'static str = "Unable to Create Or Find the Session. Error:003.";
@@ -64,7 +68,14 @@ pub fn change_session_state(connection: &MysqlConnection, request: &ChangeSessio
 
     do_alter_session_state(connection, request)?;
 
-    find(connection, &request.id.as_str())
+    let session = find(connection, &request.id.as_str())?;
+
+    if request.target_state == TargetState::CANCEL {
+        send_session_cancel_mail(connection, &session);
+    }
+
+    Ok(session)
+    
 }
 
 fn can_change_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<usize, &'static str> {
@@ -142,5 +153,27 @@ fn create_session_mail(connection: &MysqlConnection, session: &Session, member: 
     
     let recipients = MailRecipient::as_recipients(member, coach, mail_out.id.as_str());
 
+    create_mail(connection, mail_out, recipients)
+}
+
+fn send_session_cancel_mail(connection: &MysqlConnection, session: &Session) -> Result<usize, &'static str>{
+
+    let sus:Vec<(SessionUser,User)> = session_users.inner_join(users)
+                    .filter(session_id.eq(session.id))
+                    .load(connection).unwrap();
+    
+    let team: HashMap<String,User> = sus
+                    .iter()
+                    .map(|tuple| (tuple.0.user_type,tuple.1))
+                    .collect();
+
+    let coach = team.get("coach").unwrap();
+
+    let member = team.get("member").unwrap();
+
+    let mail_out = MailOut::for_cancel_session(session, coach.id.as_str());
+    
+    let recipients = MailRecipient::as_recipients(member, coach, mail_out.id.as_str());
+                
     create_mail(connection, mail_out, recipients)
 }

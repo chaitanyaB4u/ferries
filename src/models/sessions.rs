@@ -219,7 +219,7 @@ impl NewSession {
     }
 }
 
-#[derive(juniper::GraphQLEnum)]
+#[derive(juniper::GraphQLEnum, PartialEq)]
 pub enum TargetState {
     READY,
     START,
