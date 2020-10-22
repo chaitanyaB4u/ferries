@@ -93,11 +93,24 @@ impl MailOut {
         )
     }
 
-    pub fn for_new_session(session: &Session, coach_id: &str) -> MailOut {
-        let content = FerrisEvent::new_session_event(session);
+    pub fn for_new_session(session: &Session, coach: &User, member: &User) -> MailOut {
+        let content = FerrisEvent::new_session_event(session,coach,member);
 
         MailOut::new(
-            coach_id.to_owned(),
+            coach.id.to_owned(),
+            session.program_id.to_owned(),
+            session.enrollment_id.to_owned(),
+            session.name.to_owned(),
+            content.to_owned(),
+            EVENT
+        )
+    }
+
+    pub fn for_cancel_session(session: &Session, coach: &User, member: &User) -> MailOut {
+        let content = FerrisEvent::cancel_event(session,coach,member);
+
+        MailOut::new(
+            coach.id.to_owned(),
             session.program_id.to_owned(),
             session.enrollment_id.to_owned(),
             session.name.to_owned(),
@@ -204,6 +217,9 @@ impl Mailable {
 pub struct FerrisEvent {
     pub id: String,
     pub description: Option<String>,
+    pub organizer: Option<String>,
+    pub attendee: Option<String>,
+    pub sequence: i32,
     pub startDate: String,
     pub endDate: String,
     pub status: String,
@@ -211,17 +227,41 @@ pub struct FerrisEvent {
 }
 
 impl FerrisEvent {
-    fn new_session_event(session: &Session) -> String {
+    fn new_session_event(session: &Session, coach: &User, member: &User) -> String {
         let start_date = session.original_start_date;
         let end_date = session.original_end_date;
 
         let event = FerrisEvent {
             id: session.id.to_owned(),
+            sequence: 1,
+            organizer: Some(coach.email.clone()),
+            attendee: Some(member.email.clone()),
             description: session.description.clone(),
             startDate: util::format_time(&start_date),
             endDate: util::format_time(&end_date),
             status: "CONFIRMED".to_owned(),
-            method: "CONFIRMED".to_owned(),
+            method: "REQUEST".to_owned(),
+        };
+
+        let content = serde_json::to_string(&event).unwrap_or(String::from(""));
+
+        content
+    }
+
+    fn cancel_event(session: &Session,coach: &User,member: &User) -> String {
+        let start_date = session.original_start_date;
+        let end_date = session.original_end_date;
+
+        let event = FerrisEvent {
+            id: session.id.to_owned(),
+            sequence: 99,
+            organizer: Some(coach.email.clone()),
+            attendee: Some(member.email.clone()),
+            description: session.closing_notes.clone(),
+            startDate: util::format_time(&start_date),
+            endDate: util::format_time(&end_date),
+            status: "CANCELLED".to_owned(),
+            method: "CANCEL".to_owned(),
         };
 
         let content = serde_json::to_string(&event).unwrap_or(String::from(""));
