@@ -26,10 +26,10 @@ pub const BAD_QUERY: &'static str = "Error in executing the query";
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct EventCriteria {
-    user_id: String,
-    program_id: Option<String>,
-    start_date: Option<String>,
-    end_date: Option<String>,
+    pub user_id: String,
+    pub program_id: Option<String>,
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
 }
 
 pub struct EventRow {

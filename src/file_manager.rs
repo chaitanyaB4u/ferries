@@ -91,6 +91,29 @@ pub async fn fetch_list_of_boards(_request: HttpRequest) -> Result<HttpResponse,
     Ok(HttpResponse::Ok().content_type("application/json").body(json_response))
 }
 
+/**
+ * Especially for obtaining the bord files
+ */
+pub fn get_file_names(dir_name: PathBuf) -> Result<Vec<String>,std::io::Error> {
+    let mut file_names: Vec<String> = Vec::new();
+
+    let result = fs::read_dir(dir_name)?;
+    for item in result {
+        let dir_entry: fs::DirEntry = item?;
+        if dir_entry.file_type()?.is_dir() {
+            continue;
+        }
+        let entry = dir_entry.path();
+        let name_result = entry.file_name();
+        if name_result.is_some() {
+            let file_name = format!("{:?}", name_result.unwrap());
+            file_names.push(file_name);
+        }
+    }
+
+    Ok(file_names)
+}
+
 pub async fn fetch_board_file(_request: HttpRequest) -> Result<NamedFile, Error> {
     let session_user_fuzzy_id: PathBuf = _request.match_info().query("session_user_fuzzy_id").parse().unwrap();
     let asset_name: PathBuf = _request.match_info().query("filename").parse().unwrap();

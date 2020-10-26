@@ -1,5 +1,5 @@
-use chrono::{Duration, NaiveDate, NaiveDateTime, Timelike, Utc};
 use chrono::format::strftime::StrftimeItems;
+use chrono::{Duration, NaiveDate, NaiveDateTime, Timelike, Utc};
 use sodiumoxide::crypto::pwhash::argon2id13;
 use std::ops::Sub;
 use uuid::Uuid;
@@ -124,6 +124,8 @@ pub fn is_equal(hashed_password: &str, given_password: &str) -> bool {
     status
 }
 
+
+
 pub fn find_diff(current: Vec<String>, given: Vec<String>) -> Vec<String> {
     let mut diff: Vec<String> = Vec::new();
 
@@ -178,4 +180,5 @@ mod tests {
         let diff = find_diff(old, new);
         assert_eq!(vec![String::from("2"), String::from("3")], diff);
     }
+
 }

@@ -5,7 +5,7 @@ use crate::schema::sessions;
 use chrono::{Duration, NaiveDateTime};
 
 // The Order of the fiels are very important
-#[derive(Queryable, Debug, Identifiable)]
+#[derive(Queryable, Debug, Identifiable,Clone)]
 pub struct Session {
     pub id: String,
     pub name: String,
@@ -87,6 +87,14 @@ impl Session {
 
     pub fn scheduleEnd(&self) -> NaiveDateTime {
         self.revised_end_date.unwrap_or(self.original_end_date)
+    }
+
+    pub fn actualStart(&self) -> Option<NaiveDateTime> {
+        self.actual_start_date
+    }
+
+    pub fn actualEnd(&self) -> Option<NaiveDateTime> {
+        self.actual_end_date
     }
 
     pub fn isClosed(&self) -> bool {

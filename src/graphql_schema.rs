@@ -8,7 +8,7 @@ use crate::models::enrollments::{Enrollment, EnrollmentCriteria, NewEnrollmentRe
 use crate::models::master_plans::{MasterPlan, MasterPlanCriteria, NewMasterPlanRequest, UpdateMasterPlanRequest};
 use crate::models::master_tasks::{MasterTask, MasterTaskCriteria, NewMasterTaskRequest, UpdateMasterTaskRequest};
 use crate::models::notes::{NewNoteRequest, Note, NoteCriteria};
-use crate::models::user_artifacts::{get_enrollment_notes,NoteRow};
+use crate::models::user_artifacts::{get_enrollment_notes,NoteRow,get_boards,BoardRow};
 use crate::models::objectives::{NewObjectiveRequest, Objective, UpdateObjectiveRequest};
 use crate::models::observations::{NewObservationRequest, Observation, UpdateObservationRequest};
 use crate::models::options::{Constraint, NewOptionRequest, UpdateOptionRequest};
@@ -225,6 +225,17 @@ impl QueryRoot {
 
         let connection = context.db.get().unwrap();
         let result = sendable_mails(&connection);
+
+        match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
+    }
+
+    #[graphql(description = "Get the List of all the Boards of an enrolled member")]
+    fn get_boards(context: &DBContext, criteria: EventCriteria) -> QueryResult<Vec<BoardRow>> {
+        let connection = context.db.get().unwrap();
+        let result = get_boards(&connection, criteria);
 
         match result {
             Ok(value) => QueryResult(Ok(value)),

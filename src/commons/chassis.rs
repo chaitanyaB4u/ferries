@@ -13,6 +13,7 @@ use crate::models::user_events::{EventRow, PlanRow, SessionPeople};
 use crate::models::user_programs::ProgramRow;
 use crate::models::coach_members::MemberRow;
 use crate::models::user_artifacts::NoteRow;
+use crate::models::user_artifacts::BoardRow;
 use crate::models::correspondences::Mailable;
 
 /**
@@ -144,9 +145,19 @@ impl QueryResult<Vec<Note>> {
     }
 }
 
-#[juniper::object(name = "ProgramNotes")]
+#[juniper::object(name = "EnrollmentNotes")]
 impl QueryResult<Vec<NoteRow>> {
     pub fn notes(&self) -> Option<&Vec<NoteRow>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "EnrollmentBoards")]
+impl QueryResult<Vec<BoardRow>> {
+    pub fn boards(&self) -> Option<&Vec<BoardRow>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {
