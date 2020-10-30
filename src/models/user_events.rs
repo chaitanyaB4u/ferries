@@ -177,7 +177,7 @@ pub fn get_plan_events(connection: &MysqlConnection, criteria: EventCriteria) ->
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct SessionCriteria {
-    id: String,
+    pub id: String,
 }
 
 pub struct SessionPeople {

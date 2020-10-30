@@ -123,7 +123,7 @@ fn insert_session(connection: &MysqlConnection, new_session: &NewSession) -> Res
     find(connection, new_session.id.as_str())
 }
 
-fn find(connection: &MysqlConnection, the_id: &str) -> Result<Session, &'static str> {
+pub fn find(connection: &MysqlConnection, the_id: &str) -> Result<Session, &'static str> {
     use crate::schema::sessions::dsl::id;
 
     let session_result = sessions.filter(id.eq(the_id)).first(connection);

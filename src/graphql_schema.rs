@@ -29,7 +29,7 @@ use crate::services::objectives::{create_objective, get_objectives, update_objec
 use crate::services::observations::{create_observation, get_observations, update_observation};
 use crate::services::options::{create_option, get_options, update_option};
 use crate::services::programs::{change_program_state, create_new_program};
-use crate::services::sessions::{change_session_state, create_session};
+use crate::services::sessions::{change_session_state, create_session,find};
 use crate::services::tasks::{create_task, get_tasks, update_task};
 use crate::services::users::{authenticate, get_users, register, reset_password};
 use crate::services::correspondences::{sendable_mails};
@@ -207,6 +207,13 @@ impl QueryRoot {
             Ok(value) => QueryResult(Ok(value)),
             Err(e) => query_error(e),
         }
+    }
+
+    #[graphql(description = "Get the Session by its id")]
+    fn get_session(context: &DBContext, criteria: SessionCriteria) -> FieldResult<Session> {
+        let connection = context.db.get().unwrap();
+        let session = find(&connection,&criteria.id)?; 
+        Ok(session)
     }
 
     #[graphql(description = "Get the People participating in an Event")]
