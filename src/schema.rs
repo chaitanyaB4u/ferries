@@ -40,6 +40,17 @@ table! {
 }
 
 table! {
+    discussions (id) {
+        id -> Varchar,
+        enrollment_id -> Varchar,
+        created_by_id -> Varchar,
+        description -> Text,
+        created_at -> Datetime,
+        updated_at -> Datetime,
+    }
+}
+
+table! {
     enrollments (id) {
         id -> Varchar,
         program_id -> Varchar,
@@ -285,6 +296,8 @@ joinable!(coaches -> users (user_id));
 joinable!(correspondences -> enrollments (enrollment_id));
 joinable!(correspondences -> programs (program_id));
 joinable!(correspondences -> users (from_user_id));
+joinable!(discussions -> enrollments (enrollment_id));
+joinable!(discussions -> users (created_by_id));
 joinable!(enrollments -> programs (program_id));
 joinable!(enrollments -> users (member_id));
 joinable!(mail_recipients -> correspondences (correspondence_id));
@@ -317,6 +330,7 @@ allow_tables_to_appear_in_same_query!(
     abstract_tasks,
     coaches,
     correspondences,
+    discussions,
     enrollments,
     mail_recipients,
     master_plans,

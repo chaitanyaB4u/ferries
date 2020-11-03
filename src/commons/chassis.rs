@@ -15,6 +15,7 @@ use crate::models::coach_members::MemberRow;
 use crate::models::user_artifacts::NoteRow;
 use crate::models::user_artifacts::BoardRow;
 use crate::models::correspondences::Mailable;
+use crate::models::discussions::Discussion;
 
 /**
  * Important: The Mutation Result might seem like a Code Duplication,
@@ -138,6 +139,16 @@ impl QueryResult<Vec<Task>> {
 #[juniper::object(name = "NotesResult")]
 impl QueryResult<Vec<Note>> {
     pub fn notes(&self) -> Option<&Vec<Note>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "DiscussionsResult")]
+impl QueryResult<Vec<Discussion>> {
+    pub fn discussions(&self) -> Option<&Vec<Discussion>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {
@@ -296,6 +307,17 @@ impl MutationResult<Enrollment> {
 #[juniper::object(name = "NoteResult")]
 impl MutationResult<Note> {
     pub fn note(&self) -> Option<&Note> {
+        self.0.as_ref().ok()
+    }
+
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "DiscussionResult")]
+impl MutationResult<Discussion> {
+    pub fn discussion(&self) -> Option<&Discussion> {
         self.0.as_ref().ok()
     }
 

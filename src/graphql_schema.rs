@@ -19,6 +19,7 @@ use crate::models::user_events::{get_events, get_people, get_plan_events, EventC
 use crate::models::user_programs::{get_programs, ProgramCriteria, ProgramRow};
 use crate::models::users::{LoginRequest, Registration, ResetPasswordRequest, User};
 use crate::models::correspondences::{Mailable};
+use crate::models::discussions::{Discussion, NewDiscussionRequest, DiscussionCriteria};
 
 use crate::services::abstract_tasks::{create_abstract_task, get_abstract_tasks};
 use crate::services::enrollments::{create_new_enrollment, get_active_enrollments,create_managed_enrollment};
@@ -33,6 +34,7 @@ use crate::services::sessions::{change_session_state, create_session,find};
 use crate::services::tasks::{create_task, get_tasks, update_task};
 use crate::services::users::{authenticate, get_users, register, reset_password};
 use crate::services::correspondences::{sendable_mails};
+use crate::services::discussions::{create_new_discussion, get_discussions};
 
 use crate::commons::chassis::{mutation_error, query_error,service_error, MutationResult, QueryResult, QueryError};
 
@@ -191,6 +193,16 @@ impl QueryRoot {
     fn get_notes(context: &DBContext, criteria: NoteCriteria) -> QueryResult<Vec<Note>> {
         let connection = context.db.get().unwrap();
         let result = get_notes(&connection, criteria);
+
+        match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
+    }
+
+    fn get_discussions(context: &DBContext, criteria: DiscussionCriteria) -> QueryResult<Vec<Discussion>> {
+        let connection = context.db.get().unwrap();
+        let result = get_discussions(&connection, criteria);
 
         match result {
             Ok(value) => QueryResult(Ok(value)),
@@ -564,7 +576,19 @@ impl MutationRoot {
             Err(e) => mutation_error(e),
         }
     }
+
+    fn create_discussion(context: &DBContext, new_discussion_request: NewDiscussionRequest) -> MutationResult<Discussion> {
+
+        let connection = context.db.get().unwrap();
+        let result = create_new_discussion(&connection, &new_discussion_request);
+
+        match result {
+            Ok(discussion) => MutationResult(Ok(discussion)),
+            Err(e) => mutation_error(e),
+        }
+    }
 }
+
 
 pub type GQSchema = RootNode<'static, QueryRoot, MutationRoot>;
 
