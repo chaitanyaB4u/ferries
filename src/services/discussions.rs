@@ -14,5 +14,8 @@ pub fn create_new_discussion(connection: &MysqlConnection, request: &NewDiscussi
 }
 
 pub fn get_discussions(connection: &MysqlConnection, criteria: DiscussionCriteria) -> Result<Vec<Discussion>, diesel::result::Error> {
-    discussions.filter(enrollment_id.eq(criteria.enrollment_id)).load(connection)
+    discussions
+    .filter(enrollment_id.eq(criteria.enrollment_id))
+    .order_by(created_at.asc())
+    .load(connection)
 }
