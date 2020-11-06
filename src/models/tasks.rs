@@ -26,6 +26,9 @@ pub struct Task {
     pub updated_at: NaiveDateTime,
     pub description: Option<String>,
     pub closing_notes: Option<String>,
+    pub response: Option<String>,
+    pub approved_at: Option<NaiveDateTime>,
+    pub cancelled_at: Option<NaiveDateTime>,
 }
 
 #[derive(juniper::GraphQLEnum)]
