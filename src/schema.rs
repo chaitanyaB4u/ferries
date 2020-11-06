@@ -275,6 +275,9 @@ table! {
         updated_at -> Datetime,
         description -> Nullable<Text>,
         closing_notes -> Nullable<Text>,
+        response -> Nullable<Text>,
+        approved_at -> Nullable<Datetime>,
+        cancelled_at -> Nullable<Datetime>,
     }
 }
 
