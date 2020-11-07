@@ -9,6 +9,7 @@ use std::path::PathBuf;
 
 pub const SESSION_ASSET_DIR: &'static str = "/Users/pmpower/assets/sessions";
 pub const PROGRAM_ASSET_DIR: &'static str = "/Users/pmpower/assets/programs";
+pub const COACH_ASSET_DIR: &'static str = "/Users/pmpower/assets/mentors";
 
 pub async fn manage_notes_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let mut file_paths: Vec<String> = Vec::new();
@@ -134,6 +135,16 @@ pub async fn fetch_program_content(_request: HttpRequest) -> Result<NamedFile, E
     let mut file_name: PathBuf = PathBuf::from(PROGRAM_ASSET_DIR);
     file_name.push(program_fuzzy_id);
     file_name.push(purpose);
+    file_name.push(asset_name);
+
+    Ok(NamedFile::open(file_name)?)
+}
+pub async fn fetch_coach_content(_request: HttpRequest) -> Result<NamedFile, Error> {
+    let coach_id: PathBuf = _request.match_info().query("coach_id").parse().unwrap();
+    let asset_name: PathBuf = _request.match_info().query("filename").parse().unwrap();
+
+    let mut file_name: PathBuf = PathBuf::from(COACH_ASSET_DIR);
+    file_name.push(coach_id);
     file_name.push(asset_name);
 
     Ok(NamedFile::open(file_name)?)
