@@ -4,7 +4,7 @@ use crate::commons::util;
 use chrono::Duration;
 
 use crate::models::enrollments::PlanCriteria;
-use crate::models::tasks::{NewTask, NewTaskRequest, Task, UpdateTask, UpdateTaskRequest};
+use crate::models::tasks::{NewTask, NewTaskRequest, Task, UpdateTask, UpdateTaskRequest,UpdateResponseRequest};
 use crate::schema::tasks::dsl::*;
 
 pub fn create_task(connection: &MysqlConnection, request: &NewTaskRequest) -> Result<Task, diesel::result::Error> {
@@ -33,6 +33,10 @@ pub fn update_task(connection: &MysqlConnection, request: &UpdateTaskRequest) ->
         .execute(connection)?;
 
     tasks.filter(id.eq(the_id)).first(connection)
+}
+
+pub fn update_response(connection: &MysqlConnection, request: &UpdateResponseRequest)  {
+
 }
 
 pub fn get_tasks(connection: &MysqlConnection, criteria: PlanCriteria) -> Result<Vec<Task>, diesel::result::Error> {

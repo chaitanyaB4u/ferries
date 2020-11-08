@@ -29,15 +29,18 @@ pub struct Task {
     pub response: Option<String>,
     pub approved_at: Option<NaiveDateTime>,
     pub cancelled_at: Option<NaiveDateTime>,
+    pub responded_date: Option<NaiveDateTime>,
 }
 
 #[derive(juniper::GraphQLEnum)]
 enum Status {
-    DONE,
     PLANNED,
-    PROGRESS,
+    CANCELLED,
     DUE,
     DELAY,
+    PROGRESS,
+    RESPONDED,
+    DONE
 }
 
 #[juniper::object]
@@ -82,24 +85,44 @@ impl Task {
         self.created_at
     }
 
+    pub fn actualStart(&self) -> Option<NaiveDateTime> {
+        self.actual_start_date
+    }
+
+    pub fn actualEnd(&self) -> Option<NaiveDateTime> {
+        self.actual_end_date
+    }
+
+    pub fn responded_date(&self) -> Option<NaiveDateTime> {
+        self.responded_date
+    }
+
     pub fn status(&self) -> Status {
-        if self.actual_end_date.is_some() {
+
+        if self.cancelled_at.is_some() {
+            return Status::CANCELLED;
+        }
+       
+        if self.approved_at.is_some() {
             return Status::DONE;
         }
+
+        if self.actual_end_date.is_some() {
+            return Status::RESPONDED;
+        }
+
+        let rev_end_date = self.revised_end_date.unwrap_or(self.original_end_date);
+        if util::is_past_date(rev_end_date) {
+            return Status::DELAY;
+        }
+
         if self.actual_start_date.is_some() {
             return Status::PROGRESS;
         }
 
         let rev_start_date = self.revised_start_date.unwrap_or(self.original_start_date);
-
         if util::is_past_date(rev_start_date) {
             return Status::DUE;
-        }
-
-        let rev_end_date = self.revised_end_date.unwrap_or(self.original_end_date);
-
-        if util::is_past_date(rev_end_date) {
-            return Status::DELAY;
         }
 
         Status::PLANNED
@@ -112,6 +135,23 @@ impl Task {
         };
         value
     }
+
+    pub fn response(&self) -> &str {
+        let value: &str = match &self.response {
+            None => "",
+            Some(value) => value.as_str(),
+        };
+        value
+    }
+
+    pub fn closing_notes(&self) -> &str {
+        let value: &str = match &self.closing_notes {
+            None => "",
+            Some(value) => value.as_str(),
+        };
+        value
+    }
+
 }
 
 #[derive(juniper::GraphQLInputObject)]
@@ -230,4 +270,40 @@ pub struct UpdateTask {
     pub duration: i32,
     pub original_start_date: NaiveDateTime,
     pub original_end_date: NaiveDateTime,
+}
+
+#[derive(juniper::GraphQLInputObject)]
+pub struct UpdateResponseRequest {
+    pub id: String,
+    pub response: String,
+}
+
+#[derive(juniper::GraphQLInputObject)]
+pub struct UpdateClosingNoteRequest {
+    pub id: String,
+    pub notes: String,
+}
+
+#[derive(juniper::GraphQLEnum, PartialEq)]
+pub enum CoachTargetState {
+    DONE,
+    CANCEL,
+}
+
+#[derive(juniper::GraphQLInputObject)]
+pub struct ChangeCoachTaskStateRequest {
+    pub id: String,
+    pub target_state: CoachTargetState,
+}
+
+#[derive(juniper::GraphQLEnum, PartialEq)]
+pub enum MemberTargetState {
+    START,
+    DONE,
+}
+
+#[derive(juniper::GraphQLInputObject)]
+pub struct ChangeMemberTaskStateRequest {
+    pub id: String,
+    pub target_state: MemberTargetState,
 }

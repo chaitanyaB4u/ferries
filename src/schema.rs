@@ -278,6 +278,7 @@ table! {
         response -> Nullable<Text>,
         approved_at -> Nullable<Datetime>,
         cancelled_at -> Nullable<Datetime>,
+        responded_date -> Nullable<Datetime>,
     }
 }
 
