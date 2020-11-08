@@ -14,7 +14,7 @@ use crate::models::observations::{NewObservationRequest, Observation, UpdateObse
 use crate::models::options::{Constraint, NewOptionRequest, UpdateOptionRequest};
 use crate::models::programs::{ChangeProgramStateRequest, NewProgramRequest, Program};
 use crate::models::sessions::{ChangeSessionStateRequest, NewSessionRequest, Session};
-use crate::models::tasks::{NewTaskRequest, Task, UpdateTaskRequest};
+use crate::models::tasks::{NewTaskRequest, UpdateClosingNoteRequest, Task, UpdateTaskRequest, UpdateResponseRequest, ChangeCoachTaskStateRequest, ChangeMemberTaskStateRequest};
 use crate::models::user_events::{get_events, get_people, get_plan_events, EventCriteria, EventRow, PlanRow, SessionCriteria, SessionPeople};
 use crate::models::user_programs::{get_programs, ProgramCriteria, ProgramRow};
 use crate::models::users::{LoginRequest, Registration, ResetPasswordRequest, User};
@@ -31,7 +31,7 @@ use crate::services::observations::{create_observation, get_observations, update
 use crate::services::options::{create_option, get_options, update_option};
 use crate::services::programs::{change_program_state, create_new_program};
 use crate::services::sessions::{change_session_state, create_session,find};
-use crate::services::tasks::{create_task, get_tasks, update_task};
+use crate::services::tasks::{create_task, get_tasks, update_task, update_response, update_closing_notes, change_member_task_state, change_coach_task_state};
 use crate::services::users::{authenticate, get_users, register, reset_password};
 use crate::services::correspondences::{sendable_mails};
 use crate::services::discussions::{create_new_discussion, get_discussions};
@@ -498,21 +498,6 @@ impl MutationRoot {
         }
     }
 
-    fn update_task(context: &DBContext, update_task_request: UpdateTaskRequest) -> MutationResult<Task> {
-        let errors = update_task_request.validate();
-        if !errors.is_empty() {
-            return MutationResult(Err(errors));
-        }
-
-        let connection = context.db.get().unwrap();
-        let result = update_task(&connection, &update_task_request);
-
-        match result {
-            Ok(task) => MutationResult(Ok(task)),
-            Err(e) => mutation_error(e),
-        }
-    }
-
     fn update_objective(context: &DBContext, update_objective_request: UpdateObjectiveRequest) -> MutationResult<Objective> {
         let errors = update_objective_request.validate();
         if !errors.is_empty() {
@@ -540,6 +525,57 @@ impl MutationRoot {
         match result {
             Ok(task) => MutationResult(Ok(task)),
             Err(e) => mutation_error(e),
+        }
+    }
+
+    fn update_task(context: &DBContext, update_task_request: UpdateTaskRequest) -> MutationResult<Task> {
+        let errors = update_task_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = update_task(&connection, &update_task_request);
+
+        match result {
+            Ok(task) => MutationResult(Ok(task)),
+            Err(e) => mutation_error(e),
+        }
+    }
+
+    fn update_task_closing_notes(context: &DBContext, request: UpdateClosingNoteRequest) -> MutationResult<Task> {
+        let connection = context.db.get().unwrap();
+        let result = update_closing_notes(&connection, &request);
+        match result {
+            Ok(task) => MutationResult(Ok(task)),
+            Err(e) => service_error(e),
+        }
+    }
+
+    fn update_task_response(context: &DBContext, request: UpdateResponseRequest) -> MutationResult<Task> {
+        let connection = context.db.get().unwrap();
+        let result = update_response(&connection, &request);
+        match result {
+            Ok(task) => MutationResult(Ok(task)),
+            Err(e) => service_error(e),
+        }
+    }
+    fn alter_coach_task_state(context: &DBContext, request: ChangeCoachTaskStateRequest) -> MutationResult<Task> {
+        let connection = context.db.get().unwrap();
+        let result = change_coach_task_state(&connection, &request);
+        match result {
+            Ok(task) => MutationResult(Ok(task)),
+            Err(e) => service_error(e),
+        }
+
+    }
+
+    fn alter_member_task_state(context: &DBContext, request: ChangeMemberTaskStateRequest) -> MutationResult<Task> {
+        let connection = context.db.get().unwrap();
+        let result = change_member_task_state(&connection, &request);
+        match result {
+            Ok(task) => MutationResult(Ok(task)),
+            Err(e) => service_error(e),
         }
     }
 

@@ -288,6 +288,7 @@ pub struct UpdateClosingNoteRequest {
 pub enum CoachTargetState {
     DONE,
     CANCEL,
+    REOPEN,
 }
 
 #[derive(juniper::GraphQLInputObject)]
