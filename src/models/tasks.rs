@@ -102,12 +102,12 @@ impl Task {
         if self.cancelled_at.is_some() {
             return Status::CANCELLED;
         }
-       
-        if self.approved_at.is_some() {
+    
+        if self.actual_end_date.is_some() {
             return Status::DONE;
         }
 
-        if self.actual_end_date.is_some() {
+        if self.responded_date.is_some() {
             return Status::RESPONDED;
         }
 
@@ -299,7 +299,7 @@ pub struct ChangeCoachTaskStateRequest {
 #[derive(juniper::GraphQLEnum, PartialEq)]
 pub enum MemberTargetState {
     START,
-    DONE,
+    FINISH,
 }
 
 #[derive(juniper::GraphQLInputObject)]
