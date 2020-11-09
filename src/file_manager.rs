@@ -139,6 +139,36 @@ pub async fn fetch_program_content(_request: HttpRequest) -> Result<NamedFile, E
 
     Ok(NamedFile::open(file_name)?)
 }
+
+pub async fn manage_coach_content(_request: HttpRequest, mut payload: Multipart) -> Result<HttpResponse, Error> {
+    let coach_id: String = _request.match_info().query("coach_id").parse().unwrap();
+ 
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        let content_type = field.content_disposition().unwrap();
+
+        let filename = content_type.get_name().unwrap();
+
+        // Ensure to create a directory for the program content.
+        let dir_path = format!("{}/{}", COACH_ASSET_DIR, coach_id);
+        std::fs::create_dir_all(dir_path).unwrap();
+
+        let file_path = format!("{}/{}/{}", COACH_ASSET_DIR, coach_id, filename);
+
+        // File::create is blocking operation, use threadpool
+        let mut f = web::block(|| std::fs::File::create(file_path)).await.unwrap();
+
+        // Field in turn is stream of *Bytes* object
+        while let Some(chunk) = field.next().await {
+            let data = chunk.unwrap();
+
+            // filesystem operations are blocking, we have to use threadpool
+            f = web::block(move || f.write_all(&data).map(|_| f)).await?;
+        }
+    }
+
+    Ok(HttpResponse::Ok().body("Ok"))
+}
+
 pub async fn fetch_coach_content(_request: HttpRequest) -> Result<NamedFile, Error> {
     let coach_id: PathBuf = _request.match_info().query("coach_id").parse().unwrap();
     let asset_name: PathBuf = _request.match_info().query("filename").parse().unwrap();

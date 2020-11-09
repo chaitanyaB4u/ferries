@@ -73,9 +73,6 @@ pub fn find(connection: &MysqlConnection, the_id: &str) -> Result<User, &'static
     Ok(result.unwrap())
 }
 
-pub fn get_users(connection: &MysqlConnection) -> Vec<User> {
-    users.limit(100).load::<User>(connection).expect("Error Fetching users")
-}
 
 fn create_user(connection: &MysqlConnection, registration: &Registration) -> Result<User, &'static str> {
     let new_user = NewUser::from(registration);

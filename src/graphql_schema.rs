@@ -17,7 +17,7 @@ use crate::models::sessions::{ChangeSessionStateRequest, NewSessionRequest, Sess
 use crate::models::tasks::{NewTaskRequest, UpdateClosingNoteRequest, Task, UpdateTaskRequest, UpdateResponseRequest, ChangeCoachTaskStateRequest, ChangeMemberTaskStateRequest};
 use crate::models::user_events::{get_events, get_people, get_plan_events, EventCriteria, EventRow, PlanRow, SessionCriteria, SessionPeople};
 use crate::models::user_programs::{get_programs, ProgramCriteria, ProgramRow};
-use crate::models::users::{LoginRequest, Registration, ResetPasswordRequest, User};
+use crate::models::users::{LoginRequest, Registration, ResetPasswordRequest, User, UserCriteria};
 use crate::models::correspondences::{Mailable};
 use crate::models::discussions::{Discussion, NewDiscussionRequest, DiscussionCriteria};
 
@@ -32,7 +32,7 @@ use crate::services::options::{create_option, get_options, update_option};
 use crate::services::programs::{change_program_state, create_new_program};
 use crate::services::sessions::{change_session_state, create_session,find};
 use crate::services::tasks::{create_task, get_tasks, update_task, update_response, update_closing_notes, change_member_task_state, change_coach_task_state};
-use crate::services::users::{authenticate, get_users, register, reset_password};
+use crate::services::users::{authenticate, register, reset_password};
 use crate::services::correspondences::{sendable_mails};
 use crate::services::discussions::{create_new_discussion, get_discussions};
 
@@ -56,10 +56,11 @@ impl QueryRoot {
         Ok(user)
     }
 
-    #[graphql(description = "Get the top 100 Users")]
-    fn get_users(context: &DBContext) -> Vec<User> {
+    #[graphql(description = "Return the basic information of a user")]
+    fn get_user(context: &DBContext,criteria: UserCriteria) -> FieldResult<User> {
         let connection = context.db.get().unwrap();
-        get_users(&connection)
+        let user = crate::services::users::find(&connection,&criteria.id)?; 
+        Ok(user)
     }
 
     #[graphql(description = "Get Programs of a Coach Or Member Or Latest 10.")]

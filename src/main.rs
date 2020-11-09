@@ -21,9 +21,11 @@ mod services;
 
 use actix_files::NamedFile;
 use db_manager::establish_connection;
-use file_manager::{fetch_board_file, fetch_list_of_boards, fetch_program_content, fetch_coach_content, manage_notes_file, manage_program_content, PROGRAM_ASSET_DIR, SESSION_ASSET_DIR};
+use file_manager::{
+    fetch_board_file, fetch_coach_content, fetch_list_of_boards, fetch_program_content, manage_coach_content, manage_notes_file, manage_program_content, COACH_ASSET_DIR, PROGRAM_ASSET_DIR,
+    SESSION_ASSET_DIR,
+};
 use graphql_schema::{create_gq_schema, DBContext, GQSchema};
-
 
 async fn upload_notes_file(payload: Multipart) -> Result<HttpResponse, Error> {
     manage_notes_file(payload).await
@@ -46,6 +48,10 @@ async fn offer_program_content(_request: HttpRequest) -> Result<NamedFile, Error
 
 async fn offer_coach_content(_request: HttpRequest) -> Result<NamedFile, Error> {
     fetch_coach_content(_request).await
+}
+
+async fn upload_coach_content(_request: HttpRequest, payload: Multipart) -> Result<HttpResponse, Error> {
+    manage_coach_content(_request, payload).await
 }
 
 async fn graphiql() -> HttpResponse {
@@ -83,6 +89,7 @@ async fn main() -> std::io::Result<()> {
 
     std::fs::create_dir_all(SESSION_ASSET_DIR).unwrap();
     std::fs::create_dir_all(PROGRAM_ASSET_DIR).unwrap();
+    std::fs::create_dir_all(COACH_ASSET_DIR).unwrap();
 
     let pool = establish_connection();
     let db_context = DBContext { db: pool.clone() };
@@ -101,7 +108,8 @@ async fn main() -> std::io::Result<()> {
             .route("assets/upload", web::post().to(upload_notes_file))
             .route("assets/boards/{session_user_fuzzy_id}", web::get().to(list_of_boards))
             .route("assets/boards/{session_user_fuzzy_id}/{filename}", web::get().to(offer_board_file))
-            .route("assets/mentor/{coach_id}/{filename}", web::get().to(offer_coach_content))
+            .route("assets/mentors/{coach_id}", web::post().to(upload_coach_content))
+            .route("assets/mentors/{coach_id}/{filename}", web::get().to(offer_coach_content))
             .route("assets/programs/{program_fuzzy_id}/{purpose}", web::post().to(upload_program_content))
             .route("assets/programs/{program_fuzzy_id}/{purpose}/{filename}", web::get().to(offer_program_content))
             .route("/", web::get().to(index))

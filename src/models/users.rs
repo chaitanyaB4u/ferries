@@ -135,3 +135,8 @@ impl ResetPasswordRequest {
         errors
     }
 }
+
+#[derive(juniper::GraphQLInputObject)]
+pub struct UserCriteria {
+    pub id: String,
+}
