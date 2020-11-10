@@ -9,7 +9,7 @@ use std::path::PathBuf;
 
 pub const SESSION_ASSET_DIR: &'static str = "/Users/pmpower/assets/sessions";
 pub const PROGRAM_ASSET_DIR: &'static str = "/Users/pmpower/assets/programs";
-pub const COACH_ASSET_DIR: &'static str = "/Users/pmpower/assets/mentors";
+pub const USER_ASSET_DIR: &'static str = "/Users/pmpower/assets/users";
 
 pub async fn manage_notes_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let mut file_paths: Vec<String> = Vec::new();
@@ -140,8 +140,8 @@ pub async fn fetch_program_content(_request: HttpRequest) -> Result<NamedFile, E
     Ok(NamedFile::open(file_name)?)
 }
 
-pub async fn manage_coach_content(_request: HttpRequest, mut payload: Multipart) -> Result<HttpResponse, Error> {
-    let coach_id: String = _request.match_info().query("coach_id").parse().unwrap();
+pub async fn manage_user_content(_request: HttpRequest, mut payload: Multipart) -> Result<HttpResponse, Error> {
+    let user_id: String = _request.match_info().query("user_id").parse().unwrap();
  
     while let Ok(Some(mut field)) = payload.try_next().await {
         let content_type = field.content_disposition().unwrap();
@@ -149,10 +149,10 @@ pub async fn manage_coach_content(_request: HttpRequest, mut payload: Multipart)
         let filename = content_type.get_name().unwrap();
 
         // Ensure to create a directory for the program content.
-        let dir_path = format!("{}/{}", COACH_ASSET_DIR, coach_id);
+        let dir_path = format!("{}/{}", USER_ASSET_DIR, user_id);
         std::fs::create_dir_all(dir_path).unwrap();
 
-        let file_path = format!("{}/{}/{}", COACH_ASSET_DIR, coach_id, filename);
+        let file_path = format!("{}/{}/{}", USER_ASSET_DIR, user_id, filename);
 
         // File::create is blocking operation, use threadpool
         let mut f = web::block(|| std::fs::File::create(file_path)).await.unwrap();
@@ -169,12 +169,12 @@ pub async fn manage_coach_content(_request: HttpRequest, mut payload: Multipart)
     Ok(HttpResponse::Ok().body("Ok"))
 }
 
-pub async fn fetch_coach_content(_request: HttpRequest) -> Result<NamedFile, Error> {
-    let coach_id: PathBuf = _request.match_info().query("coach_id").parse().unwrap();
+pub async fn fetch_user_content(_request: HttpRequest) -> Result<NamedFile, Error> {
+    let user_id: PathBuf = _request.match_info().query("user_id").parse().unwrap();
     let asset_name: PathBuf = _request.match_info().query("filename").parse().unwrap();
 
-    let mut file_name: PathBuf = PathBuf::from(COACH_ASSET_DIR);
-    file_name.push(coach_id);
+    let mut file_name: PathBuf = PathBuf::from(USER_ASSET_DIR);
+    file_name.push(user_id);
     file_name.push(asset_name);
 
     Ok(NamedFile::open(file_name)?)
