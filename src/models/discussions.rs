@@ -40,6 +40,7 @@ impl Discussion {
 #[derive(juniper::GraphQLInputObject)]
 pub struct NewDiscussionRequest {
     pub enrollment_id: String,
+    pub to_id: String,
     pub created_by_id: String,
     pub description: String, 
 }
