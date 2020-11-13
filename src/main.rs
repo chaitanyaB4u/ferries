@@ -22,10 +22,12 @@ mod services;
 use actix_files::NamedFile;
 use db_manager::establish_connection;
 use file_manager::{
-    fetch_board_file, fetch_user_content, fetch_list_of_boards, fetch_program_content, manage_user_content, manage_notes_file, manage_program_content, USER_ASSET_DIR, PROGRAM_ASSET_DIR,
-    SESSION_ASSET_DIR,
+    fetch_board_file, fetch_list_of_boards, fetch_program_content, fetch_user_content, manage_notes_file, manage_program_content, manage_user_content, PROGRAM_ASSET_DIR, SESSION_ASSET_DIR,
+    USER_ASSET_DIR,
 };
 use graphql_schema::{create_gq_schema, DBContext, GQSchema};
+
+use crate::services::discussions::get_pending_feed_count;
 
 async fn upload_notes_file(payload: Multipart) -> Result<HttpResponse, Error> {
     manage_notes_file(payload).await
@@ -81,6 +83,16 @@ async fn graphql(ctx: web::Data<DBContext>, schema: web::Data<Arc<GQSchema>>, re
     Ok(HttpResponse::Ok().content_type("application/json").body(&result))
 }
 
+async fn count_feeds(_request: HttpRequest, ctx: web::Data<DBContext>) -> Result<HttpResponse, Error> {
+    let connection = ctx.db.get().unwrap();
+
+    let user_id = _request.match_info().query("user_id");
+    let result = get_pending_feed_count(&connection, user_id);
+    let json_response = serde_json::to_string(&result)?;
+
+    Ok(HttpResponse::Ok().content_type("application/json").body(json_response))
+}
+
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
@@ -112,6 +124,7 @@ async fn main() -> std::io::Result<()> {
             .route("assets/users/{user_id}/{filename}", web::get().to(offer_user_content))
             .route("assets/programs/{program_fuzzy_id}/{purpose}", web::post().to(upload_program_content))
             .route("assets/programs/{program_fuzzy_id}/{purpose}/{filename}", web::get().to(offer_program_content))
+            .route("feeds/{user_id}", web::get().to(count_feeds))
             .route("/", web::get().to(index))
     })
     .bind(&bind)?

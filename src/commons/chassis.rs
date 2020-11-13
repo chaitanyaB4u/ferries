@@ -16,6 +16,7 @@ use crate::models::user_artifacts::NoteRow;
 use crate::models::user_artifacts::BoardRow;
 use crate::models::correspondences::Mailable;
 use crate::models::discussions::Discussion;
+use crate::models::discussion_queue::PendingFeed;
 
 /**
  * Important: The Mutation Result might seem like a Code Duplication,
@@ -58,6 +59,16 @@ pub struct QueryResult<T>(pub Result<T, QueryError>);
 #[juniper::object(name = "ProgramsResult")]
 impl QueryResult<Vec<ProgramRow>> {
     pub fn programs(&self) -> Option<&Vec<ProgramRow>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "PendingFeedResult")]
+impl QueryResult<Vec<PendingFeed>> {
+    pub fn feeds(&self) -> Option<&Vec<PendingFeed>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {

@@ -15,7 +15,6 @@ pub struct Discussion {
 
 #[juniper::object]
 impl Discussion {
-
     pub fn id(&self) -> &str {
         self.id.as_str()
     }
@@ -34,7 +33,7 @@ impl Discussion {
 
     pub fn created_at(&self) -> NaiveDateTime {
         self.created_at
-    }   
+    }
 }
 
 #[derive(juniper::GraphQLInputObject)]
@@ -42,9 +41,14 @@ pub struct NewDiscussionRequest {
     pub enrollment_id: String,
     pub to_id: String,
     pub created_by_id: String,
-    pub description: String, 
+    pub description: String,
+    pub program_id: String,
+    pub program_name: String,
+    pub coach_id: String,
+    pub coach_name: String,
+    pub member_id: String,
+    pub member_name: String 
 }
-
 
 #[derive(Insertable)]
 #[table_name = "discussions"]
@@ -56,20 +60,20 @@ pub struct NewDiscussion {
 }
 
 impl NewDiscussion {
-    pub fn from(request: &NewDiscussionRequest) -> NewDiscussion{
-        
+    pub fn from(request: &NewDiscussionRequest) -> NewDiscussion {
         let fuzzy_id = util::fuzzy_id();
 
         NewDiscussion {
             id: fuzzy_id,
             enrollment_id: request.enrollment_id.to_owned(),
             created_by_id: request.created_by_id.to_owned(),
-            description: request.description.to_owned()
+            description: request.description.to_owned(),
         }
     }
 }
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct DiscussionCriteria {
-    pub enrollment_id: String
+    pub enrollment_id: String,
 }
+

@@ -47,6 +47,12 @@ table! {
         created_at -> Datetime,
         is_pending -> Bool,
         enrollment_id -> Varchar,
+        program_id -> Varchar,
+        program_name -> Varchar,
+        coach_id -> Varchar,
+        coach_name -> Varchar,
+        member_id -> Varchar,
+        member_name -> Varchar,
     }
 }
 
