@@ -53,11 +53,19 @@ impl Task {
         self.name.as_str()
     }
 
-    pub fn enrollment_id(&self) -> &str {
+    pub fn enrollmentId(&self) -> &str {
         self.enrollment_id.as_str()
     }
 
-    pub fn actor_id(&self) -> &str {
+    pub fn description(&self) -> &str {
+        let value: &str = match &self.description {
+            None => "_",
+            Some(value) => value.as_str(),
+        };
+        value
+    }
+
+    pub fn actorId(&self) -> &str {
         self.actor_id.as_str()
     }
 
@@ -89,14 +97,35 @@ impl Task {
         self.actual_start_date
     }
 
+    pub fn response(&self) -> &str {
+        let value: &str = match &self.response {
+            None => "",
+            Some(value) => value.as_str(),
+        };
+        value
+    }
+    
+    pub fn respondedDate(&self) -> Option<NaiveDateTime> {
+        self.responded_date
+    }
+
+    pub fn closingNotes(&self) -> &str {
+        let value: &str = match &self.closing_notes {
+            None => "",
+            Some(value) => value.as_str(),
+        };
+        value
+    }
+
     pub fn actualEnd(&self) -> Option<NaiveDateTime> {
         self.actual_end_date
     }
 
-    pub fn responded_date(&self) -> Option<NaiveDateTime> {
-        self.responded_date
+    pub fn cancelledDate(&self) -> Option<NaiveDateTime> {
+        self.cancelled_at
     }
 
+   
     pub fn status(&self) -> Status {
 
         if self.cancelled_at.is_some() {
@@ -127,31 +156,58 @@ impl Task {
 
         Status::PLANNED
     }
-
-    pub fn description(&self) -> &str {
-        let value: &str = match &self.description {
-            None => "_",
-            Some(value) => value.as_str(),
-        };
-        value
+ 
+ 
+    pub fn canStart(&self) -> bool {
+        self.can_start()
     }
 
-    pub fn response(&self) -> &str {
-        let value: &str = match &self.response {
-            None => "",
-            Some(value) => value.as_str(),
-        };
-        value
+    pub fn canRespond(&self) -> bool {
+        self.can_respond()
     }
 
-    pub fn closing_notes(&self) -> &str {
-        let value: &str = match &self.closing_notes {
-            None => "",
-            Some(value) => value.as_str(),
-        };
-        value
+    pub fn canFinish(&self) -> bool {
+        self.can_finish()
     }
 
+    pub fn canComplete(&self) -> bool {
+        self.can_complete()
+    }
+
+    pub fn canCancel(&self) -> bool {
+        self.can_cancel()
+    }
+
+    pub fn canReopen(&self) -> bool {
+        self.can_reopen()
+    }
+}
+
+impl Task {
+
+    pub fn can_start(&self) -> bool {
+        self.actual_start_date.is_none() && self.responded_date.is_none() && self.cancelled_at.is_none() && self.actual_end_date.is_none()
+    }
+
+    pub fn can_respond(&self) -> bool {
+        self.cancelled_at.is_none() && self.actual_end_date.is_none() && self.responded_date.is_none() && self.actual_start_date.is_some()
+    }
+
+    pub fn can_finish(&self) -> bool {
+        self.actual_start_date.is_some() && self.response.is_some() && self.cancelled_at.is_none() && self.responded_date.is_none() && self.actual_end_date.is_none()
+    }
+
+    pub fn can_complete(&self) -> bool {
+        self.actual_end_date.is_none() && self.cancelled_at.is_none() && self.responded_date.is_some()
+    }
+
+    pub fn can_cancel(&self) -> bool {
+        self.actual_end_date.is_none() && self.cancelled_at.is_none()
+    }
+
+    pub fn can_reopen(&self) -> bool {
+        self.responded_date.is_some()
+    }
 }
 
 #[derive(juniper::GraphQLInputObject)]

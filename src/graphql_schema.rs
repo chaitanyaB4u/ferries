@@ -572,6 +572,7 @@ impl MutationRoot {
             Err(e) => service_error(e),
         }
     }
+    
     fn alter_coach_task_state(context: &DBContext, request: ChangeCoachTaskStateRequest) -> MutationResult<Task> {
         let connection = context.db.get().unwrap();
         let result = change_coach_task_state(&connection, &request);

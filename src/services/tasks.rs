@@ -76,7 +76,7 @@ fn can_allow_response_change(connection: &MysqlConnection, request: &UpdateRespo
 
     let task = find(connection, the_id)?;
 
-    let flag = task.cancelled_at.is_none() && task.actual_end_date.is_none() && task.responded_date.is_none();
+    let flag = task.can_respond();
 
     if !flag {
         return Err(STATE_CHANGE_PROHIBITED);
@@ -138,9 +138,9 @@ fn can_allow_coach_task_state_change(connection: &MysqlConnection, request: &Cha
     let task = find(connection, the_id)?;
 
     let result: bool = match request.target_state {
-        CoachTargetState::DONE => task.actual_end_date.is_none() && task.cancelled_at.is_none() && task.responded_date.is_some(),
-        CoachTargetState::CANCEL => task.actual_end_date.is_none() && task.cancelled_at.is_none(),
-        CoachTargetState::REOPEN => task.responded_date.is_some()
+        CoachTargetState::DONE => task.can_complete(),
+        CoachTargetState::CANCEL => task.can_cancel(),
+        CoachTargetState::REOPEN => task.can_reopen()
     };
 
     if !result {
@@ -156,9 +156,8 @@ fn can_allow_member_task_state_change(connection: &MysqlConnection, request: &Ch
     let task = find(connection, the_id)?;
 
     let result: bool = match request.target_state {
-
-        MemberTargetState::START => task.responded_date.is_none() && task.cancelled_at.is_none() && task.actual_end_date.is_none(),
-        MemberTargetState::FINISH => task.actual_start_date.is_some() && task.cancelled_at.is_none() && task.responded_date.is_none() && task.actual_end_date.is_none()
+        MemberTargetState::START => task.can_start(),
+        MemberTargetState::FINISH => task.can_finish()
     };
 
     if !result {
@@ -180,5 +179,8 @@ fn find(connection: &MysqlConnection, the_id: &str) -> Result<Task, &'static str
 }
 
 pub fn get_tasks(connection: &MysqlConnection, criteria: PlanCriteria) -> Result<Vec<Task>, diesel::result::Error> {
-    tasks.filter(enrollment_id.eq(criteria.enrollment_id)).order_by(original_start_date.asc()).load(connection)
+    tasks
+        .filter(enrollment_id.eq(criteria.enrollment_id))
+        .order_by(original_start_date.asc())
+        .load(connection)
 }
