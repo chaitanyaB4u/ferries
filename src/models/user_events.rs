@@ -259,6 +259,12 @@ pub fn get_plan_events(connection: &MysqlConnection, criteria: EventCriteria) ->
     Ok(plan_rows)
 }
 
+/***
+ * A task is due for a member, when the member is yet to responded 
+ * and the original end date (planned end date) is on or before the given date.
+ * 
+ * We consider the end date as a reference point
+ */
 fn get_member_due_tasks(connection: &MysqlConnection, criteria: &EventCriteria) -> Result<Vec<TaskRowType>, String> {
     let mut query = tasks
         .inner_join(enrollments.inner_join(programs))
@@ -267,11 +273,6 @@ fn get_member_due_tasks(connection: &MysqlConnection, criteria: &EventCriteria) 
         .order_by(tasks::original_start_date.asc())
         .into_boxed();
 
-    if criteria.start_date.is_some() {
-        let start_date = criteria.start_date.as_ref().unwrap().as_str();
-        let date = util::as_start_date(start_date)?;
-        query = query.filter(tasks::original_end_date.ge(date));
-    }
     if criteria.end_date.is_some() {
         let end_date = criteria.end_date.as_ref().unwrap().as_str();
         let date = util::as_end_date(end_date)?;
@@ -287,9 +288,15 @@ fn get_member_due_tasks(connection: &MysqlConnection, criteria: &EventCriteria) 
     Ok(result.unwrap())
 }
 
+/***
+ * Normally, a task become due for a coach the moment a member responded to the task.
+ * 
+ * Luckily if a member closes a task before the planned end_date, 
+ * the coach gains some time to review.
+ * 
+ */
 
 type CoachTaskRowType = (Task, User, (Enrollment, Program));
-
 fn get_coach_due_tasks(connection: &MysqlConnection, criteria: &EventCriteria) -> Result<Vec<CoachTaskRowType>, String> {
     let mut query = tasks
         .inner_join(users)
@@ -300,11 +307,6 @@ fn get_coach_due_tasks(connection: &MysqlConnection, criteria: &EventCriteria) -
         .order_by(tasks::original_start_date.asc())
         .into_boxed();
 
-    if criteria.start_date.is_some() {
-        let start_date = criteria.start_date.as_ref().unwrap().as_str();
-        let date = util::as_start_date(start_date)?;
-        query = query.filter(tasks::original_end_date.ge(date));
-    }
     if criteria.end_date.is_some() {
         let end_date = criteria.end_date.as_ref().unwrap().as_str();
         let date = util::as_end_date(end_date)?;

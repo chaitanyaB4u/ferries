@@ -157,7 +157,7 @@ impl QueryRoot {
         }
     }
 
-    #[graphql(description = "Get the list of Plan Events for a User")]
+    #[graphql(description = "Get the list of events due for a user")]
     fn get_due(context: &DBContext, criteria: EventCriteria) -> QueryResult<Vec<ToDo>> {
         let connection = context.db.get().unwrap();
         let result = get_to_dos(&connection, criteria);
