@@ -9,7 +9,7 @@ use crate::models::options::Constraint;
 use crate::models::programs::Program;
 use crate::models::sessions::Session;
 use crate::models::tasks::Task;
-use crate::models::user_events::{EventRow, PlanRow, SessionPeople};
+use crate::models::user_events::{EventRow, PlanRow, SessionPeople,ToDo};
 use crate::models::user_programs::ProgramRow;
 use crate::models::coach_members::MemberRow;
 use crate::models::user_artifacts::NoteRow;
@@ -200,6 +200,16 @@ impl QueryResult<Vec<EventRow>> {
 #[juniper::object(name = "ActivitiesResult")]
 impl QueryResult<Vec<PlanRow>> {
     pub fn planRows(&self) -> Option<&Vec<PlanRow>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "ToDos")]
+impl QueryResult<Vec<ToDo>> {
+    pub fn todos(&self) -> Option<&Vec<ToDo>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {
