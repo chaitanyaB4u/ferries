@@ -189,16 +189,14 @@ impl NewObjective {
 
         let fuzzy_id = util::fuzzy_id();
 
-        let new_objective = NewObjective {
+        NewObjective {
             id: fuzzy_id,
             enrollment_id: request.enrollment_id.to_owned(),
             duration: 1,
             original_start_date: start_date,
             original_end_date: end_date,
             description: request.description.to_owned(),
-        };
-
-        new_objective
+        }
     }
 }
 

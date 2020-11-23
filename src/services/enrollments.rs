@@ -15,11 +15,11 @@ use crate::schema::programs::dsl::*;
 use crate::schema::users::dsl::*;
 
 
-const WARNING: &'static str = "It seems you have already enrolled in this program";
-const ERROR_002: &'static str = "Error in creating enrollment. Error-002.";
-const ERROR_003: &'static str = "Error in finding enrollment for the program and member. Error-003.";
-const ERROR_004: &'static str = "Error in marking the enrollment as Old";
-const QUERY_ERROR: &'static str = "Error in fetching enrolled members";
+const WARNING: &str = "It seems you have already enrolled in this program";
+const ERROR_002: &str = "Error in creating enrollment. Error-002.";
+const ERROR_003: &str = "Error in finding enrollment for the program and member. Error-003.";
+const ERROR_004: &str = "Error in marking the enrollment as Old";
+const QUERY_ERROR: &str = "Error in fetching enrolled members";
 
 pub fn create_new_enrollment(connection: &MysqlConnection, request: &NewEnrollmentRequest) -> Result<Enrollment, &'static str> {
     let user: User = users::find(connection, request.user_id.as_str())?;
@@ -97,8 +97,8 @@ pub fn get_active_enrollments(connection: &MysqlConnection, criteria: Enrollment
     Ok(result.unwrap())
 }
 
-const INVALID_MEMBER_MAIL: &'static str = "Invalid Member Mail Id";
-const CONFLICT_PROGRAM_OWNER_MAIL: &'static str = "The coach does not have rights to enroll this member.";
+const INVALID_MEMBER_MAIL: &str = "Invalid Member Mail Id";
+const CONFLICT_PROGRAM_OWNER_MAIL: &str = "The coach does not have rights to enroll this member.";
 
 
 pub fn create_managed_enrollment(connection: &MysqlConnection, request: &ManagedEnrollmentRequest) -> Result<Enrollment, &'static str> {
@@ -134,7 +134,7 @@ pub fn create_managed_enrollment(connection: &MysqlConnection, request: &Managed
 fn create_enrollment_mail(connection: &MysqlConnection, request: &ManagedEnrollmentRequest, new_enroll_id: &str, member: &User, coach: &User) ->Result<usize,&'static str> {
     
     let mail_out = MailOut::for_enrollment(request, new_enroll_id); 
-    let recipients = MailRecipient::as_recipients(member, coach, mail_out.id.as_str()); 
+    let recipients = MailRecipient::build_recipients(member, coach, mail_out.id.as_str()); 
 
     create_mail(connection, mail_out, recipients)    
 }

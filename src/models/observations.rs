@@ -84,12 +84,10 @@ impl NewObservation {
     pub fn from(request: &NewObservationRequest) -> NewObservation {
         let fuzzy_id = util::fuzzy_id();
 
-        let new_observation = NewObservation {
+        NewObservation {
             id: fuzzy_id,
             enrollment_id: request.enrollment_id.to_owned(),
             description: request.description.to_owned(),
-        };
-
-        new_observation
+        }
     }
 }

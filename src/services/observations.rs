@@ -9,7 +9,7 @@ pub fn create_observation(connection: &MysqlConnection, request: &NewObservation
 
     diesel::insert_into(observations).values(&new_observation).execute(connection)?;
 
-    observations.filter(id.eq(new_observation.id.to_owned())).first(connection)
+    observations.filter(id.eq(new_observation.id)).first(connection)
 }
 
 pub fn update_observation(connection: &MysqlConnection, request: &UpdateObservationRequest) -> Result<Observation, diesel::result::Error> {

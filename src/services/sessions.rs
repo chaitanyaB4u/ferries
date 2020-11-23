@@ -19,13 +19,13 @@ use crate::schema::session_users::dsl::*;
 use crate::schema::sessions::dsl::*;
 use crate::schema::users::dsl::*;
 
-const SESSION_CREATION_ERROR: &'static str = "Unable to Create Session. Error:002";
-const SESSION_NOT_FOUND: &'static str = "Unable to Create Or Find the Session. Error:003.";
+const SESSION_CREATION_ERROR: &str = "Unable to Create Session. Error:002";
+const SESSION_NOT_FOUND: &str = "Unable to Create Or Find the Session. Error:003.";
 
-const SESSION_USER_CREATION_ERROR: &'static str = "Unable to associate users to the session. Error: 004.";
+const SESSION_USER_CREATION_ERROR: &str = "Unable to associate users to the session. Error: 004.";
 
-const SESSION_STATE_CHANGE_PROHIBITED: &'static str = "The session is either cancelled or completed. Hence change of state to the session is not permitted.";
-const SESSION_UPDATE_ERROR: &'static str = "Unable to complete the requested action on the state";
+const SESSION_STATE_CHANGE_PROHIBITED: &str = "The session is either cancelled or completed. Hence change of state to the session is not permitted.";
+const SESSION_UPDATE_ERROR: &str = "Unable to complete the requested action on the state";
 
 pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest) -> Result<Session, &'static str> {
     // Obtain the Program
@@ -147,7 +147,7 @@ fn insert_session_users(connection: &MysqlConnection, coach: &NewSessionUser, me
 
 fn create_session_mail(connection: &MysqlConnection, session: &Session, member: &User, coach: &User) -> Result<usize, &'static str> {
     let mail_out = MailOut::for_new_session(session, coach, member);
-    let recipients = MailRecipient::as_recipients(member, coach, mail_out.id.as_str());
+    let recipients = MailRecipient::build_recipients(member, coach, mail_out.id.as_str());
 
     create_mail(connection, mail_out, recipients)
 }
@@ -161,6 +161,6 @@ fn send_session_cancel_mail(connection: &MysqlConnection, session: &Session) -> 
     let member = team.get("member").unwrap();
 
     let mail_out = MailOut::for_cancel_session(session, coach, member);
-    let recipients = MailRecipient::as_recipients(member, coach, mail_out.id.as_str());
+    let recipients = MailRecipient::build_recipients(member, coach, mail_out.id.as_str());
     create_mail(connection, mail_out, recipients)
 }

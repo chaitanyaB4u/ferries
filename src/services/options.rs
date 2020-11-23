@@ -9,7 +9,7 @@ pub fn create_option(connection: &MysqlConnection, request: &NewOptionRequest) -
 
     diesel::insert_into(options).values(&new_option).execute(connection)?;
 
-    options.filter(id.eq(new_option.id.to_owned())).first(connection)
+    options.filter(id.eq(new_option.id)).first(connection)
 }
 
 pub fn update_option(connection: &MysqlConnection, request: &UpdateOptionRequest) -> Result<Constraint, diesel::result::Error> {

@@ -84,12 +84,10 @@ impl NewOption {
     pub fn from(request: &NewOptionRequest) -> NewOption {
         let fuzzy_id = util::fuzzy_id();
 
-        let new_option = NewOption {
+        NewOption {
             id: fuzzy_id,
             enrollment_id: request.enrollment_id.to_owned(),
             description: request.description.to_owned(),
-        };
-
-        new_option
+        }
     }
 }

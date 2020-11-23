@@ -5,7 +5,7 @@ use crate::schema::mail_recipients::dsl::*;
 
 use crate::models::correspondences::{Correspondence, MailCriteria, MailOut, MailRecipient, Mailable};
 
-const MAIL_CREATION_ERROR: &'static str = "Error in creating the invitation mail. But enrollment is done.";
+const MAIL_CREATION_ERROR: &str = "Error in creating the invitation mail. But enrollment is done.";
 
 pub type MailType = (Correspondence, Vec<MailRecipient>);
 pub type MailResult = Result<Vec<MailType>, diesel::result::Error>;

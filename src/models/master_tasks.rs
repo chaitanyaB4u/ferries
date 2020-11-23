@@ -139,7 +139,7 @@ impl NewMasterTask {
     pub fn from(request: &NewMasterTaskRequest) -> NewMasterTask {
         let fuzzy_id = util::fuzzy_id();
 
-        let new_master_task = NewMasterTask {
+        NewMasterTask {
             id: fuzzy_id,
             master_plan_id: request.master_plan_id.to_owned(),
             abstract_task_id: request.abstract_task_id.to_owned(),
@@ -148,9 +148,7 @@ impl NewMasterTask {
             coach_id: request.coach_id.to_owned(),
             role_id: request.role_id.to_owned(),
             coordinates: request.coordinates.to_owned(),
-        };
-
-        new_master_task
+        }
     }
 }
 

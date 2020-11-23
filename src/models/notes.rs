@@ -103,7 +103,7 @@ impl NewNote {
             created_by_id: session_user.user_id,
             description: request.description.to_owned(),
             session_user_id: session_user.id,
-            remind_at: remind_at,
+            remind_at,
         }
     }
 }
@@ -125,7 +125,7 @@ impl NewNoteFile {
 
         NewNoteFile {
             id: fuzzy_id,
-            session_note_id: session_note_id.to_owned(),
+            session_note_id,
             file_path: request.path.to_owned(),
             file_name: request.name.to_owned(),
             file_type: Some(request.r#type.to_owned()),

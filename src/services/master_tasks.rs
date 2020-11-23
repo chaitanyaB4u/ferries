@@ -9,7 +9,7 @@ pub fn create_master_task(connection: &MysqlConnection, request: &NewMasterTaskR
 
     diesel::insert_into(master_tasks).values(&new_master_task).execute(connection)?;
 
-    master_tasks.filter(id.eq(new_master_task.id.to_owned())).first(connection)
+    master_tasks.filter(id.eq(new_master_task.id)).first(connection)
 }
 
 pub fn update_master_task(connection: &MysqlConnection, request: &UpdateMasterTaskRequest) -> Result<MasterTask, diesel::result::Error> {

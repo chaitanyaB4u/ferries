@@ -27,7 +27,7 @@ use crate::schema::tasks;
 use crate::schema::tasks::dsl::*;
 use crate::schema::users::dsl::*;
 
-pub const BAD_QUERY: &'static str = "Error in executing the query";
+pub const BAD_QUERY: &str = "Error in executing the query";
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct EventCriteria {

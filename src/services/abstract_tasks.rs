@@ -8,7 +8,7 @@ pub fn create_abstract_task(connection: &MysqlConnection, request: &NewAbstractT
 
     diesel::insert_into(abstract_tasks).values(&new_abstract_task).execute(connection)?;
 
-    abstract_tasks.filter(id.eq(new_abstract_task.id.to_owned())).first(connection)
+    abstract_tasks.filter(id.eq(new_abstract_task.id)).first(connection)
 }
 
 pub fn get_abstract_tasks(connection: &MysqlConnection, criteria: &AbstractTaskCriteria) -> Result<Vec<AbstractTask>, diesel::result::Error> {

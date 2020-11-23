@@ -4,13 +4,13 @@ use crate::commons::util;
 use crate::models::users::{LoginRequest, NewUser, Registration, ResetPasswordRequest, User};
 use crate::schema::users::dsl::*;
 
-const REGISTERED_ALREADY: &'static str = "It seems you have already registered with us.";
-const BLANK_EMAIL: &'static str = "The email id is required.";
-const BLANK_FULL_NAME: &'static str = "Your full name is required.";
-const INVALID_USER_ID: &'static str = "Invalid User Id";
-const CREATION_ERROR: &'static str = "Unable to create a new user";
-const INVALID_CREDENTIAL: &'static str = "Invalid Credential";
-const PASSWORD_RESET_FAILED: &'static str = "Failed to reset the password.";
+const REGISTERED_ALREADY: &str = "It seems you have already registered with us.";
+const BLANK_EMAIL: &str = "The email id is required.";
+const BLANK_FULL_NAME: &str = "Your full name is required.";
+const INVALID_USER_ID: &str = "Invalid User Id";
+const CREATION_ERROR: &str = "Unable to create a new user";
+const INVALID_CREDENTIAL: &str = "Invalid Credential";
+const PASSWORD_RESET_FAILED: &str = "Failed to reset the password.";
 
 pub fn register(connection: &MysqlConnection, registration: &Registration) -> Result<User, &'static str> {
     if registration.email.trim().is_empty() {

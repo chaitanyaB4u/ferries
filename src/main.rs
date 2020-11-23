@@ -63,7 +63,7 @@ async fn graphiql() -> HttpResponse {
 
 #[warn(unused_variables)]
 async fn index(_request: HttpRequest) -> HttpResponse {
-    let body = format!("Welcome to Ferris. The API for the Coaching Assistant!!!");
+    let body = "Welcome to Ferris. The API for the Coaching Assistant!!!";
     HttpResponse::Ok().body(body)
 }
 

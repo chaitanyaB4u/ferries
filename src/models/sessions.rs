@@ -106,7 +106,7 @@ impl Session {
             return true;
         }
 
-        return false;
+        false
     }
 
     pub fn status(&self) -> Status {
@@ -211,19 +211,17 @@ impl NewSession {
 
         let fuzzy_id = util::fuzzy_id();
 
-        let new_session = NewSession {
+        NewSession {
             id: fuzzy_id,
             name: request.name.to_owned(),
             description: request.description.to_owned(),
             program_id: request.program_id.to_owned(),
-            enrollment_id: enrollment_id,
-            people: people.to_owned(),
+            enrollment_id,
+            people,
             duration: request.duration,
             original_start_date: start_date,
             original_end_date: end_date.unwrap_or(start_date),
-        };
-
-        new_session
+        }
     }
 }
 

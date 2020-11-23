@@ -7,17 +7,17 @@ use crate::models::enrollments::PlanCriteria;
 use crate::models::tasks::{NewTask, NewTaskRequest, Task, UpdateTask, UpdateClosingNoteRequest, UpdateTaskRequest,UpdateResponseRequest, ChangeMemberTaskStateRequest, ChangeCoachTaskStateRequest, MemberTargetState, CoachTargetState};
 use crate::schema::tasks::dsl::*;
 
-const STATE_CHANGE_PROHIBITED: &'static str = "The task is either cancelled or responded.";
-const TASK_NOT_FOUND: &'static str = "Unable to find the Task.";
-const UPDATE_ERROR: &'static str = "Unable to complete the requested action.";
-const UPDATE_NOTES_ERROR: &'static str = "Unable to update the notes.";
+const STATE_CHANGE_PROHIBITED: &str = "The task is either cancelled or responded.";
+const TASK_NOT_FOUND: &str = "Unable to find the Task.";
+const UPDATE_ERROR: &str = "Unable to complete the requested action.";
+const UPDATE_NOTES_ERROR: &str = "Unable to update the notes.";
 
 pub fn create_task(connection: &MysqlConnection, request: &NewTaskRequest) -> Result<Task, diesel::result::Error> {
     let new_task = NewTask::from(request);
 
     diesel::insert_into(tasks).values(&new_task).execute(connection)?;
 
-    tasks.filter(id.eq(new_task.id.to_owned())).first(connection)
+    tasks.filter(id.eq(new_task.id)).first(connection)
 }
 
 pub fn update_task(connection: &MysqlConnection, request: &UpdateTaskRequest) -> Result<Task, diesel::result::Error> {

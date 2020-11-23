@@ -250,7 +250,7 @@ impl QueryResult<Vec<Mailable>> {
 pub fn query_error<T>(error: diesel::result::Error) -> QueryResult<T> {
     let message: String = error.to_string();
 
-    let e = QueryError { message: message };
+    let e = QueryError {message };
 
     QueryResult(Err(e))
 }
@@ -428,8 +428,7 @@ pub fn mutation_error<T>(error: diesel::result::Error) -> MutationResult<T> {
 
     let mut v: Vec<ValidationError> = Vec::new();
     let ve = ValidationError {
-        field: String::from("service"),
-        message: message,
+        field: String::from("service"),message,
     };
     v.push(ve);
 

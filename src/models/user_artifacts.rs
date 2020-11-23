@@ -55,10 +55,7 @@ pub fn get_enrollment_notes(connection: &MysqlConnection, criteria: PlanCriteria
         let session = (item.1).0;
         let note = (item.1).1;
 
-        let mut by = util::COACH;
-        if enrollment.member_id == note.created_by_id {
-            by = util::MEMBER;
-        }
+        let by = if enrollment.member_id == note.created_by_id { util::MEMBER } else { util::COACH };
 
         let note_row = NoteRow { session, note, by: String::from(by) };
 
@@ -102,29 +99,27 @@ pub fn get_boards(connection: &MysqlConnection, criteria: EventCriteria) -> Resu
         .load(connection)?;
 
     Ok(get_session_boards(&rows))
-
 }
 
 /**
  * Sessions without any boards will not be returned.
  */
-fn get_session_boards(rows: &Vec<Row>) -> Vec<BoardRow> {
+fn get_session_boards(rows: &[Row]) -> Vec<BoardRow> {
     let mut board_rows: Vec<BoardRow> = Vec::new();
 
     for row in rows {
         let mut dir_name: PathBuf = PathBuf::from(SESSION_ASSET_DIR);
-        dir_name.push(((&row.1).1).id.to_owned());
+        dir_name.push(((row.1).1).id.to_owned());
         dir_name.push("boards");
 
         let result = get_file_names(dir_name);
-        if result.is_ok() {
-            let board_row = BoardRow {
+
+        if let Ok(urls) = result {
+            board_rows.push(BoardRow {
                 session: (row.1).0.clone(),
                 session_user: (row.1).1.clone(),
-                urls: result.unwrap()
-            };
-
-            board_rows.push(board_row);
+                urls,
+            });
         }
     }
 

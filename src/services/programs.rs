@@ -6,11 +6,11 @@ use crate::models::programs::{ChangeProgramStateRequest, NewProgram, NewProgramR
 use crate::schema::coaches::dsl::*;
 use crate::schema::programs::dsl::*;
 
-const INVALID_PROGRAM: &'static str = "Invalid Program Id. Error:001.";
-const PROGRAM_CREATION_ERROR: &'static str = "Program Creation. Error:002";
-const INVALID_COACH: &'static str = "Invalid Coach Fuzzy Id. Error:003";
-const PROGRAM_STATE_CHANGE_ERROR: &'static str = "Unable to change the state of the program";
-const PROGRAM_SAME_STATE_ERROR: &'static str = "Program is already in the target state.";
+const INVALID_PROGRAM: &str = "Invalid Program Id. Error:001.";
+const PROGRAM_CREATION_ERROR: &str = "Program Creation. Error:002";
+const INVALID_COACH: &str = "Invalid Coach Fuzzy Id. Error:003";
+const PROGRAM_STATE_CHANGE_ERROR: &str = "Unable to change the state of the program";
+const PROGRAM_SAME_STATE_ERROR: &str = "Program is already in the target state.";
 
 pub fn find(connection: &MysqlConnection, the_id: &str) -> Result<Program, &'static str> {
     use crate::schema::programs::dsl::id;

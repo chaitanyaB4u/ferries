@@ -11,5 +11,5 @@ fn init_pool(database_url: &str) -> Result<MySqlConnectionPool, PoolError> {
 
 pub fn establish_connection() -> MySqlConnectionPool {
     let database_url = env::var("DATABASE_URL").expect("The Database URL should be set");
-    init_pool(&database_url).expect(&format!("Error connecting to {}", database_url))
+    init_pool(&database_url).unwrap_or_else(|_| { panic!("Error connection to {}", database_url) })
 }

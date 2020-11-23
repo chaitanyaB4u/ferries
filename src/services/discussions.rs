@@ -14,7 +14,7 @@ use crate::models::users::User;
 
 use crate::models::users::UserCriteria;
 
-const FEED_COUNT_ERROR: &'static str = "Error while counting pending feeds.";
+const FEED_COUNT_ERROR: &str = "Error while counting pending feeds.";
 
 pub fn create_new_discussion(connection: &MysqlConnection, request: &NewDiscussionRequest) -> QueryResult<Discussion> {
     let new_discussion = NewDiscussion::from(request);

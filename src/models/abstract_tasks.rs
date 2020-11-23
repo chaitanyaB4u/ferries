@@ -58,13 +58,11 @@ impl NewAbstractTask {
     pub fn from(request: &NewAbstractTaskRequest) -> NewAbstractTask {
         let fuzzy_id = util::fuzzy_id();
 
-        let new_abstract_task = NewAbstractTask {
+        NewAbstractTask {
             id: fuzzy_id,
             name: request.name.to_owned(),
             coach_id: request.coach_id.to_owned(),
-        };
-
-        new_abstract_task
+        }
     }
 }
 

@@ -17,7 +17,7 @@ pub fn create_master_plan(connection: &MysqlConnection, request: &NewMasterPlanR
 
     diesel::insert_into(master_plans).values(&new_master_plan).execute(connection)?;
 
-    master_plans.filter(master_plans::id.eq(new_master_plan.id.to_owned())).first(connection)
+    master_plans.filter(master_plans::id.eq(new_master_plan.id)).first(connection)
 }
 
 pub fn get_master_plans(connection: &MysqlConnection, criteria: &MasterPlanCriteria) -> Result<Vec<MasterPlan>, diesel::result::Error> {
@@ -31,7 +31,7 @@ fn delete_current_links(connection: &MysqlConnection, plan_id: &str) -> Result<S
     Ok(String::from("Ok"))
 }
 
-fn deletable_tasks(connection: &MysqlConnection, plan_id: &str, given_tasks: &Vec<TaskUnit>) -> Result<Vec<String>, diesel::result::Error> {
+fn deletable_tasks(connection: &MysqlConnection, plan_id: &str, given_tasks: &[TaskUnit]) -> Result<Vec<String>, diesel::result::Error> {
     let current_task_ids: Vec<String> = master_tasks.filter(master_tasks::master_plan_id.eq(plan_id)).select(master_tasks::id).load(connection)?;
     let mut given_ids: Vec<String> = given_tasks.iter().map(|tu| tu.id.clone()).collect();
     given_ids.sort_unstable_by(|id1, id2| id1.cmp(&id2));

@@ -32,16 +32,16 @@ pub struct Correspondence {
     pub mail_type: String,
 }
 
-const SCHEDULE_SENDER_ID: &'static str = "schedule@krscode.com";
+const SCHEDULE_SENDER_ID: &str = "schedule@krscode.com";
 
-const OUT: &'static str = "out";
-const TO: &'static str = "to";
-const CC: &'static str = "cc";
+const OUT: &str = "out";
+const TO: &str = "to";
+const CC: &str = "cc";
 
-const PENDING: &'static str = "pending";
+const PENDING: &str = "pending";
 
-const NORMAL: &'static str = "normal";
-const EVENT: &'static str = "event";
+const NORMAL: &str = "normal";
+const EVENT: &str = "event";
 
 #[derive(Insertable)]
 #[table_name = "correspondences"]
@@ -68,10 +68,10 @@ impl MailOut {
         MailOut {
             id: fuzzy_id,
             from_email: SCHEDULE_SENDER_ID.to_owned(),
-            from_user_id: from_user_id,
-            program_id: program_id,
-            enrollment_id: enrollment_id,
-            subject: subject,
+            from_user_id,
+            program_id,
+            enrollment_id,
+            subject,
             content: Some(content),
             in_out: OUT.to_owned(),
             status: PENDING.to_owned(),
@@ -89,33 +89,33 @@ impl MailOut {
             enrollment_id.to_owned(),
             request.subject.to_owned(),
             request.message.to_owned(),
-            NORMAL
+            NORMAL,
         )
     }
 
     pub fn for_new_session(session: &Session, coach: &User, member: &User) -> MailOut {
-        let content = FerrisEvent::new_session_event(session,coach,member);
+        let content = FerrisEvent::new_session_event(session, coach, member);
 
         MailOut::new(
             coach.id.to_owned(),
             session.program_id.to_owned(),
             session.enrollment_id.to_owned(),
             session.name.to_owned(),
-            content.to_owned(),
-            EVENT
+            content,
+            EVENT,
         )
     }
 
     pub fn for_cancel_session(session: &Session, coach: &User, member: &User) -> MailOut {
-        let content = FerrisEvent::cancel_event(session,coach,member);
+        let content = FerrisEvent::cancel_event(session, coach, member);
 
         MailOut::new(
             coach.id.to_owned(),
             session.program_id.to_owned(),
             session.enrollment_id.to_owned(),
             session.name.to_owned(),
-            content.to_owned(),
-            EVENT
+            content,
+            EVENT,
         )
     }
 }
@@ -132,7 +132,7 @@ pub struct MailRecipient {
 }
 
 impl MailRecipient {
-    pub fn as_recipients(member: &User, coach: &User, correspondence_id: &str) -> Vec<MailRecipient> {
+    pub fn build_recipients(member: &User, coach: &User, correspondence_id: &str) -> Vec<MailRecipient> {
         let to_record = MailRecipient {
             id: util::fuzzy_id(),
             correspondence_id: correspondence_id.to_owned(),
@@ -243,12 +243,10 @@ impl FerrisEvent {
             method: "REQUEST".to_owned(),
         };
 
-        let content = serde_json::to_string(&event).unwrap_or(String::from(""));
-
-        content
+        serde_json::to_string(&event).unwrap_or_else(|_|String::from(""))
     }
 
-    fn cancel_event(session: &Session,coach: &User,member: &User) -> String {
+    fn cancel_event(session: &Session, coach: &User, member: &User) -> String {
         let start_date = session.original_start_date;
         let end_date = session.original_end_date;
 
@@ -264,8 +262,6 @@ impl FerrisEvent {
             method: "CANCEL".to_owned(),
         };
 
-        let content = serde_json::to_string(&event).unwrap_or(String::from(""));
-
-        content
+        serde_json::to_string(&event).unwrap_or_else(|_| String::from(""))
     }
 }

@@ -10,7 +10,7 @@ pub fn create_objective(connection: &MysqlConnection, request: &NewObjectiveRequ
 
     diesel::insert_into(objectives).values(&new_objective).execute(connection)?;
 
-    objectives.filter(id.eq(new_objective.id.to_owned())).first(connection)
+    objectives.filter(id.eq(new_objective.id)).first(connection)
 }
 
 pub fn update_objective(connection: &MysqlConnection, request: &UpdateObjectiveRequest) -> Result<Objective, diesel::result::Error> {

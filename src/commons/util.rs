@@ -4,16 +4,16 @@ use sodiumoxide::crypto::pwhash::argon2id13;
 use std::ops::Sub;
 use uuid::Uuid;
 
-const DATE_TIME_PATTERN: &'static str = "%Y-%m-%dT%H:%M:%SZ";
-const DATE_PATTERN: &'static str = "%Y-%m-%d";
+const DATE_TIME_PATTERN: &str = "%Y-%m-%dT%H:%M:%SZ";
+const DATE_PATTERN: &str = "%Y-%m-%d";
 
-pub const BAD_DATE: &'static str = "Date format error";
+pub const BAD_DATE: &str = "Date format error";
 
-pub const MEMBER: &'static str = "member";
-pub const COACH: &'static str = "coach";
+pub const MEMBER: &str = "member";
+pub const COACH: &str = "coach";
 
 pub fn as_date(date_str: &str) -> NaiveDateTime {
-    let given_date = NaiveDateTime::parse_from_str(date_str, DATE_TIME_PATTERN).unwrap_or(Utc::now().naive_utc());
+    let given_date = NaiveDateTime::parse_from_str(date_str, DATE_TIME_PATTERN).unwrap_or_else(|_| Utc::now().naive_utc());
     strip_seconds(given_date)
 }
 
@@ -74,10 +74,7 @@ pub fn is_in_past(given_date: NaiveDateTime) -> bool {
 }
 
 pub fn fuzzy_id() -> String {
-    let uuid = Uuid::new_v4();
-    let hype = uuid.to_hyphenated().to_string();
-
-    hype.clone()
+    Uuid::new_v4().to_hyphenated().to_string()
 }
 
 pub fn concat(str1: &str, str2: &str) -> String {
@@ -89,9 +86,7 @@ pub fn hash(password: &str) -> String {
 
     let hashed_password = argon2id13::pwhash(password.as_bytes(), argon2id13::OPSLIMIT_INTERACTIVE, argon2id13::MEMLIMIT_INTERACTIVE).unwrap();
 
-    let text_hash = std::str::from_utf8(&hashed_password.0).unwrap().to_string();
-
-    text_hash
+    std::str::from_utf8(&hashed_password.0).unwrap().to_string()
 }
 
 /**
@@ -104,7 +99,7 @@ fn as_byte_array(slice: &str) -> [u8; 128] {
     let mut arr = [0u8; 128];
 
     slice.as_bytes().iter().enumerate().for_each(|(i, val)| {
-        arr[i] = val.clone();
+        arr[i] = *val;
     });
 
     arr
@@ -131,12 +126,11 @@ pub fn find_diff(current: Vec<String>, given: Vec<String>) -> Vec<String> {
 
     current
         .iter()
-        .map(|current_id| {
+        .for_each(|current_id| {
             if given.binary_search(&current_id).is_err() {
                 diff.push(current_id.clone())
             }
-        })
-        .count();
+        });
 
     diff
 }

@@ -303,7 +303,7 @@ impl NewTask {
 
         let fuzzy_id = util::fuzzy_id();
 
-        let new_task = NewTask {
+        NewTask {
             id: fuzzy_id,
             enrollment_id: request.enrollment_id.to_owned(),
             actor_id: request.actor_id.to_owned(),
@@ -312,9 +312,7 @@ impl NewTask {
             original_end_date: end_date.unwrap_or(start_date),
             description: request.description.to_owned(),
             name: request.name.to_owned(),
-        };
-
-        new_task
+        }
     }
 }
 

@@ -70,14 +70,12 @@ impl NewMasterPlan {
     pub fn from(request: &NewMasterPlanRequest) -> NewMasterPlan {
         let fuzzy_id = util::fuzzy_id();
 
-        let new_master_plan = NewMasterPlan {
+        NewMasterPlan {
             id: fuzzy_id,
             name: request.name.to_owned(),
             coach_id: request.coach_id.to_owned(),
             description: request.description.to_owned(),
-        };
-
-        new_master_plan
+        }
     }
 }
 
@@ -137,7 +135,7 @@ impl NewMasterTaskLink {
     pub fn from(link: &LinkUnit, plan_id: &str) -> NewMasterTaskLink {
         let fuzzy_id = util::fuzzy_id();
 
-        let new_link = NewMasterTaskLink {
+        NewMasterTaskLink {
             id: fuzzy_id,
             master_plan_id: plan_id.to_owned(),
             source_task_id: link.source_id.to_owned(),
@@ -145,8 +143,6 @@ impl NewMasterTaskLink {
             coordinates: link.coordinates.to_owned(),
             priority: link.priority,
             is_forward: link.is_forward,
-        };
-
-        new_link
+        }
     }
 }
