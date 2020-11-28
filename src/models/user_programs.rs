@@ -125,7 +125,12 @@ fn get_enrolled_programs(connection: &MysqlConnection, criteria: &ProgramCriteri
 fn get_coach_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) -> ProgramResult {
     use crate::schema::coaches::dsl::id;
 
-    let data: Vec<ProgramType> = programs.inner_join(coaches).filter(id.eq(&criteria.user_id)).order_by(name.asc()).load(connection)?;
+    let data: Vec<ProgramType> = programs
+        .inner_join(coaches)
+        .filter(id.eq(&criteria.user_id))
+        .filter(base_program_id.is_null())
+        .order_by(name.asc())
+        .load(connection)?;
 
     Ok(to_program_rows(data))
 }
@@ -133,7 +138,14 @@ fn get_coach_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) 
 fn get_latest_programs(connection: &MysqlConnection) -> ProgramResult {
     use crate::schema::programs::dsl::created_at;
 
-    let data: Vec<ProgramType> = programs.inner_join(coaches).order_by(created_at.asc()).filter(active.eq(true)).filter(is_private.eq(false)).limit(10).load(connection)?;
+    let data: Vec<ProgramType> = programs
+        .inner_join(coaches)
+        .order_by(created_at.asc())
+        .filter(active.eq(true))
+        .filter(is_private.eq(false))
+        .filter(base_program_id.is_null())
+        .limit(10)
+        .load(connection)?;
 
     Ok(to_program_rows(data))
 }

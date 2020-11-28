@@ -23,6 +23,7 @@ pub struct Program {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub is_private: bool,
+    pub base_program_id: Option<String>,
 }
 
 /**
@@ -72,6 +73,7 @@ pub struct NewProgramRequest {
     pub coach_id: String,
     pub description: String,
     pub is_private: bool,
+    pub base_program_id: Option<String>,
 }
 
 /**
@@ -109,6 +111,7 @@ pub struct NewProgram {
     pub is_private: bool,
     pub coach_name: String,
     pub coach_id: String,
+    pub base_program_id: Option<String>,
 }
 
 /**
@@ -127,6 +130,7 @@ impl NewProgram {
             active: false,
             coach_name: coach.full_name.to_owned(),
             coach_id: coach.id.to_owned(),
+            base_program_id: request.base_program_id.to_owned()
         }
     }
 }

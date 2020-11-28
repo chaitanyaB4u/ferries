@@ -12,3 +12,4 @@ pub mod tasks;
 pub mod users;
 pub mod correspondences;
 pub mod discussions;
+pub mod base_programs;

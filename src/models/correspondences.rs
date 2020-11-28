@@ -5,6 +5,7 @@ use chrono::NaiveDateTime;
 use crate::models::enrollments::ManagedEnrollmentRequest;
 use crate::models::sessions::Session;
 use crate::models::users::User;
+use crate::models::programs::Program;
 
 use crate::schema::correspondences;
 use crate::schema::mail_recipients;
@@ -82,13 +83,27 @@ impl MailOut {
         }
     }
 
-    pub fn for_enrollment(request: &ManagedEnrollmentRequest, enrollment_id: &str) -> MailOut {
+    pub fn for_managed_enrollment(request: &ManagedEnrollmentRequest, enrollment_id: &str) -> MailOut {
         MailOut::new(
             request.coach_id.to_owned(),
             request.program_id.to_owned(),
             enrollment_id.to_owned(),
             request.subject.to_owned(),
             request.message.to_owned(),
+            NORMAL,
+        )
+    }
+
+    pub fn for_self_enrollment(program: &Program, enrollment_id: &str) -> MailOut {
+        let subject = format!("Enrollment in {}",program.name);
+        let content = format!("Thanks for enrolling in {}",program.name);
+
+        MailOut::new(
+            program.coach_id.to_owned(),
+            program.id.to_owned(),
+            enrollment_id.to_owned(),
+            subject,
+            content,
             NORMAL,
         )
     }

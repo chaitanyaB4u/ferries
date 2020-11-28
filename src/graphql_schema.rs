@@ -4,7 +4,7 @@ use crate::db_manager::MySqlConnectionPool;
 
 use crate::models::abstract_tasks::{AbstractTask, AbstractTaskCriteria, NewAbstractTaskRequest};
 use crate::models::coach_members::{get_coach_members, CoachCriteria, MemberRow};
-use crate::models::enrollments::{Enrollment, EnrollmentCriteria, NewEnrollmentRequest, PlanCriteria, ManagedEnrollmentRequest};
+use crate::models::enrollments::{Enrollment, EnrollmentCriteria, NewEnrollmentRequest, PlanCriteria, ManagedEnrollmentRequest,SelectiveEnrollmentRequest};
 use crate::models::master_plans::{MasterPlan, MasterPlanCriteria, NewMasterPlanRequest, UpdateMasterPlanRequest};
 use crate::models::master_tasks::{MasterTask, MasterTaskCriteria, NewMasterTaskRequest, UpdateMasterTaskRequest};
 use crate::models::notes::{NewNoteRequest, Note, NoteCriteria};
@@ -12,6 +12,8 @@ use crate::models::user_artifacts::{get_enrollment_notes,NoteRow,get_boards,Boar
 use crate::models::objectives::{NewObjectiveRequest, Objective, UpdateObjectiveRequest};
 use crate::models::observations::{NewObservationRequest, Observation, UpdateObservationRequest};
 use crate::models::options::{Constraint, NewOptionRequest, UpdateOptionRequest};
+use crate::models::base_programs::{BaseProgram,NewBaseProgramRequest};
+use crate::models::base_program_coaches::{AssociateCoachRequest};
 use crate::models::programs::{ChangeProgramStateRequest, NewProgramRequest, Program};
 use crate::models::sessions::{ChangeSessionStateRequest, NewSessionRequest, Session};
 use crate::models::tasks::{NewTaskRequest, UpdateClosingNoteRequest, Task, UpdateTaskRequest, UpdateResponseRequest, ChangeCoachTaskStateRequest, ChangeMemberTaskStateRequest};
@@ -23,19 +25,21 @@ use crate::models::discussions::{Discussion, NewDiscussionRequest, DiscussionCri
 use crate::models::discussion_queue::{PendingFeed};
 
 use crate::services::abstract_tasks::{create_abstract_task, get_abstract_tasks};
-use crate::services::enrollments::{create_new_enrollment, get_active_enrollments,create_managed_enrollment};
+use crate::services::enrollments::{create_new_enrollment, get_active_enrollments, create_managed_enrollment, create_selective_enrollment};
 use crate::services::master_plans::{create_master_plan, get_master_plans, update_master_plan};
 use crate::services::master_tasks::{create_master_task, get_master_tasks, update_master_task};
 use crate::services::notes::{create_new_note, get_notes};
 use crate::services::objectives::{create_objective, get_objectives, update_objective};
 use crate::services::observations::{create_observation, get_observations, update_observation};
 use crate::services::options::{create_option, get_options, update_option};
+use crate::services::base_programs::{create_base_program,associate_coach,change_base_program_state,get_latest_base_programs};
 use crate::services::programs::{change_program_state, create_new_program};
 use crate::services::sessions::{change_session_state, create_session,find};
 use crate::services::tasks::{create_task, get_tasks, update_task, update_response, update_closing_notes, change_member_task_state, change_coach_task_state};
 use crate::services::users::{authenticate, register, reset_password};
 use crate::services::correspondences::{sendable_mails};
 use crate::services::discussions::{create_new_discussion, get_discussions, get_pending_discussions};
+
 
 use crate::commons::chassis::{mutation_error, query_error,service_error, MutationResult, QueryResult, QueryError};
 
@@ -78,6 +82,17 @@ impl QueryRoot {
     fn get_programs(context: &DBContext, criteria: ProgramCriteria) -> QueryResult<Vec<ProgramRow>> {
         let connection = context.db.get().unwrap();
         let result = get_programs(&connection, &criteria);
+
+        match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
+    }
+
+    #[graphql(description = "The latest 10 base programs to allow a member to select a coach")]
+    fn get_base_programs(context: &DBContext) -> QueryResult<Vec<BaseProgram>> {
+        let connection = context.db.get().unwrap();
+        let result = get_latest_base_programs(&connection);
 
         match result {
             Ok(value) => QueryResult(Ok(value)),
@@ -405,6 +420,35 @@ impl MutationRoot {
         }
     }
 
+    fn create_base_program(context: &DBContext,request: NewBaseProgramRequest) -> MutationResult<BaseProgram> {
+        let errors = request.validate();
+
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_base_program(&connection,&request);
+
+        match result {
+            Ok(base_program) => MutationResult(Ok(base_program)),
+            Err(e) => service_error(e)
+        }
+
+    }
+
+    fn associate_coach(context: &DBContext, request: AssociateCoachRequest) -> MutationResult<String>{
+        
+        let connection = context.db.get().unwrap();
+        let result = associate_coach(&connection, &request);
+
+        match result {
+            Ok(program_id) => MutationResult(Ok(program_id)),
+            Err(e) => service_error(e)
+        }
+
+    }
+
     fn create_enrollment(context: &DBContext, new_enrollment_request: NewEnrollmentRequest) -> MutationResult<Enrollment> {
         let errors = new_enrollment_request.validate();
         if !errors.is_empty() {
@@ -424,6 +468,17 @@ impl MutationRoot {
         
         let connection = context.db.get().unwrap();
         let result = create_managed_enrollment(&connection, &managed_enrollment_request);
+
+        match result {
+            Ok(enrollment) => MutationResult(Ok(enrollment)),
+            Err(e) => service_error(e),
+        }
+    }
+
+    fn selective_enrollment(context: &DBContext, request: SelectiveEnrollmentRequest) -> MutationResult<Enrollment> {
+        
+        let connection = context.db.get().unwrap();
+        let result = create_selective_enrollment(&connection, &request);
 
         match result {
             Ok(enrollment) => MutationResult(Ok(enrollment)),
@@ -608,6 +663,16 @@ impl MutationRoot {
         let result = change_session_state(&connection, &request);
         match result {
             Ok(session) => MutationResult(Ok(session)),
+            Err(e) => service_error(e),
+        }
+    }
+
+    fn alter_base_program_state(context: &DBContext, request: ChangeProgramStateRequest) -> MutationResult<String> {
+        let connection = context.db.get().unwrap();
+        let result = change_base_program_state(&connection, &request);
+
+        match result {
+            Ok(rows) => MutationResult(Ok(String::from("Ok"))),
             Err(e) => service_error(e),
         }
     }

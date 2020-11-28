@@ -104,3 +104,10 @@ pub struct ManagedEnrollmentRequest {
     pub message: String
 }
 
+#[derive(juniper::GraphQLInputObject)]
+pub struct SelectiveEnrollmentRequest {
+    pub base_program_id: String,
+    pub coach_id: String,
+    pub member_id: String,
+}
+

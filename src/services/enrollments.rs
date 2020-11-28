@@ -4,16 +4,15 @@ use crate::models::programs::Program;
 use crate::models::users::User;
 
 use crate::models::correspondences::{MailOut, MailRecipient};
-use crate::models::enrollments::{Enrollment, EnrollmentCriteria, EnrollmentFilter, ManagedEnrollmentRequest, NewEnrollment, NewEnrollmentRequest};
+use crate::models::enrollments::{Enrollment, EnrollmentCriteria, EnrollmentFilter, ManagedEnrollmentRequest, NewEnrollment, NewEnrollmentRequest, SelectiveEnrollmentRequest};
 
+use crate::services::correspondences::create_mail;
 use crate::services::programs;
 use crate::services::users;
-use crate::services::correspondences::create_mail;
 
 use crate::schema::enrollments::dsl::*;
 use crate::schema::programs::dsl::*;
 use crate::schema::users::dsl::*;
-
 
 const WARNING: &str = "It seems you have already enrolled in this program";
 const ERROR_002: &str = "Error in creating enrollment. Error-002.";
@@ -28,7 +27,13 @@ pub fn create_new_enrollment(connection: &MysqlConnection, request: &NewEnrollme
     gate_prior_enrollment(connection, &program, &user)?;
     insert_enrollment(connection, &program, &user)?;
 
-    find(connection, &program, &user)
+    let enrollment = find(connection, &program, &user)?;
+
+    let coach = users::find(connection, program.coach_id.as_str())?;
+
+    create_self_enrollment_mail(connection, enrollment.id.as_str(), &program, &user, &coach)?;
+
+    Ok(enrollment)
 }
 
 fn insert_enrollment(connection: &MysqlConnection, program: &Program, user: &User) -> Result<usize, &'static str> {
@@ -100,7 +105,9 @@ pub fn get_active_enrollments(connection: &MysqlConnection, criteria: Enrollment
 const INVALID_MEMBER_MAIL: &str = "Invalid Member Mail Id";
 const CONFLICT_PROGRAM_OWNER_MAIL: &str = "The coach does not have rights to enroll this member.";
 
-
+/**
+ * When a coach enrolls a member into her program
+ */
 pub fn create_managed_enrollment(connection: &MysqlConnection, request: &ManagedEnrollmentRequest) -> Result<Enrollment, &'static str> {
     let user_result: QueryResult<User> = users.filter(email.eq(request.member_mail.as_str())).first(connection);
 
@@ -126,15 +133,42 @@ pub fn create_managed_enrollment(connection: &MysqlConnection, request: &Managed
 
     let enrollment = find(connection, &program, &member)?;
 
-    create_enrollment_mail(connection, request, enrollment.id.as_str(), &member, &coach)?;
+    create_managed_enrollment_mail(connection, request, enrollment.id.as_str(), &member, &coach)?;
 
     Ok(enrollment)
 }
 
-fn create_enrollment_mail(connection: &MysqlConnection, request: &ManagedEnrollmentRequest, new_enroll_id: &str, member: &User, coach: &User) ->Result<usize,&'static str> {
-    
-    let mail_out = MailOut::for_enrollment(request, new_enroll_id); 
-    let recipients = MailRecipient::build_recipients(member, coach, mail_out.id.as_str()); 
+/**
+ * When a member chooses a coach from a List of coaches of a Program
+ */
+pub fn create_selective_enrollment(connection: &MysqlConnection, request: &SelectiveEnrollmentRequest) -> Result<Enrollment, &'static str> {
+    let program = programs::find_by_base_program(connection, request.base_program_id.as_str(), request.coach_id.as_str())?;
 
-    create_mail(connection, mail_out, recipients)    
+    let internal_request = NewEnrollmentRequest {
+        program_id: program.id,
+        user_id: request.member_id.to_owned(),
+    };
+
+    create_new_enrollment(connection, &internal_request)
 }
+
+/**
+ * Mail when a coach enrolls a member into his program
+ */
+fn create_managed_enrollment_mail(connection: &MysqlConnection, request: &ManagedEnrollmentRequest, new_enroll_id: &str, member: &User, coach: &User) -> Result<usize, &'static str> {
+    let mail_out = MailOut::for_managed_enrollment(request, new_enroll_id);
+    let recipients = MailRecipient::build_recipients(member, coach, mail_out.id.as_str());
+
+    create_mail(connection, mail_out, recipients)
+}
+
+/**
+ * Mail when a member chooses a coach from a List of coaches of a Program
+ */
+fn create_self_enrollment_mail(connection: &MysqlConnection, enrollment_id: &str, program: &Program, member: &User, coach: &User) -> Result<usize, &'static str> {
+    let mail_out = MailOut::for_self_enrollment(program, enrollment_id);
+    let recipients = MailRecipient::build_recipients(member, coach, mail_out.id.as_str());
+
+    create_mail(connection, mail_out, recipients)
+}
+

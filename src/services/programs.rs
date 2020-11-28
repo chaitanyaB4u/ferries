@@ -4,6 +4,7 @@ use crate::models::coaches::Coach;
 use crate::models::programs::{ChangeProgramStateRequest, NewProgram, NewProgramRequest, Program, ProgramTargetState};
 
 use crate::schema::coaches::dsl::*;
+use crate::schema::programs;
 use crate::schema::programs::dsl::*;
 
 const INVALID_PROGRAM: &str = "Invalid Program Id. Error:001.";
@@ -16,6 +17,20 @@ pub fn find(connection: &MysqlConnection, the_id: &str) -> Result<Program, &'sta
     use crate::schema::programs::dsl::id;
 
     let result = programs.filter(id.eq(the_id)).first(connection);
+
+    if result.is_err() {
+        return Err(INVALID_PROGRAM);
+    }
+
+    Ok(result.unwrap())
+}
+
+pub fn find_by_base_program(connection: &MysqlConnection, _base_program_id: &str, _coach_id: &str) -> Result<Program, &'static str> {
+
+    let result = programs
+        .filter(programs::base_program_id.eq(_base_program_id))
+        .filter(programs::coach_id.eq(_coach_id))
+        .first(connection);
 
     if result.is_err() {
         return Err(INVALID_PROGRAM);
