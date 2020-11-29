@@ -19,5 +19,3 @@ pub mod correspondences;
 pub mod user_artifacts;
 pub mod discussions;
 pub mod discussion_queue;
-pub mod base_program_coaches;
-pub mod base_programs;

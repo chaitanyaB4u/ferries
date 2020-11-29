@@ -128,7 +128,6 @@ fn get_coach_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) 
     let data: Vec<ProgramType> = programs
         .inner_join(coaches)
         .filter(id.eq(&criteria.user_id))
-        .filter(base_program_id.is_null())
         .order_by(name.asc())
         .load(connection)?;
 
@@ -143,7 +142,7 @@ fn get_latest_programs(connection: &MysqlConnection) -> ProgramResult {
         .order_by(created_at.asc())
         .filter(active.eq(true))
         .filter(is_private.eq(false))
-        .filter(base_program_id.is_null())
+        .filter(is_parent.eq(true))
         .limit(10)
         .load(connection)?;
 

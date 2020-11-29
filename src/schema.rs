@@ -7,29 +7,6 @@ table! {
 }
 
 table! {
-    base_program_coaches (id) {
-        id -> Varchar,
-        base_program_id -> Varchar,
-        coach_id -> Varchar,
-        is_admin -> Bool,
-        created_at -> Datetime,
-        updated_at -> Datetime,
-    }
-}
-
-table! {
-    base_programs (id) {
-        id -> Varchar,
-        name -> Varchar,
-        description -> Nullable<Text>,
-        genre_id -> Varchar,
-        active -> Bool,
-        created_at -> Datetime,
-        updated_at -> Datetime,
-    }
-}
-
-table! {
     coaches (id) {
         id -> Varchar,
         user_id -> Varchar,
@@ -221,9 +198,9 @@ table! {
         created_at -> Datetime,
         updated_at -> Datetime,
         is_private -> Bool,
-        base_program_id -> Nullable<Varchar>,
         genre_id -> Nullable<Varchar>,
         is_parent -> Bool,
+        parent_program_id -> Nullable<Varchar>,
     }
 }
 
@@ -345,9 +322,6 @@ table! {
 }
 
 joinable!(abstract_tasks -> coaches (coach_id));
-joinable!(base_program_coaches -> base_programs (base_program_id));
-joinable!(base_program_coaches -> coaches (coach_id));
-joinable!(base_programs -> program_genres (genre_id));
 joinable!(coaches -> users (user_id));
 joinable!(correspondences -> enrollments (enrollment_id));
 joinable!(correspondences -> programs (program_id));
@@ -372,7 +346,6 @@ joinable!(observations -> enrollments (enrollment_id));
 joinable!(options -> enrollments (enrollment_id));
 joinable!(program_plans -> master_plans (master_plan_id));
 joinable!(program_plans -> programs (program_id));
-joinable!(programs -> base_programs (base_program_id));
 joinable!(programs -> coaches (coach_id));
 joinable!(programs -> program_genres (genre_id));
 joinable!(session_files -> session_notes (session_note_id));
@@ -389,8 +362,6 @@ joinable!(tasks -> users (actor_id));
 
 allow_tables_to_appear_in_same_query!(
     abstract_tasks,
-    base_program_coaches,
-    base_programs,
     coaches,
     correspondences,
     discussion_queue,

@@ -23,9 +23,9 @@ pub struct Program {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub is_private: bool,
-    pub base_program_id: Option<String>,
     pub genre_id: Option<String>,
     pub is_parent: bool,
+    pub parent_program_id: Option<String>,
 }
 
 /**
@@ -65,8 +65,8 @@ impl Program {
         self.is_private
     }
 
-    pub fn base_program_id(&self) -> &Option<String> {
-        &self.base_program_id
+    pub fn parent_program_id(&self) -> &Option<String> {
+        &self.parent_program_id
     }
 
     pub fn genre_id(&self) -> &Option<String> {
@@ -130,7 +130,7 @@ pub struct NewProgram {
     pub coach_name: String,
     pub coach_id: String,
     pub is_parent: bool,
-    pub base_program_id: String,
+    pub parent_program_id: String,
     pub genre_id: Option<String>,
 }
 
@@ -147,7 +147,7 @@ impl NewProgram {
 
         NewProgram {
             id: fuzzy_id.to_owned(),
-            base_program_id: fuzzy_id.to_owned(),
+            parent_program_id: fuzzy_id,
             is_parent: true,
             name: request.name.to_owned(),
             description: request.description.to_owned(),
@@ -166,8 +166,8 @@ impl NewProgram {
         let fuzzy_id = util::fuzzy_id();
 
         NewProgram {
-            id: fuzzy_id.to_owned(),
-            base_program_id: parent_program.id.to_owned(),
+            id: fuzzy_id,
+            parent_program_id: parent_program.id.to_owned(),
             is_parent: false,
             name: parent_program.name.to_owned(),
             description: String::from("-"),
@@ -190,4 +190,12 @@ pub enum ProgramTargetState {
 pub struct ChangeProgramStateRequest {
     pub id: String,
     pub target_state: ProgramTargetState,
+}
+
+
+#[derive(juniper::GraphQLInputObject)]
+pub struct AssociateCoachRequest {
+    pub program_id: String,
+    pub coach_id: String,
+    pub admin_coach_id: String,
 }

@@ -7,7 +7,6 @@ use crate::models::objectives::Objective;
 use crate::models::observations::Observation;
 use crate::models::options::Constraint;
 use crate::models::programs::Program;
-use crate::models::base_programs::BaseProgram;
 use crate::models::sessions::Session;
 use crate::models::tasks::Task;
 use crate::models::user_events::{EventRow, PlanRow, SessionPeople,ToDo};
@@ -66,17 +65,6 @@ impl QueryResult<Vec<ProgramRow>> {
         self.0.as_ref().err()
     }
 }
-
-#[juniper::object(name = "List of abstract programs")]
-impl QueryResult<Vec<BaseProgram>> {
-    pub fn programs(&self) -> Option<&Vec<BaseProgram>> {
-        self.0.as_ref().ok()
-    }
-    pub fn error(&self) -> Option<&QueryError> {
-        self.0.as_ref().err()
-    }
-}
-
 
 #[juniper::object(name = "PendingFeedResult")]
 impl QueryResult<Vec<PendingFeed>> {
@@ -318,17 +306,6 @@ impl MutationResult<MasterPlan> {
 #[juniper::object(name = "ProgramResult")]
 impl MutationResult<Program> {
     pub fn program(&self) -> Option<&Program> {
-        self.0.as_ref().ok()
-    }
-
-    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
-        self.0.as_ref().err()
-    }
-}
-
-#[juniper::object(name = "BaseProgramResult")]
-impl MutationResult<BaseProgram> {
-    pub fn program(&self) -> Option<&BaseProgram> {
         self.0.as_ref().ok()
     }
 

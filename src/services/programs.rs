@@ -1,10 +1,9 @@
 use diesel::prelude::*;
 
 use crate::models::coaches::Coach;
-use crate::models::programs::{ChangeProgramStateRequest, NewProgram, NewProgramRequest, Program, ProgramTargetState};
+use crate::models::programs::{AssociateCoachRequest, ChangeProgramStateRequest, NewProgram, NewProgramRequest, Program, ProgramTargetState};
 
 use crate::schema::coaches::dsl::*;
-use crate::schema::programs;
 use crate::schema::programs::dsl::*;
 
 const INVALID_PROGRAM: &str = "Invalid Program Id. Error:001.";
@@ -25,34 +24,35 @@ pub fn find(connection: &MysqlConnection, the_id: &str) -> Result<Program, &'sta
     Ok(result.unwrap())
 }
 
-pub fn find_by_base_program(connection: &MysqlConnection, _base_program_id: &str, _coach_id: &str) -> Result<Program, &'static str> {
-
-    let result = programs
-        .filter(programs::base_program_id.eq(_base_program_id))
-        .filter(programs::coach_id.eq(_coach_id))
-        .first(connection);
-
-    if result.is_err() {
-        return Err(INVALID_PROGRAM);
-    }
-
-    Ok(result.unwrap())
-}
-
 /**
  * The id of coach and user_id will be the same. The Coaches table is a
  * convenience for avoiding self-join.
- * 
- * 29-Nov: Base_Program is a Normal Program. 
- * 
- * 
+ *
+ * 29-Nov:
+ * The program will be the parent program throught this route
+ *
  */
 pub fn create_new_program(connection: &MysqlConnection, request: &NewProgramRequest) -> Result<Program, &'static str> {
     //Finding coach with fuzzy_id
-    let coach = get_coach(connection, request)?;
+    let coach = get_coach(connection, request.coach_id.as_str())?;
 
     //Transform result into new_program
-    let new_program = NewProgram::from(request, &coach);
+    let new_program = NewProgram::from_request(request, &coach);
+
+    insert_program(connection, &new_program)
+}
+
+/**
+ * Spwan a new Program from the Parent Program when associating a another coach
+ */
+pub fn associate_coach(connection: &MysqlConnection, request: &AssociateCoachRequest) -> Result<Program, &'static str> {
+    
+    //Finding coach with fuzzy_id
+    let coach = get_coach(connection, request.coach_id.as_str())?;
+    
+    let program = find(connection,request.program_id.as_str())?;
+
+    let new_program = NewProgram::from_parent_program(&program, &coach);
 
     insert_program(connection, &new_program)
 }
@@ -61,10 +61,8 @@ pub fn create_new_program(connection: &MysqlConnection, request: &NewProgramRequ
  * The id of coach and user_id will be the same. The Coaches table is a
  * convenience for avoiding self-join.
  */
-fn get_coach(connection: &MysqlConnection, request: &NewProgramRequest) -> Result<Coach, &'static str> {
+fn get_coach(connection: &MysqlConnection, the_coach_id: &str) -> Result<Coach, &'static str> {
     use crate::schema::coaches::dsl::id;
-
-    let the_coach_id = request.coach_id.as_str();
 
     let coach_result = coaches.filter(id.eq(the_coach_id)).first(connection);
 

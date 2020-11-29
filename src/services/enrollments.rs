@@ -4,7 +4,7 @@ use crate::models::programs::Program;
 use crate::models::users::User;
 
 use crate::models::correspondences::{MailOut, MailRecipient};
-use crate::models::enrollments::{Enrollment, EnrollmentCriteria, EnrollmentFilter, ManagedEnrollmentRequest, NewEnrollment, NewEnrollmentRequest, SelectiveEnrollmentRequest};
+use crate::models::enrollments::{Enrollment, EnrollmentCriteria, EnrollmentFilter, ManagedEnrollmentRequest, NewEnrollment, NewEnrollmentRequest};
 
 use crate::services::correspondences::create_mail;
 use crate::services::programs;
@@ -136,20 +136,6 @@ pub fn create_managed_enrollment(connection: &MysqlConnection, request: &Managed
     create_managed_enrollment_mail(connection, request, enrollment.id.as_str(), &member, &coach)?;
 
     Ok(enrollment)
-}
-
-/**
- * When a member chooses a coach from a List of coaches of a Program
- */
-pub fn create_selective_enrollment(connection: &MysqlConnection, request: &SelectiveEnrollmentRequest) -> Result<Enrollment, &'static str> {
-    let program = programs::find_by_base_program(connection, request.base_program_id.as_str(), request.coach_id.as_str())?;
-
-    let internal_request = NewEnrollmentRequest {
-        program_id: program.id,
-        user_id: request.member_id.to_owned(),
-    };
-
-    create_new_enrollment(connection, &internal_request)
 }
 
 /**
