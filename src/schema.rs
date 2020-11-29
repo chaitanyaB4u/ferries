@@ -222,6 +222,8 @@ table! {
         updated_at -> Datetime,
         is_private -> Bool,
         base_program_id -> Nullable<Varchar>,
+        genre_id -> Nullable<Varchar>,
+        is_parent -> Bool,
     }
 }
 
@@ -372,6 +374,7 @@ joinable!(program_plans -> master_plans (master_plan_id));
 joinable!(program_plans -> programs (program_id));
 joinable!(programs -> base_programs (base_program_id));
 joinable!(programs -> coaches (coach_id));
+joinable!(programs -> program_genres (genre_id));
 joinable!(session_files -> session_notes (session_note_id));
 joinable!(session_notes -> session_users (session_user_id));
 joinable!(session_notes -> sessions (session_id));

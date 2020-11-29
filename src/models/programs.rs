@@ -24,6 +24,8 @@ pub struct Program {
     pub updated_at: NaiveDateTime,
     pub is_private: bool,
     pub base_program_id: Option<String>,
+    pub genre_id: Option<String>,
+    pub is_parent: bool,
 }
 
 /**
@@ -62,10 +64,26 @@ impl Program {
     pub fn is_private(&self) -> bool {
         self.is_private
     }
+
+    pub fn base_program_id(&self) -> &Option<String> {
+        &self.base_program_id
+    }
+
+    pub fn genre_id(&self) -> &Option<String> {
+        &self.genre_id
+    }
+
+    pub fn is_parent(&self) -> bool {
+        self.is_parent
+    }
 }
 
 /**
- * We receive a request from a coach to create a New Program
+ * 1. We receive a request from a coach to create a New Program.
+ *
+ * 2. We create this request internally from base_program after
+ * instantiating and associating a program to a coach.
+ *
  */
 #[derive(juniper::GraphQLInputObject)]
 pub struct NewProgramRequest {
@@ -73,7 +91,7 @@ pub struct NewProgramRequest {
     pub coach_id: String,
     pub description: String,
     pub is_private: bool,
-    pub base_program_id: Option<String>,
+    pub genre_id: Option<String>,
 }
 
 /**
@@ -111,26 +129,53 @@ pub struct NewProgram {
     pub is_private: bool,
     pub coach_name: String,
     pub coach_id: String,
-    pub base_program_id: Option<String>,
+    pub is_parent: bool,
+    pub base_program_id: String,
+    pub genre_id: Option<String>,
 }
 
 /**
- * Transforming the NewProgramRequest into NewProgram by inject a unique
- * fuyzz_id.
+ * Transforming the NewProgramRequest into NewProgram by injecting
+ * a unique fuyzz_id.
  */
 impl NewProgram {
-    pub fn from(request: &NewProgramRequest, coach: &Coach) -> NewProgram {
+    /**
+     * The parent program will have the same id as base_program_id
+     */
+    pub fn from_request(request: &NewProgramRequest, coach: &Coach) -> NewProgram {
         let fuzzy_id = util::fuzzy_id();
 
         NewProgram {
-            id: fuzzy_id,
+            id: fuzzy_id.to_owned(),
+            base_program_id: fuzzy_id.to_owned(),
+            is_parent: true,
             name: request.name.to_owned(),
             description: request.description.to_owned(),
             is_private: request.is_private,
             active: false,
             coach_name: coach.full_name.to_owned(),
             coach_id: coach.id.to_owned(),
-            base_program_id: request.base_program_id.to_owned()
+            genre_id: request.genre_id.to_owned(),
+        }
+    }
+
+    /**
+     * When we spawn a program while attaching another coach to the parent program
+     */
+    pub fn from_parent_program(parent_program: &Program, coach: &Coach) -> NewProgram {
+        let fuzzy_id = util::fuzzy_id();
+
+        NewProgram {
+            id: fuzzy_id.to_owned(),
+            base_program_id: parent_program.id.to_owned(),
+            is_parent: false,
+            name: parent_program.name.to_owned(),
+            description: String::from("-"),
+            is_private: true,
+            active: parent_program.active,
+            coach_name: coach.full_name.to_owned(),
+            coach_id: coach.id.to_owned(),
+            genre_id: parent_program.genre_id.to_owned(),
         }
     }
 }

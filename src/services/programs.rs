@@ -39,6 +39,14 @@ pub fn find_by_base_program(connection: &MysqlConnection, _base_program_id: &str
     Ok(result.unwrap())
 }
 
+/**
+ * The id of coach and user_id will be the same. The Coaches table is a
+ * convenience for avoiding self-join.
+ * 
+ * 29-Nov: Base_Program is a Normal Program. 
+ * 
+ * 
+ */
 pub fn create_new_program(connection: &MysqlConnection, request: &NewProgramRequest) -> Result<Program, &'static str> {
     //Finding coach with fuzzy_id
     let coach = get_coach(connection, request)?;

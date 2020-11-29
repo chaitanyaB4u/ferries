@@ -3,9 +3,9 @@ use diesel::result::Error;
 
 use crate::models::base_program_coaches::{AssociateCoachRequest, NewBaseProgramCoach};
 use crate::models::base_programs::{BaseProgram, NewBaseProgram, NewBaseProgramRequest};
-use crate::models::programs::{ChangeProgramStateRequest, NewProgramRequest, ProgramTargetState};
+use crate::models::programs::{ChangeProgramStateRequest, NewProgramRequest, Program, ProgramTargetState};
 
-use crate::services::programs::create_new_program;
+use crate::services::programs::{change_program_state, create_new_program};
 
 use crate::schema::programs;
 use crate::schema::programs::dsl::*;
@@ -54,28 +54,45 @@ pub fn create_base_program(connection: &MysqlConnection, request: &NewBaseProgra
  * 1. Check if the coach is already associated
  * 2. Associate the coach to the base_program
  * 3. Spawn a private program for the Coach
+ * 4. Sync the activation state of the Spawned Program
  */
 pub fn associate_coach(connection: &MysqlConnection, request: &AssociateCoachRequest) -> Result<String, &'static str> {
+    let base_program_coach = NewBaseProgramCoach::from(request);
 
-    let program_coach = NewBaseProgramCoach::from(request);
+    gate_prior_association(connection, &base_program_coach)?;
 
-    gate_prior_association(connection, &program_coach)?;
+    insert_coach(connection, &base_program_coach)?;
 
-    insert_coach(connection, &program_coach)?;
-
-    let base_program = find(connection, program_coach.base_program_id.as_str())?;
+    let base_program = find(connection, base_program_coach.base_program_id.as_str())?;
 
     let new_program_request = NewProgramRequest {
-        coach_id: program_coach.coach_id,
-        name: base_program.name,
-        description: base_program.description.unwrap(),
-        base_program_id: Some(base_program.id),
+        coach_id: request.coach_id.to_owned(),
+        name: base_program.name.to_owned(),
+        description: base_program.description.to_owned().unwrap(),
         is_private: true,
+        base_program_id: Some(base_program.id.to_owned()),
+        genre_id: Some(base_program.genre_id.to_owned()),
     };
 
     let program = create_new_program(connection, &new_program_request)?;
 
+    sync_sub_program_state(connection, &base_program, &program)?;
+
     Ok(program.id)
+}
+
+fn sync_sub_program_state(connection: &MysqlConnection, base_program: &BaseProgram, sub_program: &Program) -> Result<usize, &'static str> {
+    
+    if !base_program.active {
+        return Ok(0)
+    }
+
+    let state_change_request = ChangeProgramStateRequest {
+        id: sub_program.id.to_owned(),
+        target_state: ProgramTargetState::ACTIVATE,
+    };
+
+    change_program_state(connection, &state_change_request)
 }
 
 fn gate_prior_association(connection: &MysqlConnection, program_coach: &NewBaseProgramCoach) -> Result<(), &'static str> {
