@@ -17,6 +17,7 @@ use crate::models::user_artifacts::BoardRow;
 use crate::models::correspondences::Mailable;
 use crate::models::discussions::Discussion;
 use crate::models::discussion_queue::PendingFeed;
+use crate::models::coaches::Coach;
 
 /**
  * Important: The Mutation Result might seem like a Code Duplication,
@@ -59,6 +60,16 @@ pub struct QueryResult<T>(pub Result<T, QueryError>);
 #[juniper::object(name = "ProgramsResult")]
 impl QueryResult<Vec<ProgramRow>> {
     pub fn programs(&self) -> Option<&Vec<ProgramRow>> {
+        self.0.as_ref().ok()
+    }
+    pub fn error(&self) -> Option<&QueryError> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "PeerCoaches")]
+impl QueryResult<Vec<Coach>> {
+    pub fn coaches(&self) -> Option<&Vec<Coach>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {

@@ -21,6 +21,7 @@ use crate::models::users::{LoginRequest, Registration, ResetPasswordRequest, Use
 use crate::models::correspondences::{Mailable};
 use crate::models::discussions::{Discussion, NewDiscussionRequest, DiscussionCriteria};
 use crate::models::discussion_queue::{PendingFeed};
+use crate::models::coaches::Coach;
 
 use crate::services::abstract_tasks::{create_abstract_task, get_abstract_tasks};
 use crate::services::enrollments::{create_new_enrollment, get_active_enrollments, create_managed_enrollment};
@@ -30,7 +31,7 @@ use crate::services::notes::{create_new_note, get_notes};
 use crate::services::objectives::{create_objective, get_objectives, update_objective};
 use crate::services::observations::{create_observation, get_observations, update_observation};
 use crate::services::options::{create_option, get_options, update_option};
-use crate::services::programs::{change_program_state, create_new_program, associate_coach};
+use crate::services::programs::{change_program_state, create_new_program, associate_coach,get_peer_coaches};
 use crate::services::sessions::{change_session_state, create_session,find};
 use crate::services::tasks::{create_task, get_tasks, update_task, update_response, update_closing_notes, change_member_task_state, change_coach_task_state};
 use crate::services::users::{authenticate, register, reset_password};
@@ -79,6 +80,17 @@ impl QueryRoot {
     fn get_programs(context: &DBContext, criteria: ProgramCriteria) -> QueryResult<Vec<ProgramRow>> {
         let connection = context.db.get().unwrap();
         let result = get_programs(&connection, &criteria);
+
+        match result {
+            Ok(value) => QueryResult(Ok(value)),
+            Err(e) => query_error(e),
+        }
+    }
+
+    #[graphql(description = "Get the list of coaches associated with a Program through its parent program.")]
+    fn get_program_coaches(context: &DBContext, program_id: String) -> QueryResult<Vec<Coach>> {
+        let connection = context.db.get().unwrap();
+        let result = get_peer_coaches(&connection, program_id.as_str());
 
         match result {
             Ok(value) => QueryResult(Ok(value)),
