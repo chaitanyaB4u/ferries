@@ -27,7 +27,7 @@ pub fn register(connection: &MysqlConnection, registration: &Registration) -> Re
 }
 
 pub fn authenticate(connection: &MysqlConnection, request: LoginRequest) -> Result<User, &'static str> {
-    let result: QueryResult<String> = users.filter(email.eq(request.email.as_str())).select(password).first(connection);
+    let result: QueryResult<String> = users.filter(email.eq(request.email.as_str().trim())).select(password).first(connection);
     if result.is_err() {
         return Err(INVALID_CREDENTIAL);
     }
@@ -37,7 +37,7 @@ pub fn authenticate(connection: &MysqlConnection, request: LoginRequest) -> Resu
         return Err(INVALID_CREDENTIAL);
     }
 
-    let result: QueryResult<User> = users.filter(email.eq(request.email.as_str())).first(connection);
+    let result: QueryResult<User> = users.filter(email.eq(request.email.as_str().trim())).first(connection);
     if result.is_err() {
         return Err(INVALID_CREDENTIAL);
     }

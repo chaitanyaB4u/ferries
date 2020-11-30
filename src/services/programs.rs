@@ -71,7 +71,6 @@ fn get_coach(connection: &MysqlConnection, the_coach_id: &str) -> Result<Coach, 
 }
 
 fn get_coach_by_email(connection: &MysqlConnection, peer_coach_email: &str) -> Result<Coach, &'static str> {
-
     let coach_result = coaches.filter(email.eq(peer_coach_email)).first(connection);
 
     if coach_result.is_err() {
@@ -89,11 +88,8 @@ fn get_coach_by_email(connection: &MysqlConnection, peer_coach_email: &str) -> R
  */
 
 pub fn get_peer_coaches(connection: &MysqlConnection, the_program_id: &str) -> Result<Vec<Coach>, diesel::result::Error> {
-   
     let program = programs.filter(programs::id.eq(the_program_id)).first::<Program>(connection)?;
-   
     let root_program_id = program.parent_program_id.unwrap_or(program.id);
-   
     let peer_coaches: Vec<Coach> = programs
         .inner_join(coaches)
         .filter(parent_program_id.eq(root_program_id))
@@ -115,14 +111,21 @@ fn insert_program(connection: &MysqlConnection, new_program: &NewProgram) -> Res
     find(connection, new_program.id.as_str())
 }
 
+/***
+ * When we change the state of the Parent Program,
+ * we need to change state of all the Peer Programs as well.
+ * 
+ * The state change shall be permitted only from the parent program.
+ */
 pub fn change_program_state(connection: &MysqlConnection, request: &ChangeProgramStateRequest) -> Result<usize, &'static str> {
     let program = &find(connection, request.id.as_str())?;
-
     validate_target_state(program, request)?;
 
+    let target_programs = programs.filter(parent_program_id.eq(request.id.as_str()));
+
     let result = match request.target_state {
-        ProgramTargetState::ACTIVATE => diesel::update(program).set(active.eq(true)).execute(connection),
-        ProgramTargetState::DEACTIVATE => diesel::update(program).set(active.eq(false)).execute(connection),
+        ProgramTargetState::ACTIVATE => diesel::update(target_programs).set(active.eq(true)).execute(connection),
+        ProgramTargetState::DEACTIVATE => diesel::update(target_programs).set(active.eq(false)).execute(connection),
     };
 
     if result.is_err() {
@@ -133,6 +136,9 @@ pub fn change_program_state(connection: &MysqlConnection, request: &ChangeProgra
 }
 
 fn validate_target_state(program: &Program, request: &ChangeProgramStateRequest) -> Result<bool, &'static str> {
+    if !program.is_parent {
+        return Err(PROGRAM_STATE_CHANGE_ERROR);
+    }
     if program.active && request.target_state == ProgramTargetState::ACTIVATE {
         return Err(PROGRAM_SAME_STATE_ERROR);
     }

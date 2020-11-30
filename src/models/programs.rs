@@ -69,12 +69,22 @@ impl Program {
         &self.genre_id
     }
 
-    pub fn parent_program_id(&self) -> &Option<String> {
-        &self.parent_program_id
+    pub fn parent_program_id(&self) -> &str {
+       self.coalesce_parent_id()
     }
 
     pub fn is_parent(&self) -> bool {
         self.is_parent
+    }
+}
+
+impl Program {
+
+    pub fn coalesce_parent_id(&self) -> &str {
+        match &self.parent_program_id {
+            None => &self.id,
+            Some(value) => &value
+        }
     }
 }
 

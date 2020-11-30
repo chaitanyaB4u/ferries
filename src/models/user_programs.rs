@@ -6,6 +6,7 @@ use crate::models::programs::Program;
 
 use crate::schema::coaches::dsl::*;
 use crate::schema::enrollments::dsl::*;
+use crate::schema::programs;
 use crate::schema::programs::dsl::*;
 
 #[derive(juniper::GraphQLEnum)]
@@ -69,14 +70,15 @@ pub fn get_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) ->
     }
 }
 
-fn get_enrollment(connection: &MysqlConnection, criteria: &ProgramCriteria) -> (String, EnrollmentStatus) {
+/**
+ * The enrollment may be directly in the parent program or in one of the children
+ */
+fn get_enrollment(connection: &MysqlConnection, criteria: &ProgramCriteria, _parent_program_id: &str) -> (String, EnrollmentStatus) {
     use crate::schema::enrollments::dsl::id;
 
-    let enrollment_data: QueryResult<String> = enrollments
-        .filter(member_id.eq(&criteria.user_id))
-        .filter(program_id.eq(&criteria.program_id))
-        .select(id)
-        .first(connection);
+    let prog_query = programs.filter(parent_program_id.eq(_parent_program_id)).select(programs::id);
+
+    let enrollment_data: QueryResult<String> = enrollments.filter(member_id.eq(&criteria.user_id)).filter(program_id.eq_any(prog_query)).select(id).first(connection);
 
     match enrollment_data {
         Ok(enrollment_id) => (enrollment_id, EnrollmentStatus::YES),
@@ -89,11 +91,14 @@ fn find_program(connection: &MysqlConnection, criteria: &ProgramCriteria) -> Pro
 
     let result: (Program, Coach) = programs.inner_join(coaches).filter(id.eq(&criteria.program_id)).first(connection)?;
 
-    let enrollment = get_enrollment(connection, criteria);
+    let program = result.0;
+    let coach = result.1;
+
+    let enrollment = get_enrollment(connection, criteria, program.coalesce_parent_id());
 
     let program_row = ProgramRow {
-        program: result.0,
-        coach: result.1,
+        program,
+        coach,
         enrollment_id: enrollment.0,
         enrollment_status: enrollment.1,
     };
@@ -125,11 +130,7 @@ fn get_enrolled_programs(connection: &MysqlConnection, criteria: &ProgramCriteri
 fn get_coach_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) -> ProgramResult {
     use crate::schema::coaches::dsl::id;
 
-    let data: Vec<ProgramType> = programs
-        .inner_join(coaches)
-        .filter(id.eq(&criteria.user_id))
-        .order_by(name.asc())
-        .load(connection)?;
+    let data: Vec<ProgramType> = programs.inner_join(coaches).filter(id.eq(&criteria.user_id)).order_by(name.asc()).load(connection)?;
 
     Ok(to_program_rows(data))
 }
