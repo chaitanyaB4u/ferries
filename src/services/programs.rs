@@ -45,8 +45,8 @@ pub fn create_new_program(connection: &MysqlConnection, request: &NewProgramRequ
  * Spwan a new Program from the Parent Program when associating a another coach
  */
 pub fn associate_coach(connection: &MysqlConnection, request: &AssociateCoachRequest) -> Result<Program, &'static str> {
-    //Finding coach with fuzzy_id
-    let coach = get_coach(connection, request.coach_id.as_str())?;
+    //Finding coach with email_id
+    let coach = get_coach_by_email(connection, request.peer_coach_email.as_str())?;
 
     let program = find(connection, request.program_id.as_str())?;
     let new_program = NewProgram::from_parent_program(&program, &coach);
@@ -62,6 +62,17 @@ fn get_coach(connection: &MysqlConnection, the_coach_id: &str) -> Result<Coach, 
     use crate::schema::coaches::dsl::id;
 
     let coach_result = coaches.filter(id.eq(the_coach_id)).first(connection);
+
+    if coach_result.is_err() {
+        return Err(INVALID_COACH);
+    }
+
+    Ok(coach_result.unwrap())
+}
+
+fn get_coach_by_email(connection: &MysqlConnection, peer_coach_email: &str) -> Result<Coach, &'static str> {
+
+    let coach_result = coaches.filter(email.eq(peer_coach_email)).first(connection);
 
     if coach_result.is_err() {
         return Err(INVALID_COACH);

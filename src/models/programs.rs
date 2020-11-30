@@ -195,7 +195,7 @@ pub struct ChangeProgramStateRequest {
 
 #[derive(juniper::GraphQLInputObject)]
 pub struct AssociateCoachRequest {
+    pub peer_coach_email: String,
     pub program_id: String,
-    pub coach_id: String,
     pub admin_coach_id: String,
 }
