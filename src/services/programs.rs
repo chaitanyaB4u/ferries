@@ -1,7 +1,9 @@
 use diesel::prelude::*;
 
 use crate::models::coaches::Coach;
-use crate::models::programs::{AssociateCoachRequest, ChangeProgramStateRequest, NewProgram, NewProgramRequest, Program, ProgramTargetState};
+use crate::models::programs::{AssociateCoachRequest, ChangeProgramStateRequest, NewProgram, NewProgramRequest, Program, ProgramCoach, ProgramTargetState};
+
+use crate::services::users::{find_coach_by_email, find_coach_by_id};
 
 use crate::schema::coaches::dsl::*;
 use crate::schema::programs;
@@ -9,7 +11,7 @@ use crate::schema::programs::dsl::*;
 
 const INVALID_PROGRAM: &str = "Invalid Program Id. Error:001.";
 const PROGRAM_CREATION_ERROR: &str = "Program Creation. Error:002";
-const INVALID_COACH: &str = "Invalid Coach Fuzzy Id. Error:003";
+
 const PROGRAM_STATE_CHANGE_ERROR: &str = "Unable to change the state of the program";
 const PROGRAM_SAME_STATE_ERROR: &str = "Program is already in the target state.";
 
@@ -28,12 +30,12 @@ pub fn find(connection: &MysqlConnection, the_id: &str) -> Result<Program, &'sta
  * convenience for avoiding self-join.
  *
  * 29-Nov:
- * The program will be the parent program throught this route
+ * The program will be the parent program through this route
  *
  */
 pub fn create_new_program(connection: &MysqlConnection, request: &NewProgramRequest) -> Result<Program, &'static str> {
     //Finding coach with fuzzy_id
-    let coach = get_coach(connection, request.coach_id.as_str())?;
+    let coach = find_coach_by_id(connection, request.coach_id.as_str())?;
 
     //Transform result into new_program
     let new_program = NewProgram::from_request(request, &coach);
@@ -45,39 +47,12 @@ pub fn create_new_program(connection: &MysqlConnection, request: &NewProgramRequ
  * Spwan a new Program from the Parent Program when associating a another coach
  */
 pub fn associate_coach(connection: &MysqlConnection, request: &AssociateCoachRequest) -> Result<Program, &'static str> {
-    //Finding coach with email_id
-    let coach = get_coach_by_email(connection, request.peer_coach_email.as_str())?;
+    let coach = find_coach_by_email(connection, request.peer_coach_email.as_str())?;
 
     let program = find(connection, request.program_id.as_str())?;
     let new_program = NewProgram::from_parent_program(&program, &coach);
 
     insert_program(connection, &new_program)
-}
-
-/**
- * The id of coach and user_id will be the same. The Coaches table is a
- * convenience for avoiding self-join.
- */
-fn get_coach(connection: &MysqlConnection, the_coach_id: &str) -> Result<Coach, &'static str> {
-    use crate::schema::coaches::dsl::id;
-
-    let coach_result = coaches.filter(id.eq(the_coach_id)).first(connection);
-
-    if coach_result.is_err() {
-        return Err(INVALID_COACH);
-    }
-
-    Ok(coach_result.unwrap())
-}
-
-fn get_coach_by_email(connection: &MysqlConnection, peer_coach_email: &str) -> Result<Coach, &'static str> {
-    let coach_result = coaches.filter(email.eq(peer_coach_email)).first(connection);
-
-    if coach_result.is_err() {
-        return Err(INVALID_COACH);
-    }
-
-    Ok(coach_result.unwrap())
 }
 
 /**
@@ -87,15 +62,15 @@ fn get_coach_by_email(connection: &MysqlConnection, peer_coach_email: &str) -> R
  * Return the list of all the associated coaches for the program.
  */
 
-pub fn get_peer_coaches(connection: &MysqlConnection, the_program_id: &str) -> Result<Vec<Coach>, diesel::result::Error> {
+pub fn get_peer_coaches(connection: &MysqlConnection, the_program_id: &str) -> Result<Vec<ProgramCoach>, diesel::result::Error> {
     let program = programs.filter(programs::id.eq(the_program_id)).first::<Program>(connection)?;
     let root_program_id = program.parent_program_id.unwrap_or(program.id);
-    let peer_coaches: Vec<Coach> = programs
+    let peer_coaches: Vec<ProgramCoach> = programs
         .inner_join(coaches)
         .filter(parent_program_id.eq(root_program_id))
         .load(connection)?
         .into_iter()
-        .map(|tuple: (Program, Coach)| tuple.1)
+        .map(|tuple: (Program, Coach)| ProgramCoach { program: tuple.0, coach: tuple.1 })
         .collect();
 
     Ok(peer_coaches)
@@ -114,7 +89,7 @@ fn insert_program(connection: &MysqlConnection, new_program: &NewProgram) -> Res
 /***
  * When we change the state of the Parent Program,
  * we need to change state of all the Peer Programs as well.
- * 
+ *
  * The state change shall be permitted only from the parent program.
  */
 pub fn change_program_state(connection: &MysqlConnection, request: &ChangeProgramStateRequest) -> Result<usize, &'static str> {

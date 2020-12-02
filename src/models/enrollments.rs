@@ -41,6 +41,7 @@ impl Enrollment {
 pub struct NewEnrollmentRequest {
     pub program_id: String,
     pub user_id: String,
+    pub coach_id: String,
 }
 
 impl NewEnrollmentRequest {
@@ -53,6 +54,10 @@ impl NewEnrollmentRequest {
 
         if self.user_id.trim().is_empty() {
             errors.push(ValidationError::new("user_id", "The User id is invalid."));
+        }
+
+        if self.coach_id.trim().is_empty() {
+            errors.push(ValidationError::new("coach_id", "We need the coach id who offers the program."));
         }
 
         errors

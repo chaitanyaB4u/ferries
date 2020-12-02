@@ -6,7 +6,7 @@ use crate::models::notes::Note;
 use crate::models::objectives::Objective;
 use crate::models::observations::Observation;
 use crate::models::options::Constraint;
-use crate::models::programs::Program;
+use crate::models::programs::{Program,ProgramCoach};
 use crate::models::sessions::Session;
 use crate::models::tasks::Task;
 use crate::models::user_events::{EventRow, PlanRow, SessionPeople,ToDo};
@@ -17,7 +17,6 @@ use crate::models::user_artifacts::BoardRow;
 use crate::models::correspondences::Mailable;
 use crate::models::discussions::Discussion;
 use crate::models::discussion_queue::PendingFeed;
-use crate::models::coaches::Coach;
 
 /**
  * Important: The Mutation Result might seem like a Code Duplication,
@@ -68,8 +67,8 @@ impl QueryResult<Vec<ProgramRow>> {
 }
 
 #[juniper::object(name = "PeerCoaches")]
-impl QueryResult<Vec<Coach>> {
-    pub fn coaches(&self) -> Option<&Vec<Coach>> {
+impl QueryResult<Vec<ProgramCoach>> {
+    pub fn peer_coaches(&self) -> Option<&Vec<ProgramCoach>> {
         self.0.as_ref().ok()
     }
     pub fn error(&self) -> Option<&QueryError> {

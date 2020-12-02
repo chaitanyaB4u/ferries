@@ -12,7 +12,7 @@ use crate::models::user_artifacts::{get_enrollment_notes,NoteRow,get_boards,Boar
 use crate::models::objectives::{NewObjectiveRequest, Objective, UpdateObjectiveRequest};
 use crate::models::observations::{NewObservationRequest, Observation, UpdateObservationRequest};
 use crate::models::options::{Constraint, NewOptionRequest, UpdateOptionRequest};
-use crate::models::programs::{ChangeProgramStateRequest, NewProgramRequest, Program, AssociateCoachRequest};
+use crate::models::programs::{ChangeProgramStateRequest, NewProgramRequest, Program, AssociateCoachRequest,ProgramCoach};
 use crate::models::sessions::{ChangeSessionStateRequest, NewSessionRequest, Session};
 use crate::models::tasks::{NewTaskRequest, UpdateClosingNoteRequest, Task, UpdateTaskRequest, UpdateResponseRequest, ChangeCoachTaskStateRequest, ChangeMemberTaskStateRequest};
 use crate::models::user_events::{get_events, get_people, get_plan_events, EventCriteria, EventRow, PlanRow, SessionCriteria, SessionPeople,ToDo,get_to_dos};
@@ -21,7 +21,6 @@ use crate::models::users::{LoginRequest, Registration, ResetPasswordRequest, Use
 use crate::models::correspondences::{Mailable};
 use crate::models::discussions::{Discussion, NewDiscussionRequest, DiscussionCriteria};
 use crate::models::discussion_queue::{PendingFeed};
-use crate::models::coaches::Coach;
 
 use crate::services::abstract_tasks::{create_abstract_task, get_abstract_tasks};
 use crate::services::enrollments::{create_new_enrollment, get_active_enrollments, create_managed_enrollment};
@@ -88,7 +87,7 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Get the list of coaches associated with a Program through its parent program.")]
-    fn get_program_coaches(context: &DBContext, program_id: String) -> QueryResult<Vec<Coach>> {
+    fn get_program_coaches(context: &DBContext, program_id: String) -> QueryResult<Vec<ProgramCoach>> {
         let connection = context.db.get().unwrap();
         let result = get_peer_coaches(&connection, program_id.as_str());
 

@@ -209,3 +209,19 @@ pub struct AssociateCoachRequest {
     pub program_id: String,
     pub admin_coach_id: String,
 }
+
+
+pub struct ProgramCoach {
+    pub program:Program,
+    pub coach:Coach,
+}
+
+#[juniper::object(description="To offer the List of all the PeerCoaches of a Program")]
+impl ProgramCoach {
+    pub fn program(&self) -> &Program {
+        &self.program
+    }
+    pub fn coach(&self) -> &Coach {
+        &self.coach
+    }
+}
