@@ -1,11 +1,13 @@
 use diesel::prelude::*;
 
 use crate::models::coaches::Coach;
+use crate::models::enrollments::Enrollment;
 use crate::models::programs::{AssociateCoachRequest, ChangeProgramStateRequest, NewProgram, NewProgramRequest, Program, ProgramCoach, ProgramTargetState};
 
 use crate::services::users::{find_coach_by_email, find_coach_by_id};
 
 use crate::schema::coaches::dsl::*;
+use crate::schema::enrollments::dsl::*;
 use crate::schema::programs;
 use crate::schema::programs::dsl::*;
 
@@ -14,6 +16,10 @@ const PROGRAM_CREATION_ERROR: &str = "Program Creation. Error:002";
 
 const PROGRAM_STATE_CHANGE_ERROR: &str = "Unable to change the state of the program";
 const PROGRAM_SAME_STATE_ERROR: &str = "Program is already in the target state.";
+
+const COACH_WAS_ASSOCIATED: &str = "The coach is already associated";
+const COACH_WAS_A_MEMBER: &str = "The coach was a member of this program in the past. To avoid conflict in roles, please use a different credential.";
+
 
 pub fn find(connection: &MysqlConnection, the_id: &str) -> Result<Program, &'static str> {
     let result = programs.filter(programs::id.eq(the_id)).first(connection);
@@ -44,17 +50,58 @@ pub fn create_new_program(connection: &MysqlConnection, request: &NewProgramRequ
 }
 
 /**
- * Spwan a new Program from the Parent Program when associating a another coach
+ * Spwan a new Program from the Parent Program when associating another coach.
+ *
+ * In the Past, the given coach should not be a member of the program and its spawned program in
+ * the Past. This will lead to a cyclic relationship.
+ *
+ * The given coach should not be associated already as a coach to this program.
+ *
+ * For saftey let us obtain the Parent Program from the given program id
+ *
  */
 pub fn associate_coach(connection: &MysqlConnection, request: &AssociateCoachRequest) -> Result<Program, &'static str> {
     let coach = find_coach_by_email(connection, request.peer_coach_email.as_str())?;
 
-    let program = find(connection, request.program_id.as_str())?;
-    let new_program = NewProgram::from_parent_program(&program, &coach);
+    let given_program = find(connection, request.program_id.as_str())?;
+
+    gate_past_member(connection, &given_program, &coach)?;
+
+    gate_already_associated(connection, &given_program, &coach)?;
+
+    let parent_program = find(connection, given_program.coalesce_parent_id())?;
+
+    let new_program = NewProgram::from_parent_program(&parent_program, &coach);
 
     insert_program(connection, &new_program)
 }
 
+fn gate_past_member(connection: &MysqlConnection, given_program: &Program, coach: &Coach) -> Result<(), &'static str> {
+    let prog_query = programs.filter(parent_program_id.eq(given_program.coalesce_parent_id())).select(crate::schema::programs::id);
+    let prior_enrollments: QueryResult<Enrollment> = enrollments
+        .filter(member_id.eq(coach.id.as_str()))
+        .filter(crate::schema::enrollments::program_id.eq_any(prog_query))
+        .first(connection);
+
+    if prior_enrollments.is_ok() {
+        return Err(COACH_WAS_A_MEMBER);
+    }
+
+    Ok(())
+}
+
+fn gate_already_associated(connection: &MysqlConnection, given_program: &Program, coach: &Coach) -> Result<(), &'static str> {
+    let result = programs
+        .filter(coach_id.eq(coach.id.as_str()))
+        .filter(parent_program_id.eq(given_program.coalesce_parent_id()))
+        .first::<Program>(connection);
+    
+    if result.is_ok() {
+        return Err(COACH_WAS_ASSOCIATED);
+    }
+
+    Ok(())
+}
 /**
  *
  * The given program_id may either a parent or a spawned one.
@@ -64,7 +111,7 @@ pub fn associate_coach(connection: &MysqlConnection, request: &AssociateCoachReq
 
 pub fn get_peer_coaches(connection: &MysqlConnection, the_program_id: &str) -> Result<Vec<ProgramCoach>, diesel::result::Error> {
     let program = programs.filter(programs::id.eq(the_program_id)).first::<Program>(connection)?;
-    let root_program_id = program.parent_program_id.unwrap_or(program.id);
+    let root_program_id = program.coalesce_parent_id();
     let peer_coaches: Vec<ProgramCoach> = programs
         .inner_join(coaches)
         .filter(parent_program_id.eq(root_program_id))

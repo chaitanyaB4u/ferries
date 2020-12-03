@@ -170,7 +170,7 @@ impl NewProgram {
     }
 
     /**
-     * When we spawn a program while attaching another coach to the parent program
+     * We spawn a program while attaching another coach to the parent program
      */
     pub fn from_parent_program(parent_program: &Program, coach: &Coach) -> NewProgram {
         let fuzzy_id = util::fuzzy_id();
