@@ -12,6 +12,8 @@ use crate::schema::mail_recipients;
 
 use crate::commons::util;
 
+const SELF_ENROLLMENT_MESSAGE :&str = "The coach will schedule a meeting to discuss with you at the earliest. Alternatively, you can converse with the coach, if required, from the discussion option available from your enrolled program. Thank you."; 
+
 #[derive(Queryable, Debug, Identifiable)]
 pub struct Correspondence {
     pub id: String,
@@ -96,7 +98,10 @@ impl MailOut {
 
     pub fn for_self_enrollment(program: &Program, enrollment_id: &str) -> MailOut {
         let subject = format!("Enrollment in {}",program.name);
-        let content = format!("Thanks for enrolling in {}",program.name);
+
+        let greetings = format!("Greetings, Welcome to {}. ",program.name);
+        let help: &str = SELF_ENROLLMENT_MESSAGE;
+        let content = format!("{} {}",greetings,help);
 
         MailOut::new(
             program.coach_id.to_owned(),

@@ -10,11 +10,11 @@ use crate::services::correspondences::create_mail;
 use crate::services::programs;
 use crate::services::users;
 
-use crate::schema::enrollments::dsl::*;
 use crate::schema::programs::dsl::*;
+use crate::schema::enrollments::dsl::*;
 use crate::schema::users::dsl::*;
 
-const WARNING: &str = "It seems you have already enrolled in this program";
+const WARNING: &str = "It seems the user have already enrolled in this program or in a similar program offered by a peer coach.";
 const ERROR_002: &str = "Error in creating enrollment. Error-002.";
 const ERROR_003: &str = "Error in finding enrollment for the program and member. Error-003.";
 const ERROR_004: &str = "Error in marking the enrollment as Old";
@@ -47,10 +47,17 @@ fn insert_enrollment(connection: &MysqlConnection, program: &Program, user: &Use
     Ok(insert_result.unwrap())
 }
 
+/**
+ * Check if the User is enrolled into a Spawned or Root Program already.
+ * 
+ */
 fn gate_prior_enrollment(connection: &MysqlConnection, program: &Program, user: &User) -> Result<bool, &'static str> {
-    let result = find(connection, &program, &user);
 
-    if result.is_err() {
+    let prog_query = programs.filter(parent_program_id.eq(program.coalesce_parent_id())).select(crate::schema::programs::id);
+
+    let prior_enrollments: QueryResult<Enrollment> = enrollments.filter(member_id.eq(user.id.as_str())).filter(program_id.eq_any(prog_query)).first(connection);
+
+    if prior_enrollments.is_err() {
         return Ok(true);
     }
 

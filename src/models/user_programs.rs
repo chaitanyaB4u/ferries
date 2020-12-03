@@ -73,34 +73,66 @@ pub fn get_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) ->
 /**
  * The enrollment may be directly in the parent program or in one of the children
  */
-fn get_enrollment(connection: &MysqlConnection, criteria: &ProgramCriteria, _parent_program_id: &str) -> (String, EnrollmentStatus) {
-    use crate::schema::enrollments::dsl::id;
+fn get_enrollment(connection: &MysqlConnection, criteria: &ProgramCriteria, _parent_program_id: &str) -> Option<Enrollment> {
 
     let prog_query = programs.filter(parent_program_id.eq(_parent_program_id)).select(programs::id);
 
-    let enrollment_data: QueryResult<String> = enrollments.filter(member_id.eq(&criteria.user_id)).filter(program_id.eq_any(prog_query)).select(id).first(connection);
+    let enrollment_data: QueryResult<Enrollment> = enrollments.filter(member_id.eq(&criteria.user_id)).filter(program_id.eq_any(prog_query)).first(connection);
 
     match enrollment_data {
-        Ok(enrollment_id) => (enrollment_id, EnrollmentStatus::YES),
-        Err(_) => (String::from(""), EnrollmentStatus::NO),
+        Ok(enrollment) => Some(enrollment),
+        Err(_) => None,
     }
 }
 
+/**
+ * Discovering the Kind of Relationship between the User and the Program.
+ * 
+ * Discover if the User is associated with this program as a Coach or a Member.
+ * 
+ * If Enrolled
+ *    Return the enrolled program over the criteria program
+ * 
+ * If one of the coaches of the Program, aka Peer Coach,
+ *    Return the associated program of the Coach.
+ *   
+ * If None of the above
+ *    Return allway the Parent Program
+ */
 fn find_program(connection: &MysqlConnection, criteria: &ProgramCriteria) -> ProgramResult {
-    use crate::schema::programs::dsl::id;
 
-    let result: (Program, Coach) = programs.inner_join(coaches).filter(id.eq(&criteria.program_id)).first(connection)?;
-
+    // Grep the Program by the given Id
+    let result: (Program, Coach) = programs.inner_join(coaches).filter(programs::id.eq(&criteria.program_id)).first(connection)?;
     let program = result.0;
     let coach = result.1;
 
-    let enrollment = get_enrollment(connection, criteria, program.coalesce_parent_id());
+    // Check is an enrolled Member
+    let enrollment_result = get_enrollment(connection, criteria, program.coalesce_parent_id());
+    if let Some(enrollment) = enrollment_result {
+        return find_enrolled_program(connection, &enrollment);
+    }
 
     let program_row = ProgramRow {
         program,
         coach,
-        enrollment_id: enrollment.0,
-        enrollment_status: enrollment.1,
+        enrollment_id: String::from(""),
+        enrollment_status: EnrollmentStatus::NO,
+    };
+
+    Ok(vec![program_row])
+}
+
+fn find_enrolled_program(connection: &MysqlConnection, enrollment: &Enrollment) -> ProgramResult {
+    
+    let _program_id = enrollment.program_id.as_str();
+
+    let result: (Program, Coach) = programs.inner_join(coaches).filter(programs::id.eq(&_program_id)).first(connection)?;
+   
+    let program_row = ProgramRow {
+        program:result.0,
+        coach:result.1,
+        enrollment_id: enrollment.id.to_owned(),
+        enrollment_status: EnrollmentStatus::YES,
     };
 
     Ok(vec![program_row])
