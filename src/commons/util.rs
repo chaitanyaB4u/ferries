@@ -12,6 +12,9 @@ pub const BAD_DATE: &str = "Date format error";
 pub const MEMBER: &str = "member";
 pub const COACH: &str = "coach";
 
+pub const MONO: &str = "mono";
+pub const MULTI: &str = "multi";
+
 pub fn as_date(date_str: &str) -> NaiveDateTime {
     let given_date = NaiveDateTime::parse_from_str(date_str, DATE_TIME_PATTERN).unwrap_or_else(|_| Utc::now().naive_utc());
     strip_seconds(given_date)

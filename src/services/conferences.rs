@@ -4,7 +4,7 @@ use crate::commons::util;
 
 use crate::services::enrollments;
 use crate::services::programs;
-use crate::services::sessions::{insert_session, insert_session_member, remove_conference_session};
+use crate::services::sessions::{insert_session, insert_session_member, remove_conference_session, find_by_conference};
 use crate::services::users;
 
 use crate::schema::conferences::dsl::*;
@@ -74,7 +74,7 @@ fn add_members(connection: &MysqlConnection, member_request: &MemberRequest) -> 
 
     let mut added_members: Vec<String> = Vec::new();
     for member_id in &member_request.member_ids {
-        let result = create_session(connection, &conference, member_id, &program, &coach);
+        let result = find_or_create_session(connection, &conference, member_id, &program, &coach);
         if result.is_ok() {
             added_members.push(member_id.to_owned());
         }
@@ -83,9 +83,15 @@ fn add_members(connection: &MysqlConnection, member_request: &MemberRequest) -> 
     Ok(added_members)
 }
 
-fn create_session(connection: &MysqlConnection, conference: &Conference, member_id: &str, program: &Program, coach: &User) -> Result<Session, &'static str> {
+fn find_or_create_session(connection: &MysqlConnection, conference: &Conference, member_id: &str, program: &Program, coach: &User) -> Result<Session, &'static str> {
+
+    if let Ok(session) = find_by_conference(connection, conference.id.as_str(), member_id) {
+        return Ok(session);
+    }
+
     let member = users::find(connection, member_id)?;
     let enrollment = enrollments::find(connection, &program, &member)?;
+
     let is_coach_session = coach.id.as_str().eq(member.id.as_str());
 
     let mut people_involved = coach.full_name.to_owned();
@@ -109,6 +115,7 @@ fn create_session(connection: &MysqlConnection, conference: &Conference, member_
         original_start_date: conference.original_start_date,
         original_end_date: conference.original_end_date,
         conference_id: Some(conference.id.to_owned()),
+        session_type: util::MULTI.to_owned(),
     };
 
     let session = insert_session(connection, &new_session)?;
@@ -140,5 +147,5 @@ fn create_coach_session(connection: &MysqlConnection, conference: &Conference, p
 
     enrollments::find_or_create_coach_enrollment(connection, conference.program_id.as_str())?;
 
-    create_session(connection, &conference, &coach.id.to_owned(), &program, &coach)
+    find_or_create_session(connection, &conference, &coach.id.to_owned(), &program, &coach)
 }
