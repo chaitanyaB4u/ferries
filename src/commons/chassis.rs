@@ -8,6 +8,7 @@ use crate::models::observations::Observation;
 use crate::models::options::Constraint;
 use crate::models::programs::{Program,ProgramCoach};
 use crate::models::sessions::Session;
+use crate::models::conferences::Conference;
 use crate::models::tasks::Task;
 use crate::models::user_events::{EventRow, PlanRow, SessionPeople,ToDo};
 use crate::models::user_programs::ProgramRow;
@@ -280,6 +281,17 @@ impl MutationResult<Session> {
     }
 }
 
+#[juniper::object(name = "ConferenceResult")]
+impl MutationResult<Conference> {
+    pub fn conference(&self) -> Option<&Conference> {
+        self.0.as_ref().ok()
+    }
+
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
+        self.0.as_ref().err()
+    }
+}
+
 #[juniper::object(name = "UserResult")]
 impl MutationResult<User> {
     pub fn user(&self) -> Option<&User> {
@@ -415,6 +427,17 @@ impl MutationResult<MasterTask> {
 #[juniper::object(name = "Updates")]
 impl MutationResult<String> {
     pub fn rows(&self) -> Option<&String> {
+        self.0.as_ref().ok()
+    }
+
+    pub fn errors(&self) -> Option<&Vec<ValidationError>> {
+        self.0.as_ref().err()
+    }
+}
+
+#[juniper::object(name = "Array")]
+impl MutationResult<Vec<String>> {
+    pub fn rows(&self) -> Option<&Vec<String>> {
         self.0.as_ref().ok()
     }
 

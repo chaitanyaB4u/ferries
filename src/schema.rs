@@ -18,6 +18,30 @@ table! {
 }
 
 table! {
+    conferences (id) {
+        id -> Varchar,
+        name -> Varchar,
+        description -> Nullable<Text>,
+        program_id -> Varchar,
+        people -> Nullable<Text>,
+        duration -> Integer,
+        original_start_date -> Datetime,
+        original_end_date -> Datetime,
+        revised_start_date -> Nullable<Datetime>,
+        revised_end_date -> Nullable<Datetime>,
+        offered_start_date -> Nullable<Datetime>,
+        offered_end_date -> Nullable<Datetime>,
+        is_ready -> Bool,
+        actual_start_date -> Nullable<Datetime>,
+        actual_end_date -> Nullable<Datetime>,
+        cancelled_at -> Nullable<Datetime>,
+        closing_notes -> Nullable<Text>,
+        created_at -> Datetime,
+        updated_at -> Datetime,
+    }
+}
+
+table! {
     correspondences (id) {
         id -> Varchar,
         from_user_id -> Varchar,
@@ -263,6 +287,8 @@ table! {
         updated_at -> Datetime,
         closing_notes -> Nullable<Text>,
         is_request -> Bool,
+        conference_id -> Nullable<Varchar>,
+        session_type -> Char,
     }
 }
 
@@ -323,6 +349,7 @@ table! {
 
 joinable!(abstract_tasks -> coaches (coach_id));
 joinable!(coaches -> users (user_id));
+joinable!(conferences -> programs (program_id));
 joinable!(correspondences -> enrollments (enrollment_id));
 joinable!(correspondences -> programs (program_id));
 joinable!(correspondences -> users (from_user_id));
@@ -354,6 +381,7 @@ joinable!(session_notes -> sessions (session_id));
 joinable!(session_notes -> users (created_by_id));
 joinable!(session_users -> sessions (session_id));
 joinable!(session_users -> users (user_id));
+joinable!(sessions -> conferences (conference_id));
 joinable!(sessions -> enrollments (enrollment_id));
 joinable!(sessions -> programs (program_id));
 joinable!(task_links -> enrollments (enrollment_id));
@@ -363,6 +391,7 @@ joinable!(tasks -> users (actor_id));
 allow_tables_to_appear_in_same_query!(
     abstract_tasks,
     coaches,
+    conferences,
     correspondences,
     discussion_queue,
     discussions,

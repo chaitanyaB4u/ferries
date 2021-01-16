@@ -15,6 +15,7 @@ use crate::models::session_users::{NewSessionUser, SessionUser};
 use crate::models::sessions::{ChangeSessionStateRequest, NewSession, NewSessionRequest, Session, TargetState};
 use crate::models::users::User;
 
+use crate::schema::enrollments::dsl::*;
 use crate::schema::session_users::dsl::*;
 use crate::schema::sessions::dsl::*;
 use crate::schema::users::dsl::*;
@@ -26,6 +27,9 @@ const SESSION_USER_CREATION_ERROR: &str = "Unable to associate users to the sess
 
 const SESSION_STATE_CHANGE_PROHIBITED: &str = "The session is either cancelled or completed. Hence change of state to the session is not permitted.";
 const SESSION_UPDATE_ERROR: &str = "Unable to complete the requested action on the state";
+
+const NOT_IN_CONFERENCE: &str = "The member is not included in the conference";
+const UNREMOVABLE_SESSION: &str = "The session is not in a removable state";
 
 pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest) -> Result<Session, &'static str> {
     // Obtain the Program
@@ -54,6 +58,44 @@ pub fn create_session(connection: &MysqlConnection, request: &NewSessionRequest)
     create_session_mail(connection, &session, &member, &coach)?;
 
     Ok(session)
+}
+
+pub fn find_by_conference(connection: &MysqlConnection, conf_id: &str, given_member_id: &str) -> Result<Session, &'static str> {
+    
+    let result: Result<(Session, Enrollment), diesel::result::Error> = sessions
+        .inner_join(enrollments)
+        .filter(conference_id.eq(conf_id))
+        .filter(member_id.eq(given_member_id))
+        .first(connection);
+
+    if result.is_err() {
+        return Err(NOT_IN_CONFERENCE);
+    }
+
+    Ok(result.unwrap().0)
+}
+
+pub fn remove_conference_session(connection: &MysqlConnection, conf_id: &str, given_member_id: &str) -> Result<bool, &'static str> {
+    let session = find_by_conference(connection, conf_id, given_member_id)?;
+
+    if !session.can_delete() {
+        return Err(UNREMOVABLE_SESSION);
+    }
+
+    let _session_id = session.id.as_str();
+
+    let result = diesel::delete(session_users.filter(session_id.eq(_session_id))).execute(connection);
+    if result.is_err() {
+        return Err(UNREMOVABLE_SESSION);
+    }
+
+    use crate::schema::sessions::dsl::id;
+    let result = diesel::delete(sessions.filter(id.eq(_session_id))).execute(connection);
+    if result.is_err() {
+        return Err(UNREMOVABLE_SESSION);
+    }
+
+    Ok(true)
 }
 
 pub fn find_session_user(connection: &MysqlConnection, session_user_id: &str) -> QueryResult<SessionUser> {
@@ -113,7 +155,7 @@ fn do_alter_session_state(connection: &MysqlConnection, request: &ChangeSessionS
     Ok(result.unwrap())
 }
 
-fn insert_session(connection: &MysqlConnection, new_session: &NewSession) -> Result<Session, &'static str> {
+pub fn insert_session(connection: &MysqlConnection, new_session: &NewSession) -> Result<Session, &'static str> {
     let result = diesel::insert_into(sessions).values(new_session).execute(connection);
 
     if result.is_err() {
@@ -135,7 +177,7 @@ pub fn find(connection: &MysqlConnection, the_id: &str) -> Result<Session, &'sta
     Ok(session_result.unwrap())
 }
 
-fn insert_session_users(connection: &MysqlConnection, coach: &NewSessionUser, member: &NewSessionUser) -> Result<usize, &'static str> {
+pub fn insert_session_users(connection: &MysqlConnection, coach: &NewSessionUser, member: &NewSessionUser) -> Result<usize, &'static str> {
     let result = diesel::insert_into(session_users).values(vec![coach, member]).execute(connection);
 
     if result.is_err() {
@@ -144,6 +186,16 @@ fn insert_session_users(connection: &MysqlConnection, coach: &NewSessionUser, me
 
     Ok(result.unwrap())
 }
+
+pub fn insert_session_member(connection: &MysqlConnection, session: &Session, member: &User, session_user_type: &str) -> Result<usize, &'static str> {
+    let new_session_member = NewSessionUser::from(&session, &member, session_user_type);
+    let result = diesel::insert_into(session_users).values(&new_session_member).execute(connection);
+    if result.is_err() {
+        return Err(SESSION_USER_CREATION_ERROR);
+    }
+    Ok(result.unwrap())
+}
+
 
 fn create_session_mail(connection: &MysqlConnection, session: &Session, member: &User, coach: &User) -> Result<usize, &'static str> {
     let mail_out = MailOut::for_new_session(session, coach, member);

@@ -10,8 +10,8 @@ use crate::services::correspondences::create_mail;
 use crate::services::programs;
 use crate::services::users;
 
-use crate::schema::programs::dsl::*;
 use crate::schema::enrollments::dsl::*;
+use crate::schema::programs::dsl::*;
 use crate::schema::users::dsl::*;
 
 const WARNING: &str = "It seems the user have already enrolled in this program or in a similar program offered by a peer coach.";
@@ -48,11 +48,31 @@ fn insert_enrollment(connection: &MysqlConnection, program: &Program, user: &Use
 }
 
 /**
+ * For conferences we need to have the coach is enrolled in her own program.
+ * This is because, the notes and other artifacts are tied to the session_user.
+ * In order to create a session user we need a session that needs an enrollment.
+ */
+pub fn find_or_create_coach_enrollment(connection: &MysqlConnection, given_program_id: &str) -> Result<Enrollment, &'static str> {
+    let program = programs::find(connection, given_program_id)?;
+    let given_coach_id = program.coach_id.as_str();
+
+    let enrollment_result: Result<Enrollment, diesel::result::Error> = enrollments.filter(program_id.eq(given_program_id)).filter(member_id.eq(given_coach_id)).first(connection);
+
+    if let Ok(enrollment) = enrollment_result {
+        return Ok(enrollment);
+    }
+
+    let user = users::find(connection, given_coach_id)?;
+    insert_enrollment(connection, &program, &user)?;
+
+    find(connection, &program, &user)
+}
+
+/**
  * Check if the User is enrolled into a Spawned or Root Program already.
- * 
+ *
  */
 fn gate_prior_enrollment(connection: &MysqlConnection, program: &Program, user: &User) -> Result<bool, &'static str> {
-
     let prog_query = programs.filter(parent_program_id.eq(program.coalesce_parent_id())).select(crate::schema::programs::id);
 
     let prior_enrollments: QueryResult<Enrollment> = enrollments.filter(member_id.eq(user.id.as_str())).filter(program_id.eq_any(prog_query)).first(connection);
@@ -164,4 +184,3 @@ fn create_self_enrollment_mail(connection: &MysqlConnection, enrollment_id: &str
 
     create_mail(connection, mail_out, recipients)
 }
-

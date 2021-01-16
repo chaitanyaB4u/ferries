@@ -4,41 +4,42 @@ use crate::db_manager::MySqlConnectionPool;
 
 use crate::models::abstract_tasks::{AbstractTask, AbstractTaskCriteria, NewAbstractTaskRequest};
 use crate::models::coach_members::{get_coach_members, CoachCriteria, MemberRow};
-use crate::models::enrollments::{Enrollment, EnrollmentCriteria, NewEnrollmentRequest, PlanCriteria, ManagedEnrollmentRequest};
+use crate::models::conferences::{Conference, MemberRequest, NewConferenceRequest};
+use crate::models::correspondences::Mailable;
+use crate::models::discussion_queue::PendingFeed;
+use crate::models::discussions::{Discussion, DiscussionCriteria, NewDiscussionRequest};
+use crate::models::enrollments::{Enrollment, EnrollmentCriteria, ManagedEnrollmentRequest, NewEnrollmentRequest, PlanCriteria};
 use crate::models::master_plans::{MasterPlan, MasterPlanCriteria, NewMasterPlanRequest, UpdateMasterPlanRequest};
 use crate::models::master_tasks::{MasterTask, MasterTaskCriteria, NewMasterTaskRequest, UpdateMasterTaskRequest};
 use crate::models::notes::{NewNoteRequest, Note, NoteCriteria};
-use crate::models::user_artifacts::{get_enrollment_notes,NoteRow,get_boards,BoardRow};
 use crate::models::objectives::{NewObjectiveRequest, Objective, UpdateObjectiveRequest};
 use crate::models::observations::{NewObservationRequest, Observation, UpdateObservationRequest};
 use crate::models::options::{Constraint, NewOptionRequest, UpdateOptionRequest};
-use crate::models::programs::{ChangeProgramStateRequest, NewProgramRequest, Program, AssociateCoachRequest,ProgramCoach};
+use crate::models::programs::{AssociateCoachRequest, ChangeProgramStateRequest, NewProgramRequest, Program, ProgramCoach};
 use crate::models::sessions::{ChangeSessionStateRequest, NewSessionRequest, Session};
-use crate::models::tasks::{NewTaskRequest, UpdateClosingNoteRequest, Task, UpdateTaskRequest, UpdateResponseRequest, ChangeCoachTaskStateRequest, ChangeMemberTaskStateRequest};
-use crate::models::user_events::{get_events, get_people, get_plan_events, EventCriteria, EventRow, PlanRow, SessionCriteria, SessionPeople,ToDo,get_to_dos};
+use crate::models::tasks::{ChangeCoachTaskStateRequest, ChangeMemberTaskStateRequest, NewTaskRequest, Task, UpdateClosingNoteRequest, UpdateResponseRequest, UpdateTaskRequest};
+use crate::models::user_artifacts::{get_boards, get_enrollment_notes, BoardRow, NoteRow};
+use crate::models::user_events::{get_events, get_people, get_plan_events, get_to_dos, EventCriteria, EventRow, PlanRow, SessionCriteria, SessionPeople, ToDo};
 use crate::models::user_programs::{get_programs, ProgramCriteria, ProgramRow};
 use crate::models::users::{LoginRequest, Registration, ResetPasswordRequest, User, UserCriteria};
-use crate::models::correspondences::{Mailable};
-use crate::models::discussions::{Discussion, NewDiscussionRequest, DiscussionCriteria};
-use crate::models::discussion_queue::{PendingFeed};
 
 use crate::services::abstract_tasks::{create_abstract_task, get_abstract_tasks};
-use crate::services::enrollments::{create_new_enrollment, get_active_enrollments, create_managed_enrollment};
+use crate::services::conferences::{create_conference, manage_members};
+use crate::services::correspondences::sendable_mails;
+use crate::services::discussions::{create_new_discussion, get_discussions, get_pending_discussions};
+use crate::services::enrollments::{create_managed_enrollment, create_new_enrollment, get_active_enrollments};
 use crate::services::master_plans::{create_master_plan, get_master_plans, update_master_plan};
 use crate::services::master_tasks::{create_master_task, get_master_tasks, update_master_task};
 use crate::services::notes::{create_new_note, get_notes};
 use crate::services::objectives::{create_objective, get_objectives, update_objective};
 use crate::services::observations::{create_observation, get_observations, update_observation};
 use crate::services::options::{create_option, get_options, update_option};
-use crate::services::programs::{change_program_state, create_new_program, associate_coach,get_peer_coaches};
-use crate::services::sessions::{change_session_state, create_session,find};
-use crate::services::tasks::{create_task, get_tasks, update_task, update_response, update_closing_notes, change_member_task_state, change_coach_task_state};
+use crate::services::programs::{associate_coach, change_program_state, create_new_program, get_peer_coaches};
+use crate::services::sessions::{change_session_state, create_session, find};
+use crate::services::tasks::{change_coach_task_state, change_member_task_state, create_task, get_tasks, update_closing_notes, update_response, update_task};
 use crate::services::users::{authenticate, register, reset_password};
-use crate::services::correspondences::{sendable_mails};
-use crate::services::discussions::{create_new_discussion, get_discussions, get_pending_discussions};
 
-
-use crate::commons::chassis::{mutation_error, query_error,service_error, MutationResult, QueryResult, QueryError};
+use crate::commons::chassis::{mutation_error, query_error, service_error, MutationResult, QueryError, QueryResult};
 
 #[derive(Clone)]
 pub struct DBContext {
@@ -59,13 +60,13 @@ impl QueryRoot {
     }
 
     #[graphql(description = "Return the basic information of a user")]
-    fn get_user(context: &DBContext,criteria: UserCriteria) -> FieldResult<User> {
+    fn get_user(context: &DBContext, criteria: UserCriteria) -> FieldResult<User> {
         let connection = context.db.get().unwrap();
-        let user = crate::services::users::find(&connection,&criteria.id)?; 
+        let user = crate::services::users::find(&connection, &criteria.id)?;
         Ok(user)
     }
 
-    fn get_pending_discussions(context: &DBContext,criteria: UserCriteria) -> QueryResult<Vec<PendingFeed>> {
+    fn get_pending_discussions(context: &DBContext, criteria: UserCriteria) -> QueryResult<Vec<PendingFeed>> {
         let connection = context.db.get().unwrap();
         let result = get_pending_discussions(&connection, &criteria);
 
@@ -154,7 +155,7 @@ impl QueryRoot {
 
         match result {
             Ok(value) => QueryResult(Ok(value)),
-            Err(e) => QueryResult(Err(QueryError { message: e }))
+            Err(e) => QueryResult(Err(QueryError { message: e })),
         }
     }
 
@@ -165,7 +166,7 @@ impl QueryRoot {
 
         match result {
             Ok(value) => QueryResult(Ok(value)),
-            Err(e) => QueryResult(Err(QueryError { message: e }))
+            Err(e) => QueryResult(Err(QueryError { message: e })),
         }
     }
 
@@ -176,7 +177,7 @@ impl QueryRoot {
 
         match result {
             Ok(value) => QueryResult(Ok(value)),
-            Err(e) => QueryResult(Err(QueryError { message: e }))
+            Err(e) => QueryResult(Err(QueryError { message: e })),
         }
     }
 
@@ -259,7 +260,7 @@ impl QueryRoot {
     #[graphql(description = "Get the Session by its id")]
     fn get_session(context: &DBContext, criteria: SessionCriteria) -> FieldResult<Session> {
         let connection = context.db.get().unwrap();
-        let session = find(&connection,&criteria.id)?; 
+        let session = find(&connection, &criteria.id)?;
         Ok(session)
     }
 
@@ -276,7 +277,6 @@ impl QueryRoot {
 
     #[graphql(description = "Top 3 mails marked as Pending")]
     fn get_sendable_mails(context: &DBContext) -> QueryResult<Vec<Mailable>> {
-
         let connection = context.db.get().unwrap();
         let result = sendable_mails(&connection);
 
@@ -417,16 +417,14 @@ impl MutationRoot {
         }
     }
 
-    fn associate_coach(context: &DBContext, request: AssociateCoachRequest) -> MutationResult<Program>{
-        
+    fn associate_coach(context: &DBContext, request: AssociateCoachRequest) -> MutationResult<Program> {
         let connection = context.db.get().unwrap();
         let result = associate_coach(&connection, &request);
 
         match result {
             Ok(program) => MutationResult(Ok(program)),
-            Err(e) => service_error(e)
+            Err(e) => service_error(e),
         }
-
     }
 
     fn create_enrollment(context: &DBContext, new_enrollment_request: NewEnrollmentRequest) -> MutationResult<Enrollment> {
@@ -445,7 +443,6 @@ impl MutationRoot {
     }
 
     fn managed_enrollment(context: &DBContext, managed_enrollment_request: ManagedEnrollmentRequest) -> MutationResult<Enrollment> {
-        
         let connection = context.db.get().unwrap();
         let result = create_managed_enrollment(&connection, &managed_enrollment_request);
 
@@ -466,6 +463,31 @@ impl MutationRoot {
 
         match result {
             Ok(session) => MutationResult(Ok(session)),
+            Err(e) => service_error(e),
+        }
+    }
+
+    fn create_conference(context: &DBContext, new_conference_request: NewConferenceRequest) -> MutationResult<Conference> {
+        let errors = new_conference_request.validate();
+        if !errors.is_empty() {
+            return MutationResult(Err(errors));
+        }
+
+        let connection = context.db.get().unwrap();
+        let result = create_conference(&connection, &new_conference_request);
+
+        match result {
+            Ok(conference) => MutationResult(Ok(conference)),
+            Err(e) => service_error(e),
+        }
+    }
+
+    fn manage_conference(context: &DBContext, member_request: MemberRequest) -> MutationResult<Vec<String>> {
+        let connection = context.db.get().unwrap();
+        let result = manage_members(&connection, &member_request);
+
+        match result {
+            Ok(members) => MutationResult(Ok(members)),
             Err(e) => service_error(e),
         }
     }
@@ -607,7 +629,6 @@ impl MutationRoot {
             Err(e) => service_error(e),
         }
     }
-    
     fn alter_coach_task_state(context: &DBContext, request: ChangeCoachTaskStateRequest) -> MutationResult<Task> {
         let connection = context.db.get().unwrap();
         let result = change_coach_task_state(&connection, &request);
@@ -615,7 +636,6 @@ impl MutationRoot {
             Ok(task) => MutationResult(Ok(task)),
             Err(e) => service_error(e),
         }
-
     }
 
     fn alter_member_task_state(context: &DBContext, request: ChangeMemberTaskStateRequest) -> MutationResult<Task> {
@@ -662,7 +682,6 @@ impl MutationRoot {
     }
 
     fn create_discussion(context: &DBContext, new_discussion_request: NewDiscussionRequest) -> MutationResult<Discussion> {
-
         let connection = context.db.get().unwrap();
         let result = create_new_discussion(&connection, &new_discussion_request);
 
@@ -672,7 +691,6 @@ impl MutationRoot {
         }
     }
 }
-
 
 pub type GQSchema = RootNode<'static, QueryRoot, MutationRoot>;
 
