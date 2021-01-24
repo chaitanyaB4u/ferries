@@ -8,9 +8,11 @@ use crate::models::observations::Observation;
 use crate::models::options::Constraint;
 use crate::models::programs::{Program,ProgramCoach};
 use crate::models::sessions::Session;
+use crate::models::session_users::SessionPeople;
 use crate::models::conferences::Conference;
 use crate::models::tasks::Task;
-use crate::models::user_events::{EventRow, PlanRow, SessionPeople,ToDo};
+use crate::models::user_events::{EventRow, PlanRow, ToDo};
+
 use crate::models::user_programs::ProgramRow;
 use crate::models::coach_members::MemberRow;
 use crate::models::user_artifacts::NoteRow;

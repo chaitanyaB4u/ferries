@@ -166,6 +166,10 @@ impl Session {
 
         true
     }
+
+    pub fn is_conference(&self) -> bool {
+        self.session_type.eq("multi")
+    }
 }
 
 #[derive(juniper::GraphQLInputObject)]

@@ -19,7 +19,8 @@ use crate::models::programs::{AssociateCoachRequest, ChangeProgramStateRequest, 
 use crate::models::sessions::{ChangeSessionStateRequest, NewSessionRequest, Session};
 use crate::models::tasks::{ChangeCoachTaskStateRequest, ChangeMemberTaskStateRequest, NewTaskRequest, Task, UpdateClosingNoteRequest, UpdateResponseRequest, UpdateTaskRequest};
 use crate::models::user_artifacts::{get_boards, get_enrollment_notes, BoardRow, NoteRow};
-use crate::models::user_events::{get_events, get_people, get_plan_events, get_to_dos, EventCriteria, EventRow, PlanRow, SessionCriteria, SessionPeople, ToDo};
+use crate::models::user_events::{get_events,get_plan_events, get_to_dos, EventCriteria, EventRow, PlanRow, ToDo};
+use crate::models::session_users::{get_people,SessionCriteria, SessionPeople};
 use crate::models::user_programs::{get_programs, ProgramCriteria, ProgramRow};
 use crate::models::users::{LoginRequest, Registration, ResetPasswordRequest, User, UserCriteria};
 

@@ -168,11 +168,11 @@ fn get_coach_programs(connection: &MysqlConnection, criteria: &ProgramCriteria) 
 }
 
 fn get_latest_programs(connection: &MysqlConnection) -> ProgramResult {
-    use crate::schema::programs::dsl::created_at;
+    use crate::schema::programs::dsl::updated_at;
 
     let data: Vec<ProgramType> = programs
         .inner_join(coaches)
-        .order_by(created_at.asc())
+        .order_by(updated_at.asc())
         .filter(active.eq(true))
         .filter(is_private.eq(false))
         .filter(is_parent.eq(true))

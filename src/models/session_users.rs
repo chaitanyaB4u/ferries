@@ -1,5 +1,12 @@
+use diesel::prelude::*;
+
 use crate::commons::util;
+
 use crate::schema::session_users;
+use crate::schema::session_users::dsl::*;
+use crate::schema::sessions;
+use crate::schema::sessions::dsl::*;
+use crate::schema::users::dsl::*;
 
 use crate::models::sessions::Session;
 use crate::models::users::User;
@@ -52,4 +59,72 @@ impl NewSessionUser {
             user_type: String::from(session_user_type),
         }
     }
+}
+
+#[derive(juniper::GraphQLInputObject)]
+pub struct SessionCriteria {
+    pub id: String,
+}
+
+pub struct SessionPeople {
+    pub session_user: SessionUser,
+    pub user: User,
+}
+
+#[juniper::object]
+impl SessionPeople {
+    pub fn session_user(&self) -> &SessionUser {
+        &self.session_user
+    }
+
+    pub fn user(&self) -> &User {
+        &self.user
+    }
+}
+
+pub type PeopleResult = Result<Vec<SessionPeople>, diesel::result::Error>;
+
+pub fn get_people(connection: &MysqlConnection, criteria: SessionCriteria) -> PeopleResult {
+    let given_session_id = criteria.id.as_str();
+
+    let session: Session = sessions.filter(sessions::id.eq(given_session_id)).first(connection)?;
+  
+    if session.is_conference() {
+        return get_conference_people(connection, session.conference_id);
+    }
+   
+    get_session_people(connection, given_session_id)
+}
+
+fn get_conference_people(connection: &MysqlConnection, conf_id: Option<String>) -> PeopleResult {
+
+    let session_people: Vec<SessionPeople> = session_users
+        .inner_join(users)
+        .inner_join(sessions)
+        .filter(conference_id.eq(conf_id.unwrap()))
+        .load::<(SessionUser,User,Session)>(connection)?
+        .iter()
+        .map(|tuple| SessionPeople {
+            session_user: tuple.0.clone(),
+            user: tuple.1.clone(),
+        })
+        .collect();
+
+    Ok(session_people)
+}
+
+fn get_session_people(connection: &MysqlConnection, given_session_id: &str) -> PeopleResult {
+    
+    let session_people: Vec<SessionPeople> = session_users
+        .inner_join(users)
+        .filter(session_id.eq(given_session_id))
+        .load::<(SessionUser,User)>(connection)?
+        .iter()
+        .map(|tuple| SessionPeople {
+            session_user: tuple.0.clone(),
+            user: tuple.1.clone(),
+        })
+        .collect();
+
+    Ok(session_people)
 }
