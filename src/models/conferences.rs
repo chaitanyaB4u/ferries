@@ -186,8 +186,3 @@ pub struct MemberRequest {
     pub member_ids: Vec<String>,
     pub intention: IntentionState,
 }
-
-
-
-
-
