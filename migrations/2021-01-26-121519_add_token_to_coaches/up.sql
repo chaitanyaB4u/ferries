@@ -1,0 +1,1 @@
+alter table coaches add column token int;

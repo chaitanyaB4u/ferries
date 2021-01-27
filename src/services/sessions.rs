@@ -105,20 +105,26 @@ pub fn find_session_user(connection: &MysqlConnection, session_user_id: &str) ->
 }
 
 pub fn change_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<Session, &'static str> {
-    can_change_session_state(connection, request)?;
+    let session = can_change_session_state(connection, request)?;
 
-    do_alter_session_state(connection, request)?;
-
+    if session.is_conference() {
+        let conf_id = session.conference_id.unwrap();
+        do_alter_multi_sessions_state(connection,request,conf_id.as_str())?;
+    }
+    else {
+        do_alter_mono_session_state(connection, request)?;    
+    }
+   
     let session = find(connection, &request.id.as_str())?;
-
-    if request.target_state == TargetState::CANCEL {
+    
+    if request.target_state == TargetState::CANCEL && !session.is_conference() {
         send_session_cancel_mail(connection, &session)?;
     }
 
     Ok(session)
 }
 
-fn can_change_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<usize, &'static str> {
+fn can_change_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<Session, &'static str> {
     let the_id = &request.id.as_str();
 
     let session = find(connection, the_id)?;
@@ -129,14 +135,38 @@ fn can_change_session_state(connection: &MysqlConnection, request: &ChangeSessio
         return Err(SESSION_STATE_CHANGE_PROHIBITED);
     }
 
-    Ok(1)
+    Ok(session)
 }
 
-fn do_alter_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<usize, &'static str> {
-    use crate::schema::sessions::dsl::id;
+fn do_alter_multi_sessions_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest, conf_id: &str) -> Result<usize, &'static str> {
 
+    let target_sessions = sessions.filter(conference_id.eq(conf_id));
+
+    let now = util::now();
+
+    let result = match request.target_state {
+        TargetState::READY => diesel::update(target_sessions).set(is_ready.eq(true)).execute(connection),
+        TargetState::START => diesel::update(target_sessions).set(actual_start_date.eq(now)).execute(connection),
+        TargetState::DONE => diesel::update(target_sessions)
+            .set((actual_end_date.eq(now), closing_notes.eq(&request.closing_notes)))
+            .execute(connection),
+        TargetState::CANCEL => diesel::update(target_sessions).set((cancelled_at.eq(now), closing_notes.eq(&request.closing_notes))).execute(connection),
+    };
+
+    if result.is_err() {
+        return Err(SESSION_UPDATE_ERROR);
+    }
+
+    Ok(result.unwrap())
+    
+}
+
+fn do_alter_mono_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<usize, &'static str> {
+
+    use crate::schema::sessions::dsl::id;
     let the_session_id = &request.id.as_str();
     let target_session = sessions.filter(id.eq(the_session_id));
+
     let now = util::now();
 
     let result = match request.target_state {

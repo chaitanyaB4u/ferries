@@ -14,6 +14,7 @@ table! {
         email -> Varchar,
         created_at -> Datetime,
         updated_at -> Datetime,
+        token -> Nullable<Integer>,
     }
 }
 

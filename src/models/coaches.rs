@@ -8,6 +8,7 @@ pub struct Coach {
     pub email: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+    pub token: Option<i32>,
 }
 
 // Fields that we can safely expose to APIs
@@ -27,5 +28,12 @@ impl Coach {
 
     pub fn name(&self) -> &str {
         self.full_name.as_str()
+    }
+
+}
+
+impl Coach {
+    pub fn token(&self) -> Option<i32> {
+        self.token
     }
 }
