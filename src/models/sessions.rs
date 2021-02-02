@@ -236,6 +236,7 @@ pub struct NewSession {
     pub original_end_date: NaiveDateTime,
     pub conference_id: Option<String>,
     pub session_type: String,
+    pub is_ready: bool,
 }
 
 impl NewSession {
@@ -258,6 +259,7 @@ impl NewSession {
             original_end_date: end_date.unwrap_or(start_date),
             conference_id: None,
             session_type: util::MONO.to_owned(),
+            is_ready:false,
         }
     }
 }

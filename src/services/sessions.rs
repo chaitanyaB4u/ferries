@@ -9,6 +9,8 @@ use crate::services::enrollments;
 use crate::services::programs;
 use crate::services::users;
 
+use crate::services::conferences::{sync_conference_state};
+
 use crate::models::correspondences::{MailOut, MailRecipient};
 use crate::models::enrollments::Enrollment;
 use crate::models::session_users::{NewSessionUser, SessionUser};
@@ -110,6 +112,7 @@ pub fn change_session_state(connection: &MysqlConnection, request: &ChangeSessio
     if session.is_conference() {
         let conf_id = session.conference_id.unwrap();
         do_alter_multi_sessions_state(connection,request,conf_id.as_str())?;
+        sync_conference_state(connection,request,conf_id.as_str())?;
     }
     else {
         do_alter_mono_session_state(connection, request)?;    
@@ -158,7 +161,6 @@ fn do_alter_multi_sessions_state(connection: &MysqlConnection, request: &ChangeS
     }
 
     Ok(result.unwrap())
-    
 }
 
 fn do_alter_mono_session_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest) -> Result<usize, &'static str> {

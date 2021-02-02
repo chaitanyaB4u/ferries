@@ -4,18 +4,18 @@ use crate::commons::util;
 
 use crate::services::enrollments;
 use crate::services::programs;
-use crate::services::sessions::{insert_session, insert_session_member, remove_conference_session, find_by_conference};
+use crate::services::sessions::{find_by_conference, insert_session, insert_session_member, remove_conference_session};
 use crate::services::users;
-
-use crate::schema::conferences::dsl::*;
 
 use crate::models::conferences::{Conference, IntentionState, MemberRequest, NewConference, NewConferenceRequest};
 use crate::models::programs::Program;
-use crate::models::sessions::{NewSession, Session};
+use crate::models::sessions::{ChangeSessionStateRequest, NewSession, Session, TargetState};
 use crate::models::users::User;
+use crate::schema::conferences::dsl::*;
 
 const CONFERENCE_CREATION_ERROR: &str = "Unable to create conference.";
 const FINDER_ERROR: &str = "Unable to find the conference.";
+const CONFERENCE_STATE_UPDATE_ERROR: &str = "Unable to complete the requested action on the state of the conference";
 
 pub fn create_conference(connection: &MysqlConnection, request: &NewConferenceRequest) -> Result<Conference, &'static str> {
     let program = programs::find(connection, request.program_id.as_str())?;
@@ -34,7 +34,6 @@ pub fn create_conference(connection: &MysqlConnection, request: &NewConferenceRe
 }
 
 pub fn manage_members(connection: &MysqlConnection, member_request: &MemberRequest) -> Result<Vec<String>, &'static str> {
-    
     if let IntentionState::ADD = member_request.intention {
         return add_members(connection, member_request);
     }
@@ -53,9 +52,7 @@ fn insert_conference(connection: &MysqlConnection, new_conference: &NewConferenc
 }
 
 fn find(connection: &MysqlConnection, conf_id: &str) -> Result<Conference, &'static str> {
-    let result = conferences
-        .filter(crate::schema::conferences::id.eq(conf_id))
-        .first(connection);
+    let result = conferences.filter(crate::schema::conferences::id.eq(conf_id)).first(connection);
 
     if result.is_err() {
         return Err(FINDER_ERROR);
@@ -84,7 +81,6 @@ fn add_members(connection: &MysqlConnection, member_request: &MemberRequest) -> 
 }
 
 fn find_or_create_session(connection: &MysqlConnection, conference: &Conference, member_id: &str, program: &Program, coach: &User) -> Result<Session, &'static str> {
-
     if let Ok(session) = find_by_conference(connection, conference.id.as_str(), member_id) {
         return Ok(session);
     }
@@ -116,11 +112,11 @@ fn find_or_create_session(connection: &MysqlConnection, conference: &Conference,
         original_end_date: conference.original_end_date,
         conference_id: Some(conference.id.to_owned()),
         session_type: util::MULTI.to_owned(),
+        is_ready: conference.is_ready,
     };
 
     let session = insert_session(connection, &new_session)?;
     insert_session_member(connection, &session, &member, user_type)?;
-    
     enrollments::mark_as_old(connection, enrollment.id())?;
 
     Ok(session)
@@ -143,9 +139,34 @@ fn remove_members(connection: &MysqlConnection, member_request: &MemberRequest) 
 }
 
 // Coach Session is a special entry with a self enrollment id
-fn create_coach_session(connection: &MysqlConnection, conference: &Conference, program: &Program, coach: &User) -> Result<Session, &'static str>{
-
+fn create_coach_session(connection: &MysqlConnection, conference: &Conference, program: &Program, coach: &User) -> Result<Session, &'static str> {
     enrollments::find_or_create_coach_enrollment(connection, conference.program_id.as_str())?;
 
     find_or_create_session(connection, &conference, &coach.id.to_owned(), &program, &coach)
+}
+
+// To keep the state of the conference in sync with the coach's session state.
+// When a new member is added during a live session, 
+// the newly added user sees its state as that of his/her peers.
+
+pub fn sync_conference_state(connection: &MysqlConnection, request: &ChangeSessionStateRequest, conf_id: &str) -> Result<usize, &'static str> {
+
+    let target_conference = conferences.filter(id.eq(conf_id));
+
+    let now = util::now();
+
+    let result = match request.target_state {
+        TargetState::READY => diesel::update(target_conference).set(is_ready.eq(true)).execute(connection),
+        TargetState::START => diesel::update(target_conference).set(actual_start_date.eq(now)).execute(connection),
+        TargetState::DONE => diesel::update(target_conference)
+            .set((actual_end_date.eq(now), closing_notes.eq(&request.closing_notes)))
+            .execute(connection),
+        TargetState::CANCEL => diesel::update(target_conference).set((cancelled_at.eq(now), closing_notes.eq(&request.closing_notes))).execute(connection),
+    };
+
+    if result.is_err() {
+        return Err(CONFERENCE_STATE_UPDATE_ERROR);
+    }
+
+    Ok(result.unwrap())
 }
