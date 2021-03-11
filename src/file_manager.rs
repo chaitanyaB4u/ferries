@@ -75,10 +75,10 @@ pub async fn manage_program_content(_request: HttpRequest, mut payload: Multipar
 }
 
 pub async fn fetch_list_of_boards(_request: HttpRequest) -> Result<HttpResponse, Error> {
-    let session_user_fuzzy_id: PathBuf = _request.match_info().query("session_user_fuzzy_id").parse().unwrap();
+    let session_id: PathBuf = _request.match_info().query("session_id").parse().unwrap();
 
     let mut dir_name: PathBuf = PathBuf::from(SESSION_ASSET_DIR);
-    dir_name.push(session_user_fuzzy_id);
+    dir_name.push(session_id);
     dir_name.push("boards");
 
     let mut entries = fs::read_dir(dir_name)?
@@ -116,11 +116,11 @@ pub fn get_file_names(dir_name: PathBuf) -> Result<Vec<String>,std::io::Error> {
 }
 
 pub async fn fetch_board_file(_request: HttpRequest) -> Result<NamedFile, Error> {
-    let session_user_fuzzy_id: PathBuf = _request.match_info().query("session_user_fuzzy_id").parse().unwrap();
+    let session_id: PathBuf = _request.match_info().query("session_id").parse().unwrap();
     let asset_name: PathBuf = _request.match_info().query("filename").parse().unwrap();
 
     let mut file_name: PathBuf = PathBuf::from(SESSION_ASSET_DIR);
-    file_name.push(session_user_fuzzy_id);
+    file_name.push(session_id);
     file_name.push("boards");
     file_name.push(asset_name);
 
