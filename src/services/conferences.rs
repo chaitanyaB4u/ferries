@@ -4,7 +4,7 @@ use crate::commons::util;
 
 use crate::services::enrollments;
 use crate::services::programs;
-use crate::services::sessions::{find_by_conference, insert_session, insert_session_member, remove_conference_session};
+use crate::services::sessions::{find_by_conference, insert_session, insert_session_member, remove_conference_session,create_session_mail};
 use crate::services::users;
 
 use crate::models::conferences::{Conference, IntentionState, MemberRequest, NewConference, NewConferenceRequest};
@@ -117,7 +117,12 @@ fn find_or_create_session(connection: &MysqlConnection, conference: &Conference,
 
     let session = insert_session(connection, &new_session)?;
     insert_session_member(connection, &session, &member, user_type)?;
+    
     enrollments::mark_as_old(connection, enrollment.id())?;
+
+    if !is_coach_session {
+        create_session_mail(connection, &session, &member, &coach)?;
+    }
 
     Ok(session)
 }

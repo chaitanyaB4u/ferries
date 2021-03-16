@@ -229,7 +229,7 @@ pub fn insert_session_member(connection: &MysqlConnection, session: &Session, me
 }
 
 
-fn create_session_mail(connection: &MysqlConnection, session: &Session, member: &User, coach: &User) -> Result<usize, &'static str> {
+pub fn create_session_mail(connection: &MysqlConnection, session: &Session, member: &User, coach: &User) -> Result<usize, &'static str> {
     let mail_out = MailOut::for_new_session(session, coach, member);
     let recipients = MailRecipient::build_recipients(member, coach, mail_out.id.as_str());
 
