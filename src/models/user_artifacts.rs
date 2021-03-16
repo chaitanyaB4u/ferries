@@ -6,7 +6,6 @@ use crate::file_manager::{get_file_names, SESSION_ASSET_DIR};
 
 use crate::models::enrollments::{Enrollment, PlanCriteria};
 use crate::models::notes::Note;
-use crate::models::session_users::SessionUser;
 use crate::models::sessions::Session;
 use crate::models::user_events::EventCriteria;
 
@@ -16,7 +15,6 @@ use crate::schema::sessions;
 
 use crate::schema::enrollments::dsl::*;
 use crate::schema::session_notes::dsl::*;
-use crate::schema::session_users::dsl::*;
 use crate::schema::sessions::dsl::*;
 
 use std::path::PathBuf;
@@ -67,7 +65,6 @@ pub fn get_enrollment_notes(connection: &MysqlConnection, criteria: PlanCriteria
 
 pub struct BoardRow {
     pub session: Session,
-    pub session_user: SessionUser,
     pub urls: Vec<String>,
 }
 
@@ -77,22 +74,18 @@ impl BoardRow {
         &self.session
     }
 
-    pub fn session_user(&self) -> &SessionUser {
-        &self.session_user
-    }
-
     pub fn urls(&self) -> &Vec<String> {
         &self.urls
     }
 }
 
-type Row = (Enrollment, (Session, SessionUser));
+type Row = (Enrollment, Session);
 
 pub fn get_boards(connection: &MysqlConnection, criteria: EventCriteria) -> Result<Vec<BoardRow>, diesel::result::Error> {
     let prog_id = criteria.program_id.unwrap();
 
     let rows: Vec<Row> = enrollments
-        .inner_join(sessions.inner_join(session_users))
+        .inner_join(sessions)
         .filter(enrollments::program_id.eq(&prog_id))
         .filter(enrollments::member_id.eq(&criteria.user_id))
         .order_by(sessions::updated_at.asc())
@@ -103,21 +96,28 @@ pub fn get_boards(connection: &MysqlConnection, criteria: EventCriteria) -> Resu
 
 /**
  * Sessions without any boards will not be returned.
+ * 
+ * We store the boards against the conference id if the session is part
+ * of a conference, So the url should be constructed with the conference id 
+ * instead of session id for conference sessions.
  */
 fn get_session_boards(rows: &[Row]) -> Vec<BoardRow> {
     let mut board_rows: Vec<BoardRow> = Vec::new();
 
     for row in rows {
         let mut dir_name: PathBuf = PathBuf::from(SESSION_ASSET_DIR);
-        dir_name.push(((row.1).1).id.to_owned());
+
+        let artifact_id = match &row.1.conference_id {
+            Some(value) => value.to_owned(),
+            None => row.1.id.to_owned()
+        };
+        
+        dir_name.push(artifact_id);
         dir_name.push("boards");
 
-        let result = get_file_names(dir_name);
-
-        if let Ok(urls) = result {
+        if let Ok(urls) = get_file_names(dir_name) {
             board_rows.push(BoardRow {
-                session: (row.1).0.clone(),
-                session_user: (row.1).1.clone(),
+                session: row.1.clone(),
                 urls,
             });
         }
