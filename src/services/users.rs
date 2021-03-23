@@ -1,6 +1,8 @@
 use diesel::prelude::*;
 
 use crate::commons::util;
+
+use crate::models::ferror::Ferror;
 use crate::models::coaches::Coach;
 use crate::models::users::{LoginRequest, NewUser, Registration, ResetPasswordRequest, User};
 
@@ -10,30 +12,29 @@ use crate::schema::users::dsl::*;
 use crate::schema::coaches;
 use crate::schema::coaches::dsl::*;
 
-const REGISTERED_ALREADY: &str = "It seems you have already registered with us.";
-const BLANK_EMAIL: &str = "The email id is required.";
-const BLANK_FULL_NAME: &str = "Your full name is required.";
-const INVALID_USER_ID: &str = "Invalid User Id";
-const CREATION_ERROR: &str = "Unable to create a new user";
-const INVALID_CREDENTIAL: &str = "Invalid Credential";
-const PASSWORD_RESET_FAILED: &str = "Failed to reset the password.";
-const INVALID_COACH_EMAIL: &str = "Invalid Coach email address";
-const INVALID_COACH_ID: &str = "Invalid Coach Id";
+pub const REGISTERED_ALREADY: &str = "It seems you have already registered with us.";
+pub const INVALID_USER_ID: &str = "Invalid User Id";
+pub const CREATION_ERROR: &str = "Unable to create a new user";
+pub const INVALID_CREDENTIAL: &str = "Invalid Credential";
+pub const PASSWORD_RESET_FAILED: &str = "Failed to reset the password.";
+pub const INVALID_COACH_EMAIL: &str = "Invalid Coach email address";
+pub const INVALID_COACH_ID: &str = "Invalid Coach Id";
 
-pub fn register(connection: &MysqlConnection, registration: &Registration) -> Result<User, &'static str> {
-    if registration.email.trim().is_empty() {
-        return Err(BLANK_EMAIL);
-    }
-
-    if registration.full_name.trim().is_empty() {
-        return Err(BLANK_FULL_NAME);
-    }
+pub fn register(connection: &MysqlConnection, registration: &Registration) -> Result<User, Ferror> {
+    
+    registration.validate()?;
 
     is_registered(connection, registration.email.as_str())?;
 
-    create_user(connection, registration)
+    let user = create_user(connection, registration)?;
+
+    Ok(user)
 }
 
+/**
+ * Mysql equal operation on var is case-insensitive, hence we need to
+ * take any care to lowercase the users.email
+ */
 pub fn authenticate(connection: &MysqlConnection, request: LoginRequest) -> Result<User, &'static str> {
     let result: QueryResult<String> = users.filter(users::email.eq(request.email.as_str().trim())).select(password).first(connection);
     if result.is_err() {

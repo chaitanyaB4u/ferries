@@ -19,6 +19,9 @@ mod models;
 mod schema;
 mod services;
 
+#[cfg(test)]
+mod service_tests;
+
 use actix_files::NamedFile;
 use db_manager::establish_connection;
 use file_manager::{

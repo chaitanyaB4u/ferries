@@ -23,25 +23,21 @@ pub fn as_date(date_str: &str) -> NaiveDateTime {
 pub fn as_start_date(date_str: &str) -> Result<NaiveDateTime, String> {
     let date = NaiveDate::parse_from_str(date_str, DATE_PATTERN);
 
-    if date.is_err() {
-        return Err(BAD_DATE.to_owned());
+    if let Ok(nd) = date {
+        return Ok(nd.and_hms(0,0,0));
     }
 
-    let result = date.unwrap().and_hms(0, 0, 0);
-
-    Ok(result)
+    Err(BAD_DATE.to_owned())
 }
 
 pub fn as_end_date(date_str: &str) -> Result<NaiveDateTime, String> {
     let date = NaiveDate::parse_from_str(date_str, DATE_PATTERN);
 
-    if date.is_err() {
-        return Err(BAD_DATE.to_owned());
+    if let Ok(nd) = date {
+        return Ok(nd.and_hms(23, 59, 0));
     }
 
-    let result = date.unwrap().and_hms(23, 59, 0);
-
-    Ok(result)
+    Err(BAD_DATE.to_owned())
 }
 
 pub fn format_time(given_time: &NaiveDateTime) -> String {
@@ -137,6 +133,7 @@ pub fn find_diff(current: Vec<String>, given: Vec<String>) -> Vec<String> {
 
     diff
 }
+
 
 #[cfg(test)]
 mod tests {

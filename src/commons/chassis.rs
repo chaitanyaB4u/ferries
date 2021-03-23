@@ -36,13 +36,29 @@ use crate::models::discussion_queue::PendingFeed;
  * but you can make e.g. Result<User, String> into a GraphQL type.
  */
 use crate::models::users::User;
+use diesel::result::Error;
 
 #[derive(juniper::GraphQLObject)]
 pub struct QueryError {
     pub message: String,
 }
 
+impl From<Error> for QueryError {
+    fn from(sql_error:Error) -> Self {
+        QueryError{message:sql_error.to_string()}
+    }
+}
+
+impl From<String> for QueryError {
+    fn from(criteria_error:String) -> Self {
+        QueryError{message:criteria_error}
+    }
+}
+
+
+
 #[derive(juniper::GraphQLObject)]
+#[derive(Debug)]
 pub struct ValidationError {
     pub field: String,
     pub message: String,
@@ -267,7 +283,6 @@ pub fn query_error<T>(error: diesel::result::Error) -> QueryResult<T> {
 
     QueryResult(Err(e))
 }
-
 
 
 pub struct MutationResult<T>(pub Result<T, Vec<ValidationError>>);

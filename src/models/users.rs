@@ -4,7 +4,9 @@
 
 use chrono::NaiveDateTime;
 
-use crate::commons::chassis::ValidationError;
+use super::ferror::{Ferror};
+
+use crate::commons::chassis::{ValidationError};
 use crate::commons::util;
 use crate::schema::users;
 
@@ -53,22 +55,26 @@ pub struct Registration {
 }
 
 impl Registration {
-    pub fn validate(&self) -> Vec<ValidationError> {
-        let mut errors: Vec<ValidationError> = Vec::new();
+    pub fn validate(&self) -> Result<(),Ferror> {
+        let mut errors = Ferror::new();
 
         if self.email.trim().is_empty() {
-            errors.push(ValidationError::new("email", "email is a must for registration"));
+            errors.push("email", "email is a must for registration");
         }
 
         if self.password.trim().is_empty() {
-            errors.push(ValidationError::new("password", "password is a must for registration"));
+            errors.push("password", "password is a must for registration");
         }
 
         if self.full_name.trim().is_empty() {
-            errors.push(ValidationError::new("full_name", "Full name of the user is a must for registration"));
+            errors.push("full_name", "Full name of the user is a must for registration");
         }
 
-        errors
+        if errors.is_empty() {
+           return Ok(()); 
+        }
+
+        Err(errors)
     }
 }
 

@@ -1,6 +1,7 @@
 use diesel::prelude::*;
 
 use crate::commons::util;
+use crate::commons::chassis::QueryError;
 
 use crate::models::enrollments::Enrollment;
 use crate::models::notes::Note;
@@ -60,7 +61,7 @@ impl EventRow {
 
 type SessionProgram = (Session, Program, SessionUser);
 
-pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Result<Vec<EventRow>, String> {
+pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Result<Vec<EventRow>, QueryError> {
     let mut query = sessions
         .inner_join(programs)
         .inner_join(session_users)
@@ -68,42 +69,31 @@ pub fn get_events(connection: &MysqlConnection, criteria: EventCriteria) -> Resu
         .order_by(sessions::original_start_date.asc())
         .into_boxed();
 
-    if criteria.start_date.is_some() {
-        let start_date = util::as_start_date(criteria.start_date.unwrap().as_str())?;
-        query = query.filter(sessions::original_start_date.ge(start_date))
-    }
-    if criteria.end_date.is_some() {
-        let end_date = util::as_end_date(criteria.end_date.unwrap().as_str())?;
-        query = query.filter(sessions::original_start_date.le(end_date))
-    }
-
-    if criteria.program_id.is_some() {
-        let prog_id = criteria.program_id.unwrap();
+    if let Some(prog_id) = criteria.program_id {
         query = query.filter(sessions::program_id.eq(prog_id));
     }
 
-    let result: Result<Vec<SessionProgram>, diesel::result::Error> = query.load(connection);
-
-    if result.is_err() {
-        return Err(BAD_QUERY.to_owned());
+    if let Some(date) = criteria.start_date {
+        let start_date = util::as_start_date(date.as_str())?;
+        query = query.filter(sessions::original_start_date.ge(start_date))
     }
 
-    let rows: Vec<SessionProgram> = result.unwrap();
-    Ok(to_event_rows(rows))
-}
-
-fn to_event_rows(rows: Vec<SessionProgram>) -> Vec<EventRow> {
-    let mut event_rows: Vec<EventRow> = Vec::new();
-
-    for row in rows {
-        event_rows.push(EventRow {
-            session: row.0,
-            program: row.1,
-            session_user: row.2,
-        });
+    if let Some(date) = criteria.end_date {
+        let end_date = util::as_end_date(date.as_str())?;
+        query = query.filter(sessions::original_start_date.le(end_date));
     }
 
-    event_rows
+    let rows: Vec<EventRow> = query
+        .load::<SessionProgram>(connection)?
+        .into_iter()
+        .map(|tuple| EventRow {
+            session: tuple.0,
+            program: tuple.1,
+            session_user: tuple.2,
+        })
+        .collect();
+
+    Ok(rows)
 }
 
 pub struct PlanRow {
@@ -139,20 +129,17 @@ fn get_task_events(connection: &MysqlConnection, criteria: &EventCriteria) -> Re
         .order_by(tasks::original_start_date.asc())
         .into_boxed();
 
-    if criteria.start_date.is_some() {
-        let start_date = criteria.start_date.as_ref().unwrap().as_str();
-        let date = util::as_start_date(start_date)?;
-        query = query.filter(tasks::original_start_date.ge(date));
+    if let Some(date) = &criteria.start_date {
+        let start_date = util::as_start_date(date)?;
+        query = query.filter(tasks::original_start_date.ge(start_date));
+    } 
+
+    if let Some(date) = &criteria.end_date {
+        let end_date = util::as_end_date(date)?;
+        query = query.filter(tasks::original_start_date.le(end_date));
     }
 
-    if criteria.end_date.is_some() {
-        let end_date = criteria.end_date.as_ref().unwrap().as_str();
-        let date = util::as_end_date(end_date)?;
-        query = query.filter(tasks::original_start_date.le(date));
-    }
-
-    if criteria.program_id.is_some() {
-        let prog_id = criteria.program_id.as_ref().unwrap().as_str();
+    if let Some(prog_id) = &criteria.program_id {
         query = query.filter(enrollments::program_id.eq(prog_id));
     }
 
@@ -164,7 +151,6 @@ fn get_task_events(connection: &MysqlConnection, criteria: &EventCriteria) -> Re
 
     Ok(result.unwrap())
 }
-
 
 type ObjectiveRowType = (Objective, (Enrollment, Program));
 fn get_objective_events(connection: &MysqlConnection, criteria: &EventCriteria) -> Result<Vec<ObjectiveRowType>, String> {
@@ -260,9 +246,9 @@ pub fn get_plan_events(connection: &MysqlConnection, criteria: EventCriteria) ->
 }
 
 /***
- * A task is due for a member, when the member is yet to responded 
+ * A task is due for a member, when the member is yet to responded
  * and the original end date (planned end date) is on or before the given date.
- * 
+ *
  * We consider the end date as a reference point
  */
 fn get_member_due_tasks(connection: &MysqlConnection, criteria: &EventCriteria) -> Result<Vec<TaskRowType>, String> {
@@ -290,10 +276,10 @@ fn get_member_due_tasks(connection: &MysqlConnection, criteria: &EventCriteria) 
 
 /***
  * Normally, a task become due for a coach the moment a member responded to the task.
- * 
- * Luckily if a member closes a task before the planned end_date, 
+ *
+ * Luckily if a member closes a task before the planned end_date,
  * the coach gains some time to review.
- * 
+ *
  */
 
 type CoachTaskRowType = (Task, User, (Enrollment, Program));
@@ -330,11 +316,9 @@ pub struct ToDo {
 
 #[juniper::object]
 impl ToDo {
-
     pub fn task(&self) -> &Task {
         &self.task
     }
-   
     pub fn program(&self) -> &Program {
         &self.program
     }
@@ -345,19 +329,26 @@ impl ToDo {
 }
 
 pub fn get_to_dos(connection: &MysqlConnection, criteria: EventCriteria) -> Result<Vec<ToDo>, String> {
-
-    let member_tasks = get_member_due_tasks(connection,&criteria)?;
+    let member_tasks = get_member_due_tasks(connection, &criteria)?;
     let coach_tasks = get_coach_due_tasks(connection, &criteria)?;
 
     let mut to_dos: Vec<ToDo> = Vec::new();
 
     for row in member_tasks {
-        let to_do = ToDo{program:(row.1).1, task:row.0, user:None};
+        let to_do = ToDo {
+            program: (row.1).1,
+            task: row.0,
+            user: None,
+        };
         to_dos.push(to_do);
     }
 
     for row in coach_tasks {
-        let to_do = ToDo{program:(row.2).1, task:row.0, user:Some(row.1)};
+        let to_do = ToDo {
+            program: (row.2).1,
+            task: row.0,
+            user: Some(row.1),
+        };
         to_dos.push(to_do);
     }
 

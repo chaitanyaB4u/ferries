@@ -156,7 +156,7 @@ impl QueryRoot {
 
         match result {
             Ok(value) => QueryResult(Ok(value)),
-            Err(e) => QueryResult(Err(QueryError { message: e })),
+            Err(e) => QueryResult(Err(e)),
         }
     }
 
@@ -304,17 +304,13 @@ pub struct MutationRoot;
 #[juniper::object(Context = DBContext)]
 impl MutationRoot {
     fn create_user(context: &DBContext, registration: Registration) -> MutationResult<User> {
-        let errors = registration.validate();
-        if !errors.is_empty() {
-            return MutationResult(Err(errors));
-        }
 
         let connection = context.db.get().unwrap();
         let result = register(&connection, &registration);
 
         match result {
             Ok(user) => MutationResult(Ok(user)),
-            Err(e) => service_error(e),
+            Err(e) => MutationResult(Err(e.errors)),
         }
     }
 
