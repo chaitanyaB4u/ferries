@@ -17,4 +17,6 @@ pub mod authentication_feature;
 pub mod registration_feature;
 pub mod password_reset_feature;
 
+pub mod program_creation_feature;
+
 pub mod session_tests;

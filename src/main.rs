@@ -105,7 +105,7 @@ async fn count_feeds(_request: HttpRequest, ctx: web::Data<DBContext>) -> Result
     Ok(HttpResponse::Ok().content_type("application/json").body(json_response))
 }
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
@@ -124,10 +124,12 @@ async fn main() -> std::io::Result<()> {
     println!("Server is running at: {}", &bind);
 
     HttpServer::new(move || {
+        let cors = Cors::permissive();
+
         App::new()
             .data(db_context.clone())
             .data(gq_schema.clone())
-            .wrap(Cors::new().supports_credentials().max_age(3600).finish())
+            .wrap(cors)
             .route("graphql", web::post().to(graphql))
             .route("graphiql", web::get().to(graphiql))
             .route("assets/upload", web::post().to(upload_notes_file))
@@ -150,7 +152,6 @@ async fn main() -> std::io::Result<()> {
 mod tests {
 
     use super::*;
-    use actix_rt;
     use actix_web::{http, test};
 
     #[actix_rt::test]
@@ -160,6 +161,4 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 
-    #[actix_rt::test]
-    async fn test_graphql() {}
 }

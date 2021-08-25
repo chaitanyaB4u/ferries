@@ -7,7 +7,6 @@ use crate::models::ferror::Ferror;
 use crate::services::users::register;
 use crate::services::users::{REGISTERED_ALREADY};
 
-
 #[test]
 pub fn should_register_valid_user() {
     let connection = connection_without_transaction();
