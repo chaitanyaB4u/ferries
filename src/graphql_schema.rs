@@ -47,7 +47,6 @@ pub struct DBContext {
     pub db: MySqlConnectionPool,
 }
 
-impl juniper::Context for DBContext {}
 
 pub struct QueryRoot;
 

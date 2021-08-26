@@ -68,17 +68,50 @@ async fn upload_user_content(_request: HttpRequest, payload: Multipart) -> Resul
     manage_user_content(_request, payload).await
 }
 
+/**
+ * 
+ * As talking to db is always a blocking call let us delegate the invocation to a work pool through blocking
+ * 
+ * **/
+async fn count_feeds(_request: HttpRequest, ctx: web::Data<DBContext>) -> Result<HttpResponse, Error> {
+
+    let user_id: String = _request.match_info().query("user_id").parse().unwrap();
+    
+    let result = web::block(move || {
+        let connection = ctx.db.get().unwrap();
+        let res = get_pending_feed_count(&connection, user_id.as_str());
+        let json_response = serde_json::to_string(&res)?;
+
+        Ok::<_, serde_json::error::Error>(json_response)
+    })
+    .await
+    .map_err(|e|{
+        eprintln!("{}", e);
+        HttpResponse::InternalServerError().finish()
+    })?;
+
+    Ok(HttpResponse::Ok().content_type("application/json").body(result))
+}
+
+
+#[warn(unused_variables)]
+async fn index(_request: HttpRequest) -> HttpResponse {
+    let body = "Welcome to Ferris - 0.5 Version. The API for the Coaching Assistant.";
+    HttpResponse::Ok().body(body)
+}
+
 async fn graphiql() -> HttpResponse {
     let html = graphiql_source("http://localhost:8088/graphql");
     HttpResponse::Ok().content_type("text/html; charset=utf-8").body(html)
 }
 
-#[warn(unused_variables)]
-async fn index(_request: HttpRequest) -> HttpResponse {
-    let body = "Welcome to Ferris - 0.4 Version. The API for the Coaching Assistant.";
-    HttpResponse::Ok().body(body)
-}
-
+/**
+ * Offload the blocking diesel query invocation into another worker thread using actix-web::web::block
+ * 
+ * If we did not move the blocking operation to another thread the main thread
+ * will be blocked from accepting new connections.
+ * 
+ * */
 async fn graphql(ctx: web::Data<DBContext>, schema: web::Data<Arc<GQSchema>>, request: web::Json<GraphQLRequest>) -> Result<HttpResponse, Error> {
     let result = web::block(move || {
         let res = request.execute(&schema, &ctx);
@@ -95,16 +128,6 @@ async fn graphql(ctx: web::Data<DBContext>, schema: web::Data<Arc<GQSchema>>, re
     Ok(HttpResponse::Ok().content_type("application/json").body(&result))
 }
 
-async fn count_feeds(_request: HttpRequest, ctx: web::Data<DBContext>) -> Result<HttpResponse, Error> {
-    let connection = ctx.db.get().unwrap();
-
-    let user_id = _request.match_info().query("user_id");
-    let result = get_pending_feed_count(&connection, user_id);
-    let json_response = serde_json::to_string(&result)?;
-
-    Ok(HttpResponse::Ok().content_type("application/json").body(json_response))
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
@@ -118,8 +141,8 @@ async fn main() -> std::io::Result<()> {
 
     let pool = establish_connection();
     let db_context = DBContext { db: pool.clone() };
-
     let gq_schema = std::sync::Arc::new(create_gq_schema());
+
     let bind = dotenv::var("BIND").unwrap();
     println!("Server is running at: {}", &bind);
 

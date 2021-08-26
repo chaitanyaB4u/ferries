@@ -34,7 +34,7 @@ fn delete_current_links(connection: &MysqlConnection, plan_id: &str) -> Result<S
 fn deletable_tasks(connection: &MysqlConnection, plan_id: &str, given_tasks: &[TaskUnit]) -> Result<Vec<String>, diesel::result::Error> {
     let current_task_ids: Vec<String> = master_tasks.filter(master_tasks::master_plan_id.eq(plan_id)).select(master_tasks::id).load(connection)?;
     let mut given_ids: Vec<String> = given_tasks.iter().map(|tu| tu.id.clone()).collect();
-    given_ids.sort_unstable_by(|id1, id2| id1.cmp(&id2));
+    given_ids.sort_unstable();
 
     let tasks_to_delete: Vec<String> = util::find_diff(current_task_ids, given_ids);
 
